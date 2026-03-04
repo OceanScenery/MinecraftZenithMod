@@ -22,7 +22,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.attack_damage","伤害设置");
             add("the_zenith_sword.configuration.ensured_damage_for_player","对玩家保底伤害");
             add("the_zenith_sword.configuration.ensured_damage_for_non_player","对非玩家保底伤害");
-            add("the_zenith_sword.configuration.default_damage_factor","全局伤害系数");
+            add("the_zenith_sword.configuration.default_damage","物品默认攻击");
             add("the_zenith_sword.configuration.ranged_damage_factor","远程伤害系数");
             add("the_zenith_sword.configuration.sort_farest","优先搜索远方敌人");
         }
@@ -32,7 +32,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.attack_damage","damage settings");
             add("the_zenith_sword.configuration.ensured_damage_for_player","ensured damage when attacking player");
             add("the_zenith_sword.configuration.ensured_damage_for_non_player","ensured damage when attacking non-player entity");
-            add("the_zenith_sword.configuration.default_damage_factor","global damage factor");
+            add("the_zenith_sword.configuration.default_damage","default damage");
             add("the_zenith_sword.configuration.ranged_damage_factor","ranged damage factor");
             add("the_zenith_sword.configuration.sort_farest","sort farest enemy first");
         }

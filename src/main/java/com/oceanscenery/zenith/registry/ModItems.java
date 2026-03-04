@@ -16,6 +16,5 @@ public class ModItems {
             ZenithItem::new,
             new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant().setNoRepair()
                     .component(DataComponents.TOOL,ZenithItem.createToolProperties())
-                    .component(DataComponents.ATTRIBUTE_MODIFIERS,ZenithItem.createAttributes())
     );
 }

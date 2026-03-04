@@ -23,8 +23,8 @@ public class ModConfigs {
         return ZENITH_CONFIG.ensured_damage_for_non_player.get().floatValue();
     }
 
-    public static double getDFactor(){
-        return ZENITH_CONFIG.default_damage_factor.get();
+    public static double getDefaultDamage(){
+        return ZENITH_CONFIG.default_damage.get();
     }
 
     public static double getFactor(){

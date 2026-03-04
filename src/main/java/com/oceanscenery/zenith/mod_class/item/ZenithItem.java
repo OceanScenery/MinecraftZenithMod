@@ -8,7 +8,6 @@ import com.oceanscenery.zenith.registry.ModItems;
 import com.oceanscenery.zenith.tool.Vector3;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
@@ -24,11 +23,11 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,9 +46,9 @@ public class ZenithItem extends Item {
         return new Tool(List.of(),1.0F,0);
     }
 
-    public static ItemAttributeModifiers createAttributes(){
-        return ItemAttributeModifiers.builder()
-                .add(Attributes.ATTACK_DAMAGE,new AttributeModifier(BASE_ATTACK_DAMAGE_ID, 30, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+    @Override
+    public @NotNull ItemAttributeModifiers getDefaultAttributeModifiers(@NotNull ItemStack stack) {
+        return ItemAttributeModifiers.builder().add(Attributes.ATTACK_DAMAGE,new AttributeModifier(BASE_ATTACK_DAMAGE_ID,ModConfigs.getDefaultDamage(), AttributeModifier.Operation.ADD_VALUE),EquipmentSlotGroup.MAINHAND)
                 .add(Attributes.ATTACK_SPEED,new AttributeModifier(BASE_ATTACK_SPEED_ID,30, AttributeModifier.Operation.ADD_VALUE),EquipmentSlotGroup.MAINHAND)
                 .build();
     }

@@ -16,6 +16,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 
 @EventBusSubscriber
 public class DamageHandle {
@@ -38,19 +39,6 @@ public class DamageHandle {
                         event.setNewDamage(ModConfigs.getPDamageNP());
                     }
                 }
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void preDamage(LivingIncomingDamageEvent event){
-        if(event.getSource().getEntity() instanceof Player player){
-            DamageSource source=event.getSource();
-            LivingEntity victim=event.getEntity();
-            if(player.getMainHandItem().is(ModItems.ZENITH.get())){
-                float damage_pre=event.getAmount();
-                float damage_post= (float) (damage_pre*ModConfigs.getDFactor());
-                event.setAmount(damage_post);
             }
         }
     }
