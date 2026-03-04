@@ -143,7 +143,17 @@ public class ZenithItem extends Item {
         onUseTick(level,livingEntity,stack,1,20,0);
     }
 
-    public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration,double distance,int type){
+    @Override
+    public boolean isEnchantable(ItemStack stack) {
+        return true;
+    }
+
+    @Override
+    public int getEnchantmentValue(ItemStack stack) {
+        return 50;
+    }
+
+    public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration, double distance, int type){
         if(!level.isClientSide && livingEntity instanceof Player player && player.getMainHandItem().is(ModItems.ZENITH.get())){
             ZenithProjectile zenith=new ZenithProjectile(
                     ModEntity.ZENITH_PROJECTILE.get(),
