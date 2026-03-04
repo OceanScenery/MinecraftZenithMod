@@ -1,0 +1,68 @@
+{
+  "parent": "minecraft:item/handheld",
+  "display": {
+    "firstperson_lefthand": {
+      "rotation": [
+        149.49,
+        -87.13,
+        111.83
+      ],
+      "translation": [
+        2.5,
+        5,
+        0
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        -147.32,
+        74.07,
+        -143.41
+      ],
+      "translation": [
+        0.25,
+        3.5,
+        1
+      ]
+    },
+    "ground": {
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        40.04,
+        -82.94,
+        -9.32
+      ],
+      "translation": [
+        0,
+        6.5,
+        1.75
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        -89.87,
+        87.79,
+        128.89
+      ],
+      "translation": [
+        0,
+        6.75,
+        0.5
+      ]
+    }
+  },
+  "textures": {
+    "layer0": "the_zenith_sword:item/seedler"
+  }
+}

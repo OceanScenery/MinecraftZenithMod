@@ -1,0 +1,10 @@
+{
+  "entity.the_zenith_sword.zenith_projectile": "ZenithProjectile",
+  "item.the_zenith_sword.zenith": "Zenith Sword",
+  "the_zenith_sword.configuration.attack_damage": "damage settings",
+  "the_zenith_sword.configuration.default_damage_factor": "global damage factor",
+  "the_zenith_sword.configuration.ensured_damage_for_non_player": "ensured damage when attacking non-player entity",
+  "the_zenith_sword.configuration.ensured_damage_for_player": "ensured damage when attacking player",
+  "the_zenith_sword.configuration.ranged_damage_factor": "ranged damage factor",
+  "the_zenith_sword.configuration.sort_farest": "sort farest enemy first"
+}

@@ -1,0 +1,10 @@
+{
+  "entity.the_zenith_sword.zenith_projectile": "天顶剑射弹",
+  "item.the_zenith_sword.zenith": "天顶剑",
+  "the_zenith_sword.configuration.attack_damage": "伤害设置",
+  "the_zenith_sword.configuration.default_damage_factor": "全局伤害系数",
+  "the_zenith_sword.configuration.ensured_damage_for_non_player": "对非玩家保底伤害",
+  "the_zenith_sword.configuration.ensured_damage_for_player": "对玩家保底伤害",
+  "the_zenith_sword.configuration.ranged_damage_factor": "远程伤害系数",
+  "the_zenith_sword.configuration.sort_farest": "优先搜索远方敌人"
+}
