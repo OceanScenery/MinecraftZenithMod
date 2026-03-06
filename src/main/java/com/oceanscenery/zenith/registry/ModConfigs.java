@@ -15,11 +15,11 @@ public class ModConfigs {
         CONFIG= specPair.getRight();
     }
 
-    public static float getPDamageP(){
+    public static float getEnsuredDamageForPlayer(){
         return ZENITH_CONFIG.ensured_damage_for_player.get().floatValue();
     }
 
-    public static float getPDamageNP(){
+    public static float getEnsuredDamageForNonPlayer(){
         return ZENITH_CONFIG.ensured_damage_for_non_player.get().floatValue();
     }
 
@@ -27,7 +27,7 @@ public class ModConfigs {
         return ZENITH_CONFIG.default_damage.get();
     }
 
-    public static double getFactor(){
+    public static double getRangedFactor(){
         return ZENITH_CONFIG.ranged_damage_factor.get();
     }
 }

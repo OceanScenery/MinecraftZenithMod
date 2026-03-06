@@ -25,6 +25,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.default_damage","物品默认攻击");
             add("the_zenith_sword.configuration.ranged_damage_factor","远程伤害系数");
             add("the_zenith_sword.configuration.sort_farest","优先搜索远方敌人");
+            add("the_zenith_sword.configuration.disable_knockback","取消击退");
         }
         if(locale.equals("en_us")){
             add(ModItems.ZENITH.get(),"Zenith Sword");
@@ -35,6 +36,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.default_damage","default damage");
             add("the_zenith_sword.configuration.ranged_damage_factor","ranged damage factor");
             add("the_zenith_sword.configuration.sort_farest","sort farest enemy first");
+            add("the_zenith_sword.configuration.disable_knockback","disable knockback");
         }
     }
 }

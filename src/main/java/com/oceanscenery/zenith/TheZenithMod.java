@@ -16,7 +16,7 @@ public class TheZenithMod {
     public static final String MOD_ID = "the_zenith_sword";
 
     public TheZenithMod(IEventBus modEventBus, ModContainer modContainer) {
-        modContainer.registerConfig(ModConfig.Type.COMMON, ModConfigs.CONFIG);
+        modContainer.registerConfig(ModConfig.Type.SERVER, ModConfigs.CONFIG);
         ModItems.ITEMS.register(modEventBus);
         ModCreativeTab.CREATIVE_TAB.register(modEventBus);
         ModEntity.ENTITIES.register(modEventBus);

@@ -113,11 +113,11 @@ public class ZenithItem extends Item {
             }else{
                 distance=nearest==200?20:nearest;
             }
-            distance+=0.5;
+            distance+=1;
 
             for (LivingEntity entity : victim) {
                 entity.invulnerableTime = 0;
-                DamageHandle.applyDamage(player, entity);
+                DamageHandle.applyDamage(player, entity,3);
             }
 
             Random random=new Random();

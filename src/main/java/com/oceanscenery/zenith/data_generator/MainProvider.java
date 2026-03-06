@@ -65,5 +65,10 @@ public class MainProvider {
 
         generator.addProvider(true
         ,new ModRecipeProvider(packOutput,lookupProvider));
+
+        generator.addProvider(
+                true,
+                new ModDamageTypeTagProvider(packOutput,lookupProvider,fileHelper)
+        );
     }
 }

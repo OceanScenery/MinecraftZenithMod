@@ -1,0 +1,4 @@
+// 1.21.1	2026-03-05T18:25:45.8439087	Tags for minecraft:damage_type mod id the_zenith_sword
+3265778ba56fd28beed1714d9c77cbc314746b1f data/minecraft/tags/damage_type/bypasses_cooldown.json
+3265778ba56fd28beed1714d9c77cbc314746b1f data/minecraft/tags/damage_type/is_player_attack.json
+3265778ba56fd28beed1714d9c77cbc314746b1f data/minecraft/tags/damage_type/no_knockback.json

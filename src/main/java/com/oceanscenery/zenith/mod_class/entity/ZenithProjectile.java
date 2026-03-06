@@ -337,12 +337,12 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             this.setFacingVector(Vector3.transToVector3(real_center.subtract(real_pos)));
 
             this.setLastVector(this.getFacingVector());
-
+            this.setProgress(this.getProgress() + 1);
             if (this.getProgress() > STAGE_COUNT) {
                 this.discard();
             }
 
-            this.setProgress(this.getProgress() + 1);
+
         }else{
             if(local_progress==-1){
                 local_progress=getProgress();
