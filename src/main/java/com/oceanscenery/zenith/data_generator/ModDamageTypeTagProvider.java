@@ -20,7 +20,8 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
     @Override
     protected void addTags(HolderLookup.Provider provider) {
         tag(DamageTypeTags.NO_KNOCKBACK).add(ModDamageType.ZENITH);
-        tag(DamageTypeTags.IS_PLAYER_ATTACK).add(ModDamageType.ZENITH);
-        tag(DamageTypeTags.BYPASSES_COOLDOWN).add(ModDamageType.ZENITH);
+        tag(DamageTypeTags.IS_PLAYER_ATTACK).add(ModDamageType.ZENITH).add(ModDamageType.ZENITH_KNOCKBACK);
+        tag(DamageTypeTags.BYPASSES_COOLDOWN).add(ModDamageType.ZENITH).add(ModDamageType.ZENITH_KNOCKBACK);
+        tag(DamageTypeTags.BYPASSES_SHIELD).add(ModDamageType.ZENITH).add(ModDamageType.ZENITH_KNOCKBACK);
     }
 }

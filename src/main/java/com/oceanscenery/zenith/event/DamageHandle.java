@@ -14,6 +14,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 
 @EventBusSubscriber
 public class DamageHandle {
@@ -40,26 +41,37 @@ public class DamageHandle {
         }
     }
 
-    public static void applyDamage(Player player,LivingEntity victim){
-        applyDamage(player,victim,1);
+    @SubscribeEvent
+    public static void onHitShield(LivingShieldBlockEvent event){
+        if(event.getDamageSource().getEntity() instanceof Player player){
+            if(player.getMainHandItem().is(ModItems.ZENITH.get())){
+                event.setCanceled(true);
+            }
+        }
     }
 
-    public static void applyDamage(Player player,LivingEntity victim,float multiply){
+    public static boolean applyDamage(Player player,LivingEntity victim){
+        return applyDamage(player,victim,1);
+    }
+
+    public static boolean applyDamage(Player player,LivingEntity victim,float multiply){
         if(!player.level().isClientSide){
-            float damage=(float)(player.getAttribute(Attributes.ATTACK_DAMAGE)==null ? 1:(float) player.getAttributeValue(Attributes.ATTACK_DAMAGE));
+            boolean flag;
+            float damage= player.getAttribute(Attributes.ATTACK_DAMAGE)==null ? 1:(float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
             DamageSource source;
             if(ModConfigs.ZENITH_CONFIG.disable_knockback.get()){
                 source=player.damageSources().source(ModDamageType.ZENITH,player);
             }else{
-                source=player.damageSources().playerAttack(player);
+                source=player.damageSources().source(ModDamageType.ZENITH_KNOCKBACK,player);
             }
             EnchantmentHelper.doPostAttackEffectsWithItemSource((ServerLevel) player.level(), victim, source, source.getWeaponItem());
             damage=EnchantmentHelper.modifyDamage((ServerLevel) player.level(), source.getWeaponItem() == null ? player.getMainHandItem() : source.getWeaponItem(), victim, source, damage);
             damage=damage*(float)ModConfigs.getRangedFactor()*multiply;
             victim.invulnerableTime=0;
-            victim.hurt(source,damage);
-            double x0=player.getX()-victim.getX();
-            double z0=player.getZ()-victim.getZ();
+            flag=victim.hurt(source,damage);
+            victim.invulnerableTime=0;
+            return flag;
         }
+        return false;
     }
 }

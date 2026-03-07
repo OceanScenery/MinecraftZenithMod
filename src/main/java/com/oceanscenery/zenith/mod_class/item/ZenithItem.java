@@ -117,7 +117,10 @@ public class ZenithItem extends Item {
 
             for (LivingEntity entity : victim) {
                 entity.invulnerableTime = 0;
-                DamageHandle.applyDamage(player, entity,3);
+                int i=3;
+                if(!DamageHandle.applyDamage(player, entity,3)){
+                    DamageHandle.applyDamage(player, entity,6);
+                }
             }
 
             Random random=new Random();

@@ -11,4 +11,9 @@ public class ModDamageType {
             Registries.DAMAGE_TYPE,
             ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith")
     );
+
+    public static final ResourceKey<DamageType> ZENITH_KNOCKBACK=ResourceKey.create(
+            Registries.DAMAGE_TYPE,
+            ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_knockback")
+    );
 }
