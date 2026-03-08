@@ -4,10 +4,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
+import com.oceanscenery.zenith.registry.ModConfigs;
 import com.oceanscenery.zenith.registry.ModItems;
 import com.oceanscenery.zenith.tool.PosUtil;
 import com.oceanscenery.zenith.tool.Quaternion;
 import com.oceanscenery.zenith.tool.Vector3;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -135,6 +137,14 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
             Vector3[] relative_center=Vector3.getReferFromAngle(rot.getPitch(),rot.getYaw());
             Vector3[] relative_world=new Vector3[]{new Vector3(1,0,0),new Vector3(0,1,0),new Vector3(0,0,1)};
             Vector3 sword_pos = new Vector3(0,0,0);
+
+            if(Minecraft.getInstance().options.getCameraType().isFirstPerson() && owner == Minecraft.getInstance().cameraEntity && ModConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()){
+                Vector3 cameraT=new Vector3(0,1,0).VecInNewRefer(
+                        relative_center,
+                        relative_world
+                );
+                poseStack.translate(cameraT.getX(),cameraT.getY(),cameraT.getZ());
+            }
 
             Vector3 center=new Vector3(0,0,distance/2).VecInNewRefer(
                 relative_center,relative_world

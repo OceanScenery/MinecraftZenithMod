@@ -1,0 +1,53 @@
+{
+  "parent": "bettercombat:sword",
+  "attributes": {
+    "category": "sword",
+    "two_handed": false,
+    "range_bonus": 2.5,
+    "pose": "bettercombat:one_handed_idle",
+    "attacks": [
+      {
+        "animation": "bettercombat:one_handed_slash_horizontal_right",
+        "hitbox": "HORIZONTAL_PLANE",
+        "damage_multiplier": 1.5,
+        "movement_speed_multiplier": 2.5,
+        "range_multiplier": 1.5,
+        "angle": 120,
+        "upswing": 0.2,
+        "swing_sound": {
+          "id": "bettercombat:sword_slash",
+          "pitch": 1.2
+        },
+        "trail_appearance": {
+          "default_appearance": {
+            "primary": {
+              "color_rgba": 4292661120,
+              "glows": true
+            }
+          }
+        }
+      },
+      {
+        "animation": "bettercombat:one_handed_slash_horizontal_left",
+        "hitbox": "HORIZONTAL_PLANE",
+        "damage_multiplier": 2,
+        "movement_speed_multiplier": 2.0,
+        "range_multiplier": 2,
+        "angle": 150,
+        "upswing": 0.3,
+        "swing_sound": {
+          "id": "bettercombat:sword_slash",
+          "pitch": 1.2
+        },
+        "trail_appearance": {
+          "default_appearance": {
+            "primary": {
+              "color_rgba": 4292661120,
+              "glows": true
+            }
+          }
+        }
+      }
+    ]
+  }
+}

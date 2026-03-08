@@ -9,6 +9,7 @@ public class ZenithConfig {
     public final ModConfigSpec.DoubleValue ranged_damage_factor;
     public final ModConfigSpec.BooleanValue sort_farest;
     public final ModConfigSpec.BooleanValue disable_knockback;
+    public final ModConfigSpec.BooleanValue enable_bypass_invulnerable;
 
     public ZenithConfig(ModConfigSpec.Builder builder){
         builder.comment("combat").push("attack_damage");
@@ -18,5 +19,6 @@ public class ZenithConfig {
         ranged_damage_factor=builder.comment("final ranged damage would be initial damage*this factor").defineInRange("ranged_damage_factor",0.2,0.0,1.0);
         sort_farest=builder.comment("whether to sort farest enemy or nearest").define("sort_farest",true);
         disable_knockback= builder.comment("whether to disable knockback").define("disable_knockback",true);
+        enable_bypass_invulnerable=builder.comment("whether to bypass the damage reduction of living entity(which may disrupt game balance,not recommended)").define("enable_bypass_invulnerable",false);
     }
 }

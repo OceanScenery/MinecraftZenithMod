@@ -323,7 +323,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             AABB box=new AABB(real_pos,last_pos).inflate(2);
             List<LivingEntity> list=this.level().getEntitiesOfClass(LivingEntity.class,box, this::canHit);
             for(LivingEntity entity:list){
-                entity.invulnerableTime=0;
                 DamageHandle.applyDamage(owner,entity);
             }
 

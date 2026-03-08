@@ -4,8 +4,11 @@
   "the_zenith_sword.configuration.attack_damage": "伤害设置",
   "the_zenith_sword.configuration.default_damage": "物品默认攻击",
   "the_zenith_sword.configuration.disable_knockback": "取消击退",
+  "the_zenith_sword.configuration.enable_bypass_invulnerable": "比较真实的伤害(不推荐)",
   "the_zenith_sword.configuration.ensured_damage_for_non_player": "对非玩家保底伤害",
   "the_zenith_sword.configuration.ensured_damage_for_player": "对玩家保底伤害",
   "the_zenith_sword.configuration.ranged_damage_factor": "远程伤害系数",
+  "the_zenith_sword.configuration.render": "渲染设置",
+  "the_zenith_sword.configuration.render_offset": "剑轨渲染偏移(向下一格)",
   "the_zenith_sword.configuration.sort_farest": "优先搜索远方敌人"
 }

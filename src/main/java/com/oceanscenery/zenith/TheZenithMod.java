@@ -1,19 +1,18 @@
 package com.oceanscenery.zenith;
 
+import com.mojang.logging.LogUtils;
 import com.oceanscenery.zenith.registry.*;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.ModLoadingContext;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.ModContainer;
+import org.slf4j.Logger;
 
-// The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(TheZenithMod.MOD_ID)
 public class TheZenithMod {
     public static final String MOD_ID = "the_zenith_sword";
+
+    public static final Logger LOGGER= LogUtils.getLogger();
 
     public TheZenithMod(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.SERVER, ModConfigs.CONFIG);

@@ -16,6 +16,7 @@ import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -23,12 +24,18 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.system.Platform;
 
+import javax.sound.sampled.Clip;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -37,6 +44,7 @@ import java.util.Random;
 public class ZenithItem extends Item {
     public static final int TYPE_AMOUNT=21;
     public static final Random random=new Random();
+    public static final boolean isBetterCombatLoaded= ModList.get().isLoaded("bettercombat");
 
     public ZenithItem(Properties properties) {
         super(properties);
@@ -49,7 +57,7 @@ public class ZenithItem extends Item {
     @Override
     public @NotNull ItemAttributeModifiers getDefaultAttributeModifiers(@NotNull ItemStack stack) {
         return ItemAttributeModifiers.builder().add(Attributes.ATTACK_DAMAGE,new AttributeModifier(BASE_ATTACK_DAMAGE_ID,ModConfigs.getDefaultDamage(), AttributeModifier.Operation.ADD_VALUE),EquipmentSlotGroup.MAINHAND)
-                .add(Attributes.ATTACK_SPEED,new AttributeModifier(BASE_ATTACK_SPEED_ID,30, AttributeModifier.Operation.ADD_VALUE),EquipmentSlotGroup.MAINHAND)
+                .add(Attributes.ATTACK_SPEED,new AttributeModifier(BASE_ATTACK_SPEED_ID,isBetterCombatLoaded?-2.4:30, AttributeModifier.Operation.ADD_VALUE),EquipmentSlotGroup.MAINHAND)
                 .build();
     }
 
@@ -93,19 +101,26 @@ public class ZenithItem extends Item {
             double distance;
 
             AABB box = new AABB(player.getEyePosition().add(initial.normalize().multiply(-1,-1,-1)), player.getEyePosition().add(initial)).inflate(1);
-            List<LivingEntity> list = level.getEntitiesOfClass(LivingEntity.class, box, entity -> entity instanceof LivingEntity && !entity.is(player));
+            List<Entity> list = level.getEntitiesOfClass(Entity.class, box, entity -> !(entity instanceof ZenithProjectile) && !entity.is(player));
             double farest=-1,nearest=200,tmp;
             ArrayList<LivingEntity> victim = new ArrayList<>();
-            for (LivingEntity entity : list) {
+            BlockHitResult blockHitResult=level.clip(new ClipContext(player.getEyePosition(),player.getEyePosition().add(initial), ClipContext.Block.VISUAL, ClipContext.Fluid.NONE,player));
+            double block_distance=blockHitResult.getLocation().distanceTo(player.getEyePosition());
+
+            for (Entity entity : list) {
                 AABB aabb=entity.getBoundingBox().inflate(1);
                 if (aabb.clip(player.getEyePosition(), player.getEyePosition().add(initial)).isPresent()) {
-                    if ((tmp=entity.distanceTo(player))>farest) {
-                        farest=tmp;
+                    if(entity instanceof LivingEntity && !((LivingEntity) entity).isDeadOrDying() && !(entity instanceof ArmorStand)){
+                        if ((tmp = entity.distanceTo(player)) > farest) {
+                            farest = tmp;
+                        }
+                        if ((tmp = entity.distanceTo(player)) < nearest) {
+                            nearest = tmp;
+                        }
+                        victim.add((LivingEntity)entity);
+                    }else if(entity.distanceTo(player)<block_distance){
+                        player.attack(entity);
                     }
-                    if ((tmp = entity.distanceTo(player))<nearest){
-                        nearest=tmp;
-                    }
-                    victim.add(entity);
                 }
             }
             if(ModConfigs.ZENITH_CONFIG.sort_farest.get()){
@@ -116,11 +131,7 @@ public class ZenithItem extends Item {
             distance+=1;
 
             for (LivingEntity entity : victim) {
-                entity.invulnerableTime = 0;
-                int i=3;
-                if(!DamageHandle.applyDamage(player, entity,3)){
-                    DamageHandle.applyDamage(player, entity,6);
-                }
+                DamageHandle.applyDamage(player,entity,3);
             }
 
             Random random=new Random();

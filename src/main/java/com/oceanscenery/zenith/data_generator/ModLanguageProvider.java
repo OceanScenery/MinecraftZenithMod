@@ -26,6 +26,9 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.ranged_damage_factor","远程伤害系数");
             add("the_zenith_sword.configuration.sort_farest","优先搜索远方敌人");
             add("the_zenith_sword.configuration.disable_knockback","取消击退");
+            add("the_zenith_sword.configuration.enable_bypass_invulnerable","比较真实的伤害(不推荐)");
+            add("the_zenith_sword.configuration.render","渲染设置");
+            add("the_zenith_sword.configuration.render_offset","剑轨渲染偏移(向下一格)");
         }
         if(locale.equals("en_us")){
             add(ModItems.ZENITH.get(),"Zenith Sword");
@@ -37,6 +40,9 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.ranged_damage_factor","ranged damage factor");
             add("the_zenith_sword.configuration.sort_farest","sort farest enemy first");
             add("the_zenith_sword.configuration.disable_knockback","disable knockback");
+            add("the_zenith_sword.configuration.enable_bypass_invulnerable","use damage type that bypasses most damage reduction");
+            add("the_zenith_sword.configuration.render","render settings");
+            add("the_zenith_sword.configuration.render_offset","trail offset(1 block down)");
         }
     }
 }

@@ -197,7 +197,7 @@ public class Vector3 {
         pitch=Math.toRadians(pitch);
         yaw=Math.toRadians(yaw);
         Vector3 tmp=new Vector3(0,1,0).cross(result[2]);
-        result[0]=Math.abs(tmp.length())<1e-8?new Vector3(-Math.sin(yaw),0,Math.cos(yaw)):tmp.normalize().multiply(-1);
+        result[0]=Math.abs(tmp.length())<1e-8?new Vector3(Math.cos(-yaw),0,-Math.sin(-yaw)).multiply(-1):tmp.normalize().multiply(-1);
         result[1]=result[2].cross(result[0]).normalize();
         return result;
     }
