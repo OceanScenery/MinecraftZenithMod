@@ -13,8 +13,7 @@ public class ModItems {
 
     public static final DeferredItem<Item> ZENITH =ITEMS.registerItem(
             "zenith",
-            ZenithItem::new,
-            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant().setNoRepair()
-                    .component(DataComponents.TOOL,ZenithItem.createToolProperties())
+            properties -> new ZenithItem(properties.stacksTo(1).rarity(Rarity.EPIC).fireResistant().setNoRepair()
+                    .component(DataComponents.TOOL,ZenithItem.createToolProperties()))
     );
 }

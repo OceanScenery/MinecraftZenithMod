@@ -118,7 +118,7 @@ public class ZenithItem extends Item {
                             nearest = tmp;
                         }
                         victim.add((LivingEntity)entity);
-                    }else if(entity.distanceTo(player)<block_distance){
+                    }else if(entity.distanceTo(player)<block_distance && !(entity instanceof LivingEntity)){
                         player.attack(entity);
                     }
                 }
