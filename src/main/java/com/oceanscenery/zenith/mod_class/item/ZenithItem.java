@@ -1,8 +1,10 @@
 package com.oceanscenery.zenith.mod_class.item;
 
 import com.oceanscenery.zenith.event.DamageHandle;
+import com.oceanscenery.zenith.mod_class.data_component.LastUseTime;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.ModConfigs;
+import com.oceanscenery.zenith.registry.ModDataComponents;
 import com.oceanscenery.zenith.registry.ModEntity;
 import com.oceanscenery.zenith.registry.ModItems;
 import com.oceanscenery.zenith.tool.Vector3;
@@ -43,6 +45,7 @@ import java.util.Random;
 
 public class ZenithItem extends Item {
     public static final int TYPE_AMOUNT=21;
+    public static final int USE_INTERVAL=4;
     public static final Random random=new Random();
     public static final boolean isBetterCombatLoaded= ModList.get().isLoaded("bettercombat");
 
@@ -87,8 +90,22 @@ public class ZenithItem extends Item {
     }
 
     @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        super.inventoryTick(stack, level, entity, slotId, isSelected);
+    }
+
+    @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if(!level.isClientSide && player.getMainHandItem().is(ModItems.ZENITH.get())){
+            ItemStack stack=player.getMainHandItem();
+            if(stack.get(ModDataComponents.LAST_USE_TIME.get())==null){
+                stack.set(ModDataComponents.LAST_USE_TIME.get(),new LastUseTime(0));
+            }
+            if(level.getGameTime()-stack.get(ModDataComponents.LAST_USE_TIME.get()).tickTime()<USE_INTERVAL){
+                return InteractionResultHolder.fail(stack);
+            }else {
+                stack.set(ModDataComponents.LAST_USE_TIME.get(),new LastUseTime(level.getGameTime()));
+            }
             Vector3[] reference = Vector3.getReferFromAngle(player.getXRot(), player.getYRot());
             Vec3 initial = new Vector3(0, 0, 100).VecInNewRefer(
                     reference[0],

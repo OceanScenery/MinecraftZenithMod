@@ -15,6 +15,7 @@ public class TheZenithMod {
     public static final Logger LOGGER= LogUtils.getLogger();
 
     public TheZenithMod(IEventBus modEventBus, ModContainer modContainer) {
+        ModDataComponents.DATA_COMPONENTS.register(modEventBus);
         modContainer.registerConfig(ModConfig.Type.SERVER, ModConfigs.CONFIG);
         ModItems.ITEMS.register(modEventBus);
         ModCreativeTab.CREATIVE_TAB.register(modEventBus);

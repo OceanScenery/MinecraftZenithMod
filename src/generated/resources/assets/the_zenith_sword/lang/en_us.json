@@ -10,5 +10,6 @@
   "the_zenith_sword.configuration.ranged_damage_factor": "ranged damage factor",
   "the_zenith_sword.configuration.render": "render settings",
   "the_zenith_sword.configuration.render_offset": "trail offset(1 block down)",
-  "the_zenith_sword.configuration.sort_farest": "sort farest enemy first"
+  "the_zenith_sword.configuration.sort_farest": "sort farest enemy first",
+  "the_zenith_sword.configuration.trail_angle": "trail_angle"
 }

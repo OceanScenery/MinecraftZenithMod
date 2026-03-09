@@ -31,9 +31,6 @@ import net.minecraft.world.phys.Vec3;
 
 public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
     public final ItemRenderer itemRenderer;
-    public static final double TOTAL_ANGLE=Math.toRadians(80);
-    public static final int AMOUNT=60;
-    public static final double ONCE_ANGLE=TOTAL_ANGLE/AMOUNT;
 
     public static final int[][] COLOR=new int[][]{
             {204,255,255},
@@ -105,6 +102,10 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
 
     @Override
     public void render(ZenithProjectile entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        double TOTAL_ANGLE=Math.toRadians(ModConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble());
+        int AMOUNT= (int)(60*ModConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble()/80);
+        double ONCE_ANGLE=TOTAL_ANGLE/AMOUNT;
+
         if(!entity.isAlive() || entity.isRemoved()){
             return;
         }

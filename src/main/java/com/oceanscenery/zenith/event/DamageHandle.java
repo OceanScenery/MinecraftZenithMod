@@ -1,7 +1,6 @@
 package com.oceanscenery.zenith.event;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.mod_class.config.ZenithConfig;
 import com.oceanscenery.zenith.registry.ModConfigs;
 import com.oceanscenery.zenith.registry.ModDamageType;
 import com.oceanscenery.zenith.registry.ModItems;
@@ -11,26 +10,21 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 @EventBusSubscriber
 public class DamageHandle {
+    private static boolean caughtException=false;
+
     @SubscribeEvent(priority= EventPriority.LOWEST)
     public static void onHurtEve(LivingDamageEvent.Pre event){
         if(!event.getEntity().level().isClientSide){
@@ -75,7 +69,7 @@ public class DamageHandle {
             damage=EnchantmentHelper.modifyDamage((ServerLevel) player.level(), source.getWeaponItem() == null ? player.getMainHandItem() : source.getWeaponItem(), victim, source, damage);
             damage=damage*(float)ModConfigs.getRangedFactor()*multiply;
             victim.invulnerableTime=0;
-            if(ModConfigs.ZENITH_CONFIG.enable_bypass_invulnerable.get()){
+            if(ModConfigs.ZENITH_CONFIG.enable_bypass_invulnerable.get() && !caughtException){
                 if(!damageProcess(victim,player,damage,source)){
                     victim.hurt(source,damage);
                 }
@@ -91,33 +85,29 @@ public class DamageHandle {
     public static boolean damageProcess(LivingEntity victim,Player player,float damage,DamageSource source){
         try {
             MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(LivingEntity.class, MethodHandles.lookup());
+            MethodHandles.Lookup extLookup=MethodHandles.privateLookupIn(victim.getClass(),MethodHandles.lookup());
             MethodHandle check_totem=lookup.findSpecial(LivingEntity.class,"checkTotemDeathProtection",MethodType.methodType(boolean.class,DamageSource.class), LivingEntity.class);
-            Class<?> clazz= LivingEntity.class;
-            Field field= clazz.getDeclaredField("DATA_HEALTH_ID");
-            field.setAccessible(true);
+            MethodHandle getHealth=lookup.findStaticGetter(LivingEntity.class,"DATA_HEALTH_ID",EntityDataAccessor.class);
+            MethodHandle hurtSound=extLookup.findSpecial(victim.getClass(),"playHurtSound",MethodType.methodType(void.class,DamageSource.class),victim.getClass());
             @SuppressWarnings("unchecked")
-            EntityDataAccessor<Float> health_id=(EntityDataAccessor<Float>)field.get(victim);
+            EntityDataAccessor<Float> health_id=(EntityDataAccessor<Float>)getHealth.invoke();
             float pastHealth=victim.getEntityData().get(health_id);
             victim.getEntityData().set(health_id,pastHealth-damage);
             victim.setLastHurtByPlayer(player);
             victim.getCombatTracker().recordDamage(source,damage);
+            victim.setLastHurtByPlayer(player);
+            victim.hurtMarked=true;
+            victim.level().broadcastDamageEvent(victim,source);
+            hurtSound.invoke(victim,source);
             if(victim.isDeadOrDying()){
                 if(!(boolean)check_totem.invoke(victim,source)){
                     victim.die(source);
                 }
             }
-        } catch (NoSuchMethodException e) {
-            TheZenithMod.LOGGER.error("hurt method error");
-            return false;
-        } catch (IllegalAccessException e) {
-            TheZenithMod.LOGGER.error("illegal access");
-            e.printStackTrace();
-            return false;
-        } catch (ClassCastException e){
-            TheZenithMod.LOGGER.error("unchecked class transform");
-            return false;
-        } catch (Throwable e) {
+        }catch (Throwable e) {
             TheZenithMod.LOGGER.error("an exception caught");
+            caughtException=true;
+            e.printStackTrace();
             return false;
         }
         return true;
