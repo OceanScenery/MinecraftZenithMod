@@ -136,7 +136,9 @@ public class ZenithItem extends Item {
                         }
                         victim.add((LivingEntity)entity);
                     }else if(entity.distanceTo(player)<block_distance && !(entity instanceof LivingEntity)){
-                        player.attack(entity);
+                        if(entity.isAttackable()){
+                            entity.hurt(player.damageSources().playerAttack(player),10);
+                        }
                     }
                 }
             }
