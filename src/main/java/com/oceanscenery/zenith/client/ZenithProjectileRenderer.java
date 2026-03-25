@@ -162,6 +162,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
             relative_center,relative_world
         ).add(Vector3.transToVector3(owner.getEyePosition(partialTick)));
 
+        Vector3 round=null;
         Vector3 last_inner=null,last_outer=null;
         Vector3 near_inner,near_outer,far_inner,far_outer;
         for(int i=0;i<AMOUNT && (i+1)*ONCE_ANGLE<progress_angle;i++){
@@ -177,6 +178,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
                 sword_pos=near.add(center);
                 near_inner=near.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.2+(0.16/AMOUNT)*factorI)).add(center);
                 near_outer=near.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.2-(0.16/AMOUNT)*factorI)).add(center);
+                round=near_outer.add(near_inner.multiply(-1));
             }else{
                 near_inner=last_inner;
                 near_outer=last_outer;
@@ -204,6 +206,9 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
         }
         poseStack.translate(sword_pos.getX(),sword_pos.getY(),sword_pos.getZ());
 
+        if(round!=null){
+            poseStack.mulPose(Quaternion.trans(rotFactor, round).toQuaternionf());
+        }
         poseStack.mulPose(Quaternion.trans(new Vector3(0,0,1),rotFactor).toQuaternionf());
         poseStack.mulPose(Quaternion.trans(new Vector3(0,0,1),new Vector3(0,1,0)).toQuaternionf());
         poseStack.mulPose(Quaternion.trans(new Vector3(1,1,0),new Vector3(0,1,0)).toQuaternionf());
