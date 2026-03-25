@@ -4,8 +4,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
-import com.oceanscenery.zenith.registry.ModConfigs;
-import com.oceanscenery.zenith.registry.ModItems;
+import com.oceanscenery.zenith.registry.ZenithConfigs;
+import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.tool.PosUtil;
 import com.oceanscenery.zenith.tool.Quaternion;
 import com.oceanscenery.zenith.tool.Vector3;
@@ -28,6 +28,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
     public final ItemRenderer itemRenderer;
@@ -86,131 +87,140 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
     }
 
     @Override
-    public boolean shouldRender(ZenithProjectile livingEntity, Frustum camera, double camX, double camY, double camZ) {
+    public boolean shouldRender(@NotNull ZenithProjectile livingEntity, @NotNull Frustum camera, double camX, double camY, double camZ) {
         return true;
     }
 
     @Override
-    protected boolean shouldShowName(ZenithProjectile entity) {
+    protected boolean shouldShowName(@NotNull ZenithProjectile entity) {
         return false;
     }
 
     @Override
-    public ResourceLocation getTextureLocation(ZenithProjectile entity) {
+    public @NotNull ResourceLocation getTextureLocation(@NotNull ZenithProjectile entity) {
         return ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"item/zenith_sword");
     }
 
     @Override
-    public void render(ZenithProjectile entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        double TOTAL_ANGLE=Math.toRadians(ModConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble());
-        int AMOUNT= (int)(60*ModConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble()/80);
+    public void render(ZenithProjectile entity, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
+        double TOTAL_ANGLE=Math.toRadians(ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble());
+        int AMOUNT= (int)(60* ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble()/80);
         double ONCE_ANGLE=TOTAL_ANGLE/AMOUNT;
 
         if(!entity.isAlive() || entity.isRemoved()){
+            poseStack.popPose();
             return;
         }
 
         poseStack.pushPose();
         int sword_type=entity.getSwordType();
 
-        ItemStack render_item=new ItemStack(ModItems.ZENITH,1, DataComponentPatch.builder().set(DataComponents.CUSTOM_MODEL_DATA,new CustomModelData(sword_type)).build());
+        ItemStack render_item=new ItemStack(ZenithItems.ZENITH,1, DataComponentPatch.builder().set(DataComponents.CUSTOM_MODEL_DATA,new CustomModelData(sword_type)).build());
 
         Vector3 vec=entity.getFacingVector();
         Vector3 vec_last=entity.getLastVector();
         Vector3 rotFactor=vec_last.multiply(1-partialTick).add(vec.multiply(partialTick));
-        int progress= Math.min(entity.getLocalProgress(),ZenithProjectile.STAGE_COUNT);
+        int progress=Math.min(entity.getLocalProgress(),ZenithProjectile.STAGE_COUNT+1);
+        if(progress>ZenithProjectile.STAGE_COUNT){
+            poseStack.popPose();
+            return;
+        }
 
         int[] color=COLOR[sword_type];
         double angle=entity.getAngle();
         double distance=entity.getDistance();
-        double progress_angle=Mth.TWO_PI*Mth.lerp(partialTick,(double)progress-1,(double)progress)/ZenithProjectile.STAGE_COUNT;
+        double progress_angle=Mth.TWO_PI*Mth.lerp(partialTick,(double)progress-1, progress)/ZenithProjectile.STAGE_COUNT;
 
         VertexConsumer vertex= bufferSource.getBuffer(RenderType.entityTranslucentEmissive(ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"textures/entity/trail.png")));
 
         Player owner=(Player)entity.level().getEntity(entity.getOwnerID());
 
+        if(owner==null){
+            poseStack.popPose();
+            return;
+        }
+
         Vec3 pos=entity.getPosition(partialTick);
 
-        if(owner!=null){
-            poseStack.translate(-pos.x,-pos.y,-pos.z);
+        poseStack.translate(-pos.x, -pos.y, -pos.z);
 
-            PosUtil.Rotation rot=entity.getIniRot();
-            Vector3[] relative_center=Vector3.getReferFromAngle(rot.getPitch(),rot.getYaw());
-            Vector3[] relative_world=new Vector3[]{new Vector3(1,0,0),new Vector3(0,1,0),new Vector3(0,0,1)};
-            Vector3 sword_pos = new Vector3(0,0,0);
+        PosUtil.Rotation rot=entity.getIniRot();
+        Vector3[] relative_center=Vector3.getReferFromAngle(rot.getPitch(),rot.getYaw());
+        Vector3[] relative_world=new Vector3[]{new Vector3(1,0,0),new Vector3(0,1,0),new Vector3(0,0,1)};
+        Vector3 sword_pos = new Vector3(0,0,-1).VecInNewRefer(relative_center,relative_world).add(Vector3.transToVector3(owner.getEyePosition(partialTick)));
+        boolean firstPerson=owner==Minecraft.getInstance().cameraEntity;
 
-            if(Minecraft.getInstance().options.getCameraType().isFirstPerson() && owner == Minecraft.getInstance().cameraEntity && ModConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()){
-                Vector3 cameraT=new Vector3(0,1,0).VecInNewRefer(
-                        relative_center,
-                        relative_world
-                );
-                poseStack.translate(cameraT.getX(),cameraT.getY(),cameraT.getZ());
-            }
-
-            Vector3 center=new Vector3(0,0,distance/2).VecInNewRefer(
-                relative_center,relative_world
-            ).add(Vector3.transToVector3(owner.getEyePosition(partialTick)));
-
-            Vector3 last_inner=null,last_outer=null;
-            Vector3 near_inner,near_outer,far_inner,far_outer;
-            for(int i=0;i<AMOUNT && (i+1)*ONCE_ANGLE<progress_angle;i++){
-
-                int factorI=i+AMOUNT-Math.min(AMOUNT,(int)(progress_angle/ONCE_ANGLE));
-                double current_angle=progress_angle-i*ONCE_ANGLE;
-                double next_angle=progress_angle-(i+1)*ONCE_ANGLE;
-                if(last_inner == null){
-                    Vector3 near=PosUtil.calCenPos(distance,current_angle,angle).add(new Vector3(0,0,-1)).VecInNewRefer(
-                            relative_center,
-                            relative_world
-                    );
-                    sword_pos=near.add(center);
-                    near_inner=near.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(relative_center[1].multiply(-0.2+(0.16/AMOUNT)*factorI)).add(center);
-                    near_outer=near.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(relative_center[1].multiply(0.2-(0.16/AMOUNT)*factorI)).add(center);
-                }else{
-                    near_inner=last_inner;
-                    near_outer=last_outer;
-                }
-                Vector3 far=PosUtil.calCenPos(distance,next_angle,angle).add(new Vector3(0,0,-1)).VecInNewRefer(
-                        relative_center,
-                        relative_world
-                );
-
-                far_inner=far.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(relative_center[1].multiply(-0.2+factorI*(0.16/AMOUNT))).add(center);
-                far_outer=far.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(relative_center[1].multiply(0.2-factorI*(0.16/AMOUNT))).add(center);
-                last_inner=far_inner;
-                last_outer=far_outer;
-
-                vertex.addVertex(poseStack.last(),far_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0,0)
-                        .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-(factorI+1)*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
-                vertex.addVertex(poseStack.last(),far_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0,1)
-                        .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-(factorI+1)*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
-                vertex.addVertex(poseStack.last(),near_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1,1)
-                        .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-factorI*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
-                vertex.addVertex(poseStack.last(),near_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1,0)
-                        .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-factorI*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
-
-
-            }
-            poseStack.translate(sword_pos.getX(),sword_pos.getY(),sword_pos.getZ());
-
-            poseStack.mulPose(Quaternion.trans(new Vector3(0,0,1),rotFactor).toQuaternionf());
-            poseStack.mulPose(Quaternion.trans(new Vector3(0,0,1),new Vector3(0,1,0)).toQuaternionf());
-            poseStack.mulPose(Quaternion.trans(new Vector3(1,1,0),new Vector3(0,1,0)).toQuaternionf());
-
-            BakedModel model=this.itemRenderer.getModel(render_item,entity.level(),null,entity.getId());
-
-
-            itemRenderer.render(
-                    render_item,
-                    ItemDisplayContext.NONE,
-                    false,
-                    poseStack,
-                    bufferSource,
-                    LightTexture.FULL_BRIGHT,
-                    OverlayTexture.NO_OVERLAY,
-                    model
+        if(firstPerson && Minecraft.getInstance().options.getCameraType().isFirstPerson() && ZenithConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()){
+            Vector3 cameraT=new Vector3(0,1,0).VecInNewRefer(
+                    relative_center,
+                    relative_world
             );
+            poseStack.translate(cameraT.getX(),cameraT.getY(),cameraT.getZ());
         }
+
+        Vector3 center=new Vector3(0,0,distance/2).VecInNewRefer(
+            relative_center,relative_world
+        ).add(Vector3.transToVector3(owner.getEyePosition(partialTick)));
+
+        Vector3 last_inner=null,last_outer=null;
+        Vector3 near_inner,near_outer,far_inner,far_outer;
+        for(int i=0;i<AMOUNT && (i+1)*ONCE_ANGLE<progress_angle;i++){
+
+            int factorI=i+AMOUNT-Math.min(AMOUNT,(int)(progress_angle/ONCE_ANGLE));
+            double current_angle=progress_angle-i*ONCE_ANGLE;
+            double next_angle=progress_angle-(i+1)*ONCE_ANGLE;
+            if(last_inner == null){
+                Vector3 near=PosUtil.calCenPos(distance,current_angle,angle).add(new Vector3(0,0,-1)).VecInNewRefer(
+                        relative_center,
+                        relative_world
+                );
+                sword_pos=near.add(center);
+                near_inner=near.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.2+(0.16/AMOUNT)*factorI)).add(center);
+                near_outer=near.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.2-(0.16/AMOUNT)*factorI)).add(center);
+            }else{
+                near_inner=last_inner;
+                near_outer=last_outer;
+            }
+            Vector3 far=PosUtil.calCenPos(distance,next_angle,angle).add(new Vector3(0,0,-1)).VecInNewRefer(
+                    relative_center,
+                    relative_world
+            );
+
+            far_inner=far.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.2+factorI*(0.16/AMOUNT))).add(center);
+            far_outer=far.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.2-factorI*(0.16/AMOUNT))).add(center);
+            last_inner=far_inner;
+            last_outer=far_outer;
+
+            vertex.addVertex(poseStack.last(),far_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0,0)
+                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-(factorI+1)*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
+            vertex.addVertex(poseStack.last(),far_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0,1)
+                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-(factorI+1)*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
+            vertex.addVertex(poseStack.last(),near_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1,1)
+                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-factorI*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
+            vertex.addVertex(poseStack.last(),near_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1,0)
+                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-factorI*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
+
+
+        }
+        poseStack.translate(sword_pos.getX(),sword_pos.getY(),sword_pos.getZ());
+
+        poseStack.mulPose(Quaternion.trans(new Vector3(0,0,1),rotFactor).toQuaternionf());
+        poseStack.mulPose(Quaternion.trans(new Vector3(0,0,1),new Vector3(0,1,0)).toQuaternionf());
+        poseStack.mulPose(Quaternion.trans(new Vector3(1,1,0),new Vector3(0,1,0)).toQuaternionf());
+
+        BakedModel model=this.itemRenderer.getModel(render_item,entity.level(),null,entity.getId());
+
+
+        itemRenderer.render(
+                render_item,
+                ItemDisplayContext.NONE,
+                false,
+                poseStack,
+                bufferSource,
+                LightTexture.FULL_BRIGHT,
+                OverlayTexture.NO_OVERLAY,
+                model
+        );
 
 
         poseStack.popPose();

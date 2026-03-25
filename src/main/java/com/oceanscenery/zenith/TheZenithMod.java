@@ -3,6 +3,7 @@ package com.oceanscenery.zenith;
 import com.mojang.logging.LogUtils;
 import com.oceanscenery.zenith.registry.*;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.ModContainer;
@@ -14,12 +15,14 @@ public class TheZenithMod {
 
     public static final Logger LOGGER= LogUtils.getLogger();
 
+    public static final boolean TERRA_LOADED= ModList.get().isLoaded("confluence");
+
     public TheZenithMod(IEventBus modEventBus, ModContainer modContainer) {
-        ModDataComponents.DATA_COMPONENTS.register(modEventBus);
-        modContainer.registerConfig(ModConfig.Type.SERVER, ModConfigs.CONFIG);
-        ModItems.ITEMS.register(modEventBus);
-        ModCreativeTab.CREATIVE_TAB.register(modEventBus);
-        ModEntity.ENTITIES.register(modEventBus);
-        ModEntityDataSerializer.MOD_ENTITY_DATA_SERIALIZER.register(modEventBus);
+        ZenithDataComponents.DATA_COMPONENTS.register(modEventBus);
+        modContainer.registerConfig(ModConfig.Type.SERVER, ZenithConfigs.CONFIG);
+        ZenithItems.ITEMS.register(modEventBus);
+        ZenithCreativeTab.CREATIVE_TAB.register(modEventBus);
+        ZenithEntities.ENTITIES.register(modEventBus);
+        ZenithEntityDataSerializer.MOD_ENTITY_DATA_SERIALIZER.register(modEventBus);
     }
 }

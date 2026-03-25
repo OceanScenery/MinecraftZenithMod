@@ -9,7 +9,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
-public class ModEntityDataSerializer {
+public class ZenithEntityDataSerializer {
     public static final DeferredRegister<EntityDataSerializer<?>> MOD_ENTITY_DATA_SERIALIZER=DeferredRegister.create(
             NeoForgeRegistries.ENTITY_DATA_SERIALIZERS,
             TheZenithMod.MOD_ID

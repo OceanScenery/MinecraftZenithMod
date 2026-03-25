@@ -1,9 +1,8 @@
 package com.oceanscenery.zenith.data_generator;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.registry.ModConfigs;
-import com.oceanscenery.zenith.registry.ModEntity;
-import com.oceanscenery.zenith.registry.ModItems;
+import com.oceanscenery.zenith.registry.ZenithEntities;
+import com.oceanscenery.zenith.registry.ZenithItems;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 
@@ -17,8 +16,8 @@ public class ModLanguageProvider extends LanguageProvider {
     @Override
     protected void addTranslations() {
         if(locale.equals("zh_cn")){
-            add(ModItems.ZENITH.get(),"天顶剑");
-            add(ModEntity.ZENITH_PROJECTILE.get(),"天顶剑射弹");
+            add(ZenithItems.ZENITH.get(),"天顶剑");
+            add(ZenithEntities.ZENITH_PROJECTILE.get(),"天顶剑射弹");
             add("the_zenith_sword.configuration.attack_damage","伤害设置");
             add("the_zenith_sword.configuration.ensured_damage_for_player","对玩家保底伤害");
             add("the_zenith_sword.configuration.ensured_damage_for_non_player","对非玩家保底伤害");
@@ -43,10 +42,24 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.render_offset.tooltip","将剑的轨迹在第一人称下的渲染向下偏移一格,以凸显轨道的弧形");
             add("the_zenith_sword.configuration.trail_angle","剑轨角度");
             add("the_zenith_sword.configuration.trail_angle.tooltip","决定剑的拖尾占总飞行轨道的比例(中心角)");
+            add("the_zenith_sword.packet.distance","默认索敌距离");
+            add("the_zenith_sword.item.distance.tooltip_pre","当前物品的默认索敌距离");
+            add("the_zenith_sword.item.distance.tooltip_post","在背包中单独右键物品以改变默认索敌距离");
+            add("the_zenith_sword.packet.attack_mode","攻击模式(实体类型)");
+            add("the_zenith_sword.item.attack_mode.tooltip_pre","攻击模式");
+            add("the_zenith_sword.item.attack_mode.tooltip_post","在背包中Ctrl+右键物品以改变默认攻击模式");
+            add("the_zenith_sword.packet.attack_player_mode","伤害玩家");
+            add("the_zenith_sword.item.attack_player_mode.tooltip.pre","伤害玩家");
+            add("the_zenith_sword.item.attack_player_mode.tooltip.post","在背包中Shift+右键以切换是否攻击玩家");
+            add("the_zenith_sword.configuration.enable_attack_item.tooltip","是否在剑的\"all\"模式下攻击掉落物或经验球");
+            add("the_zenith_sword.configuration.enable_attack_item","攻击掉落物与经验球");
+            add("the_zenith_sword.configuration.interaction","交互设置");
+            add("the_zenith_sword.configuration.block_interaction","屏蔽交互");
+            add("the_zenith_sword.configuration.block_interaction.tooltip","手持天顶剑时,屏蔽除攻击外的右键交互");
         }
         if(locale.equals("en_us")){
-            add(ModItems.ZENITH.get(),"Zenith Sword");
-            add(ModEntity.ZENITH_PROJECTILE.get(),"ZenithProjectile");
+            add(ZenithItems.ZENITH.get(),"Zenith Sword");
+            add(ZenithEntities.ZENITH_PROJECTILE.get(),"ZenithProjectile");
             add("the_zenith_sword.configuration.attack_damage","damage settings");
             add("the_zenith_sword.configuration.ensured_damage_for_player","ensured damage when attacking player");
             add("the_zenith_sword.configuration.ensured_damage_for_non_player","ensured damage when attacking non-player entity");
@@ -58,6 +71,20 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.render","render settings");
             add("the_zenith_sword.configuration.render_offset","trail offset(1 block down)");
             add("the_zenith_sword.configuration.trail_angle","trail_angle");
+            add("the_zenith_sword.packet.distance","default enemy targeting range");
+            add("the_zenith_sword.item.distance.tooltip_pre","default targeting range for the current item");
+            add("the_zenith_sword.item.distance.tooltip_post","right click the item in the inventory to change the default targeting range.");
+            add("the_zenith_sword.packet.attack_mode","attack mode");
+            add("the_zenith_sword.item.attack_mode.tooltip_pre","attack mode");
+            add("the_zenith_sword.item.attack_mode.tooltip_post","right click(with Ctrl) the item in the inventory to change the attack mode.");
+            add("the_zenith_sword.packet.attack_player_mode","hurt player");
+            add("the_zenith_sword.item.attack_player_mode.tooltip.pre","hurt player");
+            add("the_zenith_sword.item.attack_player_mode.tooltip.post","right click(with Shift) the item in the inventory to change whether to hurt player");
+            add("the_zenith_sword.configuration.enable_attack_item.tooltip","whether to attack item or xp orb in \"all\" mode");
+            add("the_zenith_sword.configuration.enable_attack_item","attack item/xp orb");
+            add("the_zenith_sword.configuration.interaction","Interaction");
+            add("the_zenith_sword.configuration.block_interaction","Block Interaction");
+            add("the_zenith_sword.configuration.block_interaction.tooltip","when there's a zenith in your hand,right-click interactions except for attacks would be blocked");
         }
     }
 }

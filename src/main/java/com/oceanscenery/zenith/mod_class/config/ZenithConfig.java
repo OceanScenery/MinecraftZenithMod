@@ -10,6 +10,7 @@ public class ZenithConfig {
     public final ModConfigSpec.BooleanValue sort_farest;
     public final ModConfigSpec.BooleanValue disable_knockback;
     public final ModConfigSpec.BooleanValue enable_bypass_invulnerable;
+    public final ModConfigSpec.BooleanValue enable_attack_item;
 
     public ZenithConfig(ModConfigSpec.Builder builder){
         builder.comment("combat").push("attack_damage");
@@ -20,5 +21,6 @@ public class ZenithConfig {
         sort_farest=builder.comment("whether to sort farest enemy or nearest").define("sort_farest",true);
         disable_knockback= builder.comment("whether to disable knockback").define("disable_knockback",true);
         enable_bypass_invulnerable=builder.comment("whether to bypass the damage reduction of living entity(which may disrupt game balance,not recommended)").define("enable_bypass_invulnerable",false);
+        enable_attack_item=builder.comment("whether to attack item or xp orb in \"all\" mode").define("enable_attack_item",false);
     }
 }

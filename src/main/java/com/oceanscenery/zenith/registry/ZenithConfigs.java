@@ -5,7 +5,7 @@ import com.oceanscenery.zenith.mod_class.config.ZenithConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class ModConfigs {
+public class ZenithConfigs {
     public static final ModConfigSpec CONFIG,CLIENT_CONFIG;
     public static final ZenithConfig ZENITH_CONFIG;
     public static final ZenithClientConfig ZENITH_CLIENT_CONFIG;

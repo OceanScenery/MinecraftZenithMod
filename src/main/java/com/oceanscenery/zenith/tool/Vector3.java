@@ -16,6 +16,7 @@ import java.util.Scanner;
 
 public class Vector3 {
     private double x,y,z;
+    public static final Vector3[] WORLD=new Vector3[]{new Vector3(1,0,0),new Vector3(0,1,0),new Vector3(0,0,1)};
 
     public static final StreamCodec<ByteBuf,Vector3> STREAM_CODEC=StreamCodec.composite(
             ByteBufCodecs.DOUBLE,Vector3::getX,

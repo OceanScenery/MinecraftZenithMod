@@ -1,7 +1,6 @@
 package com.oceanscenery.zenith.data_generator;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.registry.ModCreativeTab;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;

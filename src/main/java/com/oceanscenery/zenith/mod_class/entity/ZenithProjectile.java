@@ -1,7 +1,8 @@
 package com.oceanscenery.zenith.mod_class.entity;
 
 import com.oceanscenery.zenith.event.DamageHandle;
-import com.oceanscenery.zenith.registry.ModEntityDataSerializer;
+import com.oceanscenery.zenith.registry.ZenithEntityDataSerializer;
+import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.tool.PosUtil;
 import com.oceanscenery.zenith.tool.Vector3;
 import net.minecraft.nbt.CompoundTag;
@@ -13,7 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TraceableEntity;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
@@ -26,16 +27,16 @@ import java.util.UUID;
 
 public class ZenithProjectile extends Entity implements TraceableEntity {
 
-    public static final EntityDataAccessor<Vector3> FACING_VECTOR=SynchedEntityData.defineId(ZenithProjectile.class, ModEntityDataSerializer.VECTOR.get());
-    public static final EntityDataAccessor<Vector3> LAST_VECTOR=SynchedEntityData.defineId(ZenithProjectile.class,ModEntityDataSerializer.VECTOR.get());
+    public static final EntityDataAccessor<Vector3> FACING_VECTOR=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.VECTOR.get());
+    public static final EntityDataAccessor<Vector3> LAST_VECTOR=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.VECTOR.get());
     public static final EntityDataAccessor<Integer> PROGRESS=SynchedEntityData.defineId(ZenithProjectile.class,EntityDataSerializers.INT);
-    public static final EntityDataAccessor<Double> ANGLE=SynchedEntityData.defineId(ZenithProjectile.class,ModEntityDataSerializer.DOUBLE.get());
-    public static final EntityDataAccessor<Double> DISTANCE=SynchedEntityData.defineId(ZenithProjectile.class,ModEntityDataSerializer.DOUBLE.get());
+    public static final EntityDataAccessor<Double> ANGLE=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.DOUBLE.get());
+    public static final EntityDataAccessor<Double> DISTANCE=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.DOUBLE.get());
     public static final EntityDataAccessor<Integer> OWNER_ID =SynchedEntityData.defineId(ZenithProjectile.class,EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> SWORD_TYPE =SynchedEntityData.defineId(ZenithProjectile.class,EntityDataSerializers.INT);
-    public static final EntityDataAccessor<PosUtil.Rotation> INI_ROT=SynchedEntityData.defineId(ZenithProjectile.class,ModEntityDataSerializer.ROTATION.get());
+    public static final EntityDataAccessor<PosUtil.Rotation> INI_ROT=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.ROTATION.get());
 
-    private Player owner;
+    private LivingEntity owner;
     private UUID owner_uuid;
     private Vec3 center_pos=null;
     private Vec3 this_pos=null;
@@ -43,7 +44,8 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     private int type;
     private boolean to_remove;
     public static final int STAGE_COUNT=20;
-    private int local_progress=-1;
+    private int local_progress=0;
+    public ItemStack weapon= ZenithItems.ZENITH.toStack();
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level) {
         super(entityType, level);
@@ -53,7 +55,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         this.getEntityData().set(FACING_VECTOR,new Vector3(0,0,1));
     }
 
-    public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType,Level level,@NotNull Player owner,boolean to_remove){
+    public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level, @NotNull LivingEntity owner, boolean to_remove){
         this(entityType,level);
         this.owner=owner;
         this.owner_uuid=owner.getUUID();
@@ -62,7 +64,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         this.setIniRot(new PosUtil.Rotation(owner.getXRot(),owner.getYRot()));
     }
 
-    public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType,Level level,Player owner,boolean to_remove,double angle,int type,double distance){
+    public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType,Level level,LivingEntity owner,boolean to_remove,double angle,int type,double distance,ItemStack weapon){
         this(entityType,level,owner,to_remove);
         this.setAngle(angle);
         this.type=type;
@@ -70,6 +72,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         this.setDistance(distance);
         this.center_pos=owner.getEyePosition().relative(owner.getDirection(),(distance-1)/2);
         setFacingVector(new Vector3(0,0,1));
+        this.weapon=weapon;
     }
 
     @Override
@@ -97,6 +100,14 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        if(reason.equals(RemovalReason.KILLED) && !this.to_remove){
+            return;
+        }
+        super.remove(reason);
     }
 
     public UUID getOwnerUuid(){
@@ -275,11 +286,26 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         compound.put("PosMark",pos_mark);
     }
 
-    public boolean canHit(LivingEntity entity){
-        if(entity.getId()==this.getOwnerID()){
+    public boolean canHit(Entity entity){
+        if(entity.getId()==this.getOwnerID() || entity instanceof ZenithProjectile){
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean canChangeDimensions(@NotNull Level oldLevel, @NotNull Level newLevel) {
+        return false;
+    }
+
+    @Override
+    public boolean canFreeze() {
+        return false;
+    }
+
+    @Override
+    public boolean shouldBeSaved() {
+        return false;
     }
 
     @Override
@@ -321,12 +347,16 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             }
 
             AABB box=new AABB(real_pos,last_pos).inflate(2);
-            List<LivingEntity> list=this.level().getEntitiesOfClass(LivingEntity.class,box, this::canHit);
-            for(LivingEntity entity:list){
-                DamageHandle.applyDamage(owner,entity);
+            List<Entity> list=this.level().getEntitiesOfClass(Entity.class,box,this::canHit);
+            for(Entity entity:list){
+                DamageHandle.applyDamage(owner,entity,weapon);
             }
 
             last_pos=real_pos;
+
+            if(this.getProgress() > STAGE_COUNT && !this.to_remove) {
+                this.to_remove=true;
+            }
 
             if (this.center_pos == null) {
                 this.discard();

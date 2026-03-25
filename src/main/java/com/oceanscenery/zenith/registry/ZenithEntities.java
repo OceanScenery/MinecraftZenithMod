@@ -8,7 +8,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-public class ModEntity {
+public class ZenithEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES=DeferredRegister.create(
             BuiltInRegistries.ENTITY_TYPE,
             TheZenithMod.MOD_ID

@@ -1,7 +1,7 @@
 package com.oceanscenery.zenith.data_generator;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.registry.ModItems;
+import com.oceanscenery.zenith.registry.ZenithItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.ItemTagsProvider;
@@ -19,7 +19,6 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        tag(ItemTags.SWORD_ENCHANTABLE).add(ModItems.ZENITH.get());
-        tag(ItemTags.SHARP_WEAPON_ENCHANTABLE).add(ModItems.ZENITH.get());
+        tag(ItemTags.SWORDS).add(ZenithItems.ZENITH.get());
     }
 }
