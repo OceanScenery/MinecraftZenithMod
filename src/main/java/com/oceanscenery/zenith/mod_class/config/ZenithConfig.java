@@ -14,10 +14,10 @@ public class ZenithConfig {
 
     public ZenithConfig(ModConfigSpec.Builder builder){
         builder.comment("combat").push("attack_damage");
-        ensured_damage_for_non_player=builder.comment("damage that lower than this(for non-player) will be modified to this").defineInRange("ensured_damage_for_non_player",1,0,Float.MAX_VALUE);
-        ensured_damage_for_player=builder.comment("damage that lower than this(for player) will be modified to this").defineInRange("ensured_damage_for_player",0.1,0,Float.MAX_VALUE);
+        ensured_damage_for_non_player=builder.comment("minimum damage ratio for non-player (0.0-1.0), damage will be raised to this ratio of original damage if lower").defineInRange("ensured_damage_for_non_player",0.2f,0f,1f);
+        ensured_damage_for_player=builder.comment("minimum damage ratio for player (0.0-1.0), damage will be raised to this ratio of original damage if lower").defineInRange("ensured_damage_for_player",0.1f,0f,1f);
         default_damage =builder.comment("the default attribute-attack_damage of the item").defineInRange("default_damage",8,0,Float.MAX_VALUE);
-        ranged_damage_factor=builder.comment("final ranged damage would be initial damage*this factor").defineInRange("ranged_damage_factor",0.2,0.0,1.0);
+        ranged_damage_factor=builder.comment("final ranged damage would be initial damage*this factor").defineInRange("ranged_damage_factor",0.1,0.0,1.0);
         sort_farest=builder.comment("whether to sort farest enemy or nearest").define("sort_farest",true);
         disable_knockback= builder.comment("whether to disable knockback").define("disable_knockback",true);
         enable_bypass_invulnerable=builder.comment("whether to bypass the damage reduction of living entity(which may disrupt game balance,not recommended)").define("enable_bypass_invulnerable",false);

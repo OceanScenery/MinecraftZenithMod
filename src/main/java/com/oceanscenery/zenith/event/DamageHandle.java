@@ -2,10 +2,7 @@ package com.oceanscenery.zenith.event;
 
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.data_component.AttackMode;
-import com.oceanscenery.zenith.registry.ZenithConfigs;
-import com.oceanscenery.zenith.registry.ZenithDamageType;
-import com.oceanscenery.zenith.registry.ZenithDataComponents;
-import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.registry.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -39,18 +36,23 @@ public class DamageHandle {
     public static void onHurtEve(LivingDamageEvent.Pre event){
         if(!event.getEntity().level().isClientSide){
             LivingEntity victim = event.getEntity();
+            event.getOriginalDamage();
             DamageSource source = event.getSource();
             if (source.is(ZenithDamageType.ZENITH) || source.is(ZenithDamageType.ZENITH_KNOCKBACK)) {
+                float initial_damage=victim.getData(ZenithAttachment.ZENITH_INITIAL_DAMAGE_MARK);
                 float damage = event.getNewDamage();
+                float non_p=ZenithConfigs.getEnsuredDamageForNonPlayer()*initial_damage;
+                float for_p=ZenithConfigs.getEnsuredDamageForPlayer()*initial_damage;
                 if(victim instanceof Player){
-                    if (damage < ZenithConfigs.getEnsuredDamageForPlayer()) {
-                        event.setNewDamage(ZenithConfigs.getEnsuredDamageForPlayer()*(TheZenithMod.TERRA_LOADED?5:1));
+                    if (damage < for_p) {
+                        event.setNewDamage(for_p);
                     }
                 }else{
-                    if (damage < ZenithConfigs.getEnsuredDamageForNonPlayer()*(TheZenithMod.TERRA_LOADED?30:1)) {
-                        event.setNewDamage(ZenithConfigs.getEnsuredDamageForNonPlayer()*(TheZenithMod.TERRA_LOADED?30:1));
+                    if (damage < non_p) {
+                        event.setNewDamage(non_p);
                     }
                 }
+                victim.setData(ZenithAttachment.ZENITH_INITIAL_DAMAGE_MARK,0f);
             }
         }
     }
@@ -74,7 +76,9 @@ public class DamageHandle {
             }
             EnchantmentHelper.doPostAttackEffectsWithItemSource((ServerLevel)attacker.level(), victim, source,weapon);
             damage=EnchantmentHelper.modifyDamage((ServerLevel)attacker.level(),weapon, victim, source, damage);
-            damage=damage*(float)(Math.min(ZenithConfigs.getRangedFactor()*(TheZenithMod.TERRA_LOADED?5:1),1))*multiply;
+            damage=damage*(float)(Math.min(ZenithConfigs.getRangedFactor()*(TheZenithMod.TERRA_LOADED?10:1),1))*multiply;
+            damage+=(victim instanceof LivingEntity living)?living.getMaxHealth()*0.01f:0;
+            victim.setData(ZenithAttachment.ZENITH_INITIAL_DAMAGE_MARK,damage);
             victim.invulnerableTime=0;
             if(ZenithConfigs.ZENITH_CONFIG.enable_bypass_invulnerable.get()){
                 damageProcess(victim,attacker,damage,source);

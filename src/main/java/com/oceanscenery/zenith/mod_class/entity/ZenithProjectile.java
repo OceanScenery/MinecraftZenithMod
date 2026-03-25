@@ -1,6 +1,8 @@
 package com.oceanscenery.zenith.mod_class.entity;
 
 import com.oceanscenery.zenith.event.DamageHandle;
+import com.oceanscenery.zenith.mod_class.config.ZenithConfig;
+import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithEntityDataSerializer;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.tool.PosUtil;
@@ -39,13 +41,11 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     private LivingEntity owner;
     private UUID owner_uuid;
     private Vec3 center_pos=null;
-    private Vec3 this_pos=null;
     private Vec3 last_pos=null;
-    private int type;
     private boolean to_remove;
     public static final int STAGE_COUNT=20;
     private int local_progress=0;
-    public ItemStack weapon= ZenithItems.ZENITH.toStack();
+    public ItemStack weapon=ZenithItems.ZENITH.toStack();
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level) {
         super(entityType, level);
@@ -67,7 +67,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType,Level level,LivingEntity owner,boolean to_remove,double angle,int type,double distance,ItemStack weapon){
         this(entityType,level,owner,to_remove);
         this.setAngle(angle);
-        this.type=type;
         this.setSwordType(type);
         this.setDistance(distance);
         this.center_pos=owner.getEyePosition().relative(owner.getDirection(),(distance-1)/2);
@@ -204,86 +203,11 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag compound) {
-        if(compound.hasUUID("Owner")){
-            this.owner_uuid=compound.getUUID("Owner");
-            this.owner=this.level().getPlayerByUUID(this.owner_uuid);
-            if(this.owner==null){
-                this.discard();
-                return;
-            }else{
-                this.setOwnerID(this.owner.getId());
-            }
-            CompoundTag pos_mark=(CompoundTag)compound.get("PosMark");
-            if(pos_mark!=null){
-                if (pos_mark.get("center_pos") != null) {
-                    long[] center_pos_array_long = pos_mark.getLongArray("center_pos");
-                    double[] center_pos_array_double = new double[]{
-                            Double.longBitsToDouble(center_pos_array_long[0]),
-                            Double.longBitsToDouble(center_pos_array_long[1]),
-                            Double.longBitsToDouble(center_pos_array_long[2])
-                    };
-                    this.center_pos = new Vector3(center_pos_array_double).toVec3();
-                }
-                if(pos_mark.get("last_facing_vector")!=null){
-                    long[] last_pos_array_long = pos_mark.getLongArray("last_facing_vector");
-                    double[] last_pos_array_double = new double[]{
-                            Double.longBitsToDouble(last_pos_array_long[0]),
-                            Double.longBitsToDouble(last_pos_array_long[1]),
-                            Double.longBitsToDouble(last_pos_array_long[2])
-                    };
-                    this.getEntityData().set(LAST_VECTOR,new Vector3(last_pos_array_double));
-                }
-                if(pos_mark.get("this_pos")!=null){
-                    long[] this_pos_array_long = pos_mark.getLongArray("this_pos");
-                    double[] this_pos_array_double = new double[]{
-                            Double.longBitsToDouble(this_pos_array_long[0]),
-                            Double.longBitsToDouble(this_pos_array_long[1]),
-                            Double.longBitsToDouble(this_pos_array_long[2])
-                    };
-                    this.this_pos = new Vector3(this_pos_array_double).toVec3();
-                }
-                this.setIniRot(new PosUtil.Rotation(pos_mark.getDouble("pitch"),pos_mark.getDouble("yaw")));
-                this.setAngle(pos_mark.getDouble("angle"));
-                this.type=pos_mark.getInt("type");
-                this.setDistance(pos_mark.getDouble("distance"));
-                this.setProgress(pos_mark.getInt("progress"));
-                this.setSwordType(this.type);
-            }
-        }
+    protected void readAdditionalSaveData(@NotNull CompoundTag compound) {
     }
 
     @Override
     protected void addAdditionalSaveData(@NotNull CompoundTag compound) {
-        if (this.owner_uuid != null) {
-            compound.putUUID("Owner", this.owner_uuid);
-        }
-        CompoundTag pos_mark=new CompoundTag();
-        if(center_pos!=null){
-            double[] center_pos_array_double = new Vector3(center_pos).toArray();
-            long[] center_pos_array_long = new long[]{Double.doubleToLongBits(center_pos_array_double[0]),
-                    Double.doubleToLongBits(center_pos_array_double[1]), Double.doubleToLongBits(center_pos_array_double[2])};
-            pos_mark.putLongArray("center_pos", center_pos_array_long);
-        }
-        if(this_pos!=null){
-            double[] this_pos_array_double = new Vector3(this_pos).toArray();
-            long[] this_pos_array_long = new long[]{Double.doubleToLongBits(this_pos_array_double[0]),
-                    Double.doubleToLongBits(this_pos_array_double[1]), Double.doubleToLongBits(this_pos_array_double[2])};
-            pos_mark.putLongArray("this_pos", this_pos_array_long);
-        }
-        if(this.getLastVector()!=null){
-            double[] last_pos_array_double = this.getLastVector().toArray();
-            long[] last_pos_array_long = new long[]{Double.doubleToLongBits(last_pos_array_double[0]),
-                    Double.doubleToLongBits(last_pos_array_double[1]), Double.doubleToLongBits(last_pos_array_double[2])};
-            pos_mark.putLongArray("last_facing_vector",last_pos_array_long);
-        }
-        pos_mark.putInt("progress",this.getProgress());
-        pos_mark.putInt("type",this.type);
-        pos_mark.putDouble("angle",this.getAngle());
-        pos_mark.putDouble("distance",this.getDistance());
-        pos_mark.putDouble("pitch",this.getIniRot().getPitch());
-        pos_mark.putDouble("yaw",this.getIniRot().getYaw());
-        compound.put("PosMark",pos_mark);
     }
 
     public boolean canHit(Entity entity){

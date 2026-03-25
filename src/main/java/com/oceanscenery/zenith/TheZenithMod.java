@@ -24,5 +24,6 @@ public class TheZenithMod {
         ZenithCreativeTab.CREATIVE_TAB.register(modEventBus);
         ZenithEntities.ENTITIES.register(modEventBus);
         ZenithEntityDataSerializer.MOD_ENTITY_DATA_SERIALIZER.register(modEventBus);
+        ZenithAttachment.ATTACHMENTS.register(modEventBus);
     }
 }

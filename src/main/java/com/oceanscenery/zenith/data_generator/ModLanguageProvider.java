@@ -19,8 +19,8 @@ public class ModLanguageProvider extends LanguageProvider {
             add(ZenithItems.ZENITH.get(),"天顶剑");
             add(ZenithEntities.ZENITH_PROJECTILE.get(),"天顶剑射弹");
             add("the_zenith_sword.configuration.attack_damage","伤害设置");
-            add("the_zenith_sword.configuration.ensured_damage_for_player","对玩家保底伤害");
-            add("the_zenith_sword.configuration.ensured_damage_for_non_player","对非玩家保底伤害");
+            add("the_zenith_sword.configuration.ensured_damage_for_player","对玩家保底伤害比例");
+            add("the_zenith_sword.configuration.ensured_damage_for_non_player","对非玩家保底伤害比例");
             add("the_zenith_sword.configuration.default_damage","物品默认攻击");
             add("the_zenith_sword.configuration.ranged_damage_factor","远程伤害系数");
             add("the_zenith_sword.configuration.sort_farest","优先搜索远方敌人");
@@ -61,8 +61,8 @@ public class ModLanguageProvider extends LanguageProvider {
             add(ZenithItems.ZENITH.get(),"Zenith Sword");
             add(ZenithEntities.ZENITH_PROJECTILE.get(),"ZenithProjectile");
             add("the_zenith_sword.configuration.attack_damage","damage settings");
-            add("the_zenith_sword.configuration.ensured_damage_for_player","ensured damage when attacking player");
-            add("the_zenith_sword.configuration.ensured_damage_for_non_player","ensured damage when attacking non-player entity");
+            add("the_zenith_sword.configuration.ensured_damage_for_player","minimum damage ratio for player (0.0-1.0), damage will be raised to this ratio of original damage if lower");
+            add("the_zenith_sword.configuration.ensured_damage_for_non_player","minimum damage ratio for non-player (0.0-1.0), damage will be raised to this ratio of original damage if lower");
             add("the_zenith_sword.configuration.default_damage","default damage");
             add("the_zenith_sword.configuration.ranged_damage_factor","ranged damage factor");
             add("the_zenith_sword.configuration.sort_farest","sort farest enemy first");
