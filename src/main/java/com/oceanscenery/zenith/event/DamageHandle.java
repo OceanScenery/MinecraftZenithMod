@@ -21,6 +21,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.EntityInvulnerabilityCheckEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.invoke.MethodHandle;
@@ -31,6 +32,18 @@ import java.util.Stack;
 @EventBusSubscriber
 public class DamageHandle {
     private static boolean caughtException=false;
+
+    @SubscribeEvent(priority=EventPriority.HIGHEST)
+    public static void applyPercentage(LivingIncomingDamageEvent event){
+        if(event.getSource().is(ZenithDamageType.ZENITH) || event.getSource().is(ZenithDamageType.ZENITH_KNOCKBACK)){
+            LivingEntity living = event.getEntity();
+            float maxHealth=living.getMaxHealth();
+            float pastDamage=living.getData(ZenithAttachment.ZENITH_INITIAL_DAMAGE_MARK);
+            pastDamage+=maxHealth*0.01f;
+            living.setData(ZenithAttachment.ZENITH_INITIAL_DAMAGE_MARK,pastDamage);
+            event.setAmount(pastDamage);
+        }
+    }
 
     @SubscribeEvent(priority=EventPriority.HIGHEST)
     public static void onHurtEve(LivingDamageEvent.Pre event){
@@ -76,10 +89,10 @@ public class DamageHandle {
             }
             EnchantmentHelper.doPostAttackEffectsWithItemSource((ServerLevel)attacker.level(), victim, source,weapon);
             damage=EnchantmentHelper.modifyDamage((ServerLevel)attacker.level(),weapon, victim, source, damage);
-            damage=damage*(float)(Math.min(ZenithConfigs.getRangedFactor()*(TheZenithMod.TERRA_LOADED?10:1),1))*multiply;
-            damage+=(victim instanceof LivingEntity living)?living.getMaxHealth()*0.01f:0;
+            damage=damage*(float)(Math.min(ZenithConfigs.getRangedFactor()*((TheZenithMod.TERRA_LOADED&&ZenithConfigs.ZENITH_CONFIG.enable_terra_damage_modifier.get())?10:1),1))*multiply;
             victim.setData(ZenithAttachment.ZENITH_INITIAL_DAMAGE_MARK,damage);
             victim.invulnerableTime=0;
+
             if(ZenithConfigs.ZENITH_CONFIG.enable_bypass_invulnerable.get()){
                 damageProcess(victim,attacker,damage,source);
             }
@@ -89,6 +102,8 @@ public class DamageHandle {
                     MethodHandles.Lookup handles=MethodHandles.privateLookupIn(LivingEntity.class,MethodHandles.lookup());
                     MethodHandle handle=handles.findSpecial(LivingEntity.class,"hurt",MethodType.methodType(boolean.class,DamageSource.class,float.class), LivingEntity.class);
                     if(!(boolean)handle.invoke(living,source,damage)){
+                        damage+=living.getMaxHealth()*0.01f;
+                        victim.setData(ZenithAttachment.ZENITH_INITIAL_DAMAGE_MARK,damage);
                         MethodHandle dmgCtnr=handles.findGetter(LivingEntity.class,"damageContainers", Stack.class);
                         @SuppressWarnings("unchecked")
                         Stack<net.neoforged.neoforge.common.damagesource.DamageContainer> damageContainers=(Stack<net.neoforged.neoforge.common.damagesource.DamageContainer>)dmgCtnr.invoke(living);
@@ -126,6 +141,7 @@ public class DamageHandle {
             MethodHandles.Lookup pLookup=MethodHandles.privateLookupIn(LivingEntity.class,lookup);
             MethodHandle method=pLookup.findStaticGetter(LivingEntity.class,"DATA_HEALTH_ID",EntityDataAccessor.class);
             if(victim instanceof LivingEntity living){
+                damage+=living.getMaxHealth()*0.01f;
                 @SuppressWarnings("unchecked")
                 EntityDataAccessor<Float> health=(EntityDataAccessor<Float>)method.invoke();
                 float hp=living.getEntityData().get(health);
