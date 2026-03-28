@@ -6,6 +6,7 @@ import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithEntityDataSerializer;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.tool.PosUtil;
+import com.oceanscenery.zenith.tool.Quaternion;
 import com.oceanscenery.zenith.tool.Vector3;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -28,15 +29,16 @@ import java.util.List;
 import java.util.UUID;
 
 public class ZenithProjectile extends Entity implements TraceableEntity {
-
-    public static final EntityDataAccessor<Vector3> FACING_VECTOR=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.VECTOR.get());
-    public static final EntityDataAccessor<Vector3> LAST_VECTOR=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.VECTOR.get());
     public static final EntityDataAccessor<Integer> PROGRESS=SynchedEntityData.defineId(ZenithProjectile.class,EntityDataSerializers.INT);
     public static final EntityDataAccessor<Double> ANGLE=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.DOUBLE.get());
     public static final EntityDataAccessor<Double> DISTANCE=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.DOUBLE.get());
     public static final EntityDataAccessor<Integer> OWNER_ID =SynchedEntityData.defineId(ZenithProjectile.class,EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> SWORD_TYPE =SynchedEntityData.defineId(ZenithProjectile.class,EntityDataSerializers.INT);
     public static final EntityDataAccessor<PosUtil.Rotation> INI_ROT=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.ROTATION.get());
+
+    //缓存数据,避免计算
+    private Vector3[] relative=null;
+    private Quaternion[] fixedPose=null;
 
     private LivingEntity owner;
     private UUID owner_uuid;
@@ -52,7 +54,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         noCulling=true;
         to_remove=true;
         this.noPhysics=true;
-        this.getEntityData().set(FACING_VECTOR,new Vector3(0,0,1));
     }
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level, @NotNull LivingEntity owner, boolean to_remove){
@@ -70,7 +71,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         this.setSwordType(type);
         this.setDistance(distance);
         this.center_pos=owner.getEyePosition().relative(owner.getDirection(),(distance-1)/2);
-        setFacingVector(new Vector3(0,0,1));
         this.weapon=weapon;
     }
 
@@ -109,7 +109,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         super.remove(reason);
     }
 
-    public UUID getOwnerUuid(){
+    public UUID getOwnerUUID(){
         return this.owner_uuid;
     }
 
@@ -123,14 +123,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     public int getOwnerID(){
         return this.getEntityData().get(OWNER_ID);
-    }
-
-    public Vector3 getLastVector(){
-        return this.getEntityData().get(LAST_VECTOR);
-    }
-
-    public Vector3 getFacingVector(){
-        return this.getEntityData().get(FACING_VECTOR);
     }
 
     public int getProgress(){
@@ -155,14 +147,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     private void setOwnerID(int id){
         this.getEntityData().set(OWNER_ID,id);
-    }
-
-    public void setLastVector(Vector3 vec){
-        this.getEntityData().set(LAST_VECTOR,vec);
-    }
-
-    public void setFacingVector(Vector3 vec){
-        this.getEntityData().set(FACING_VECTOR,vec);
     }
 
     public void setProgress(int progress){
@@ -192,8 +176,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        builder.define(FACING_VECTOR,new Vector3(0,0,1));
-        builder.define(LAST_VECTOR,new Vector3(0,0,1));
         builder.define(ANGLE, 0.0);
         builder.define(DISTANCE,20.0);
         builder.define(PROGRESS,0);
@@ -248,8 +230,8 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             }
             Vector3 pos = PosUtil.calPos(this.getDistance(), this.getProgress(), this.getAngle());
             Vector3 mark_center = new Vector3(0, 0, this.getDistance()/2);
-            Vector3[] reference = Vector3.getReferFromAngle(this.getIniRot().getPitch(),this.getIniRot().getYaw());
-            Vector3[] world=new Vector3[]{new Vector3(1,0,0),new Vector3(0,1,0),new Vector3(0,0,1)};
+            Vector3[] reference=this.getReference();
+            Vector3[] world=Vector3.WORLD;
 
             Vec3 real_pos = pos.setZ(pos.getZ()-1).VecInNewRefer(
                     reference,world
@@ -287,9 +269,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
                 return;
             }
             this.center_pos = real_center;
-            this.setFacingVector(Vector3.transToVector3(real_center.subtract(real_pos)));
-
-            this.setLastVector(this.getFacingVector());
             this.setProgress(this.getProgress() + 1);
             if (this.getProgress() > STAGE_COUNT) {
                 this.discard();
@@ -302,5 +281,22 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             }
             local_progress++;
         }
+    }
+
+    public Vector3[] getReference(){
+        if(this.relative==null){
+            this.relative=Vector3.getReferFromAngle(this.getIniRot().getPitch(),this.getIniRot().getYaw());
+        }
+        return this.relative;
+    }
+
+    public Quaternion[] getFixedPose(){
+        if(this.fixedPose==null){
+            this.fixedPose=new Quaternion[3];
+            this.fixedPose[0]=Quaternion.trans(new Vector3(0,0,1),new Vector3(this.getReference()[2].getX(),0,this.getReference()[2].getZ()));
+            this.fixedPose[1]=Quaternion.trans(new Vector3(this.getReference()[2].getX(),0,this.getReference()[2].getZ()),this.getReference()[2]);
+            this.fixedPose[2]=Quaternion.rotate(this.getReference()[2],this.getAngle());
+        }
+        return this.fixedPose;
     }
 }

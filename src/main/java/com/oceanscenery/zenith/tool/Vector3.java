@@ -198,7 +198,7 @@ public class Vector3 {
         pitch=Math.toRadians(pitch);
         yaw=Math.toRadians(yaw);
         Vector3 tmp=new Vector3(0,1,0).cross(result[2]);
-        result[0]=Math.abs(tmp.length())<1e-8?new Vector3(Math.cos(-yaw),0,-Math.sin(-yaw)).multiply(-1):tmp.normalize().multiply(-1);
+        result[0]=Math.abs(tmp.length())<1e-8?new Vector3(Math.cos(-yaw),0,-Math.sin(-yaw)):tmp.normalize();
         result[1]=result[2].cross(result[0]).normalize();
         return result;
     }
@@ -218,5 +218,14 @@ public class Vector3 {
         }else{
             throw new IllegalArgumentException("试图给零向量添加长度偏移");
         }
+    }
+
+    public double radiusTo(Vector3 vec){
+        return Math.acos(this.dot(vec)/this.length()/vec.length());
+    }
+
+    public static void main(String[] args) {
+        System.out.println(PosUtil.calCenPos(10,Math.PI/4,0).normalize());
+        System.out.println(new Vector3(0,0,-1).rot(Quaternion.rotate(new Vector3(0,1,0),5)).normalize());
     }
 }

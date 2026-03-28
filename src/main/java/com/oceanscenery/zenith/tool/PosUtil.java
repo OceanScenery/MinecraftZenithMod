@@ -21,7 +21,6 @@ public class PosUtil {
     }
 
     public static Vector3 calPos(double distance,double theta,double angle){
-        Vector3 origin=null;
         double a=distance/2;
         double b=Math.min(distance/4,10);
         theta=Mth.PI-theta;
@@ -32,7 +31,6 @@ public class PosUtil {
     }
 
     public static Vector3 calCenPos(double distance,double theta,double angle){
-        Vector3 origin=null;
         double a=distance/2;
         double b=Math.min(distance/4,10);
         theta=Mth.PI-theta;
@@ -40,6 +38,12 @@ public class PosUtil {
         double x=b*Math.sin(theta)*Math.cos(angle);
         double y=b*Math.sin(theta)*Math.sin(angle);
         return new Vector3(x,y,z);
+    }
+
+    public static double getPolar(double process_angle,double distance){
+        double a=distance/2;
+        double b=Math.min(distance/4,10);
+        return Math.atan2(b*Math.sin(process_angle),a*Math.cos(process_angle));
     }
 
     public static Vector3 lerp(Vector3 past,Vector3 curr,double partial){

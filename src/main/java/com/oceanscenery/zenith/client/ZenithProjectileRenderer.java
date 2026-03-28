@@ -23,15 +23,20 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
 
 public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
     public final ItemRenderer itemRenderer;
+
+    public static final Quaternionf Q1=Quaternion.trans(new Vector3(1,1,0),new Vector3(0,1,0)).toQuaternionf();
+    public static final Quaternionf Q2=Quaternion.trans(new Vector3(0,1,0),new Vector3(0,0,-1)).toQuaternionf();
 
     public static final int[][] COLOR=new int[][]{
             {204,255,255},
@@ -117,9 +122,6 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
 
         ItemStack render_item=new ItemStack(ZenithItems.ZENITH,1, DataComponentPatch.builder().set(DataComponents.CUSTOM_MODEL_DATA,new CustomModelData(sword_type)).build());
 
-        Vector3 vec=entity.getFacingVector();
-        Vector3 vec_last=entity.getLastVector();
-        Vector3 rotFactor=vec_last.multiply(1-partialTick).add(vec.multiply(partialTick));
         int progress=Math.min(entity.getLocalProgress(),ZenithProjectile.STAGE_COUNT+1);
         if(progress>ZenithProjectile.STAGE_COUNT){
             poseStack.popPose();
@@ -133,9 +135,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
 
         VertexConsumer vertex= bufferSource.getBuffer(RenderType.entityTranslucentEmissive(ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"textures/entity/trail.png")));
 
-        Player owner=(Player)entity.level().getEntity(entity.getOwnerID());
-
-        if(owner==null){
+        if(!(entity.level().getEntity(entity.getOwnerID()) instanceof LivingEntity owner)){
             poseStack.popPose();
             return;
         }
@@ -143,25 +143,26 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
         Vec3 pos=entity.getPosition(partialTick);
 
         poseStack.translate(-pos.x, -pos.y, -pos.z);
-
-        PosUtil.Rotation rot=entity.getIniRot();
-        Vector3[] relative_center=Vector3.getReferFromAngle(rot.getPitch(),rot.getYaw());
-        Vector3[] relative_world=new Vector3[]{new Vector3(1,0,0),new Vector3(0,1,0),new Vector3(0,0,1)};
+        Vector3[] relative_center=entity.getReference();
+        Vector3[] relative_world=Vector3.WORLD;
         Vector3 sword_pos = new Vector3(0,0,-1).VecInNewRefer(relative_center,relative_world).add(Vector3.transToVector3(owner.getEyePosition(partialTick)));
-        boolean firstPerson=owner==Minecraft.getInstance().cameraEntity;
+        boolean firstPerson=owner==Minecraft.getInstance().cameraEntity&&Minecraft.getInstance().options.getCameraType().isFirstPerson();
 
-        if(firstPerson && Minecraft.getInstance().options.getCameraType().isFirstPerson() && ZenithConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()){
-            Vector3 cameraT=new Vector3(0,1,0).VecInNewRefer(
+        if(firstPerson && ZenithConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()){
+            Vector3 cameraT=new Vector3(0,-1,0).VecInNewRefer(
                     relative_center,
                     relative_world
             );
             poseStack.translate(cameraT.getX(),cameraT.getY(),cameraT.getZ());
         }
 
-        Vector3 center=new Vector3(0,0,distance/2).VecInNewRefer(
+        Vector3 center=new Vector3(0,0,distance/2-1).VecInNewRefer(
             relative_center,relative_world
         ).add(Vector3.transToVector3(owner.getEyePosition(partialTick)));
 
+        Vector3 offset=new Vector3(0,0,-1).VecInNewRefer(
+                relative_center,relative_world
+        );
         Vector3 round=null;
         Vector3 last_inner=null,last_outer=null;
         Vector3 near_inner,near_outer,far_inner,far_outer;
@@ -171,25 +172,25 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
             double current_angle=progress_angle-i*ONCE_ANGLE;
             double next_angle=progress_angle-(i+1)*ONCE_ANGLE;
             if(last_inner == null){
-                Vector3 near=PosUtil.calCenPos(distance,current_angle,angle).add(new Vector3(0,0,-1)).VecInNewRefer(
+                Vector3 near=PosUtil.calCenPos(distance,current_angle,angle).VecInNewRefer(
                         relative_center,
                         relative_world
                 );
-                sword_pos=near.add(center);
-                near_inner=near.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.2+(0.16/AMOUNT)*factorI)).add(center);
-                near_outer=near.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.2-(0.16/AMOUNT)*factorI)).add(center);
-                round=near_outer.add(near_inner.multiply(-1));
+                sword_pos=near.add(center).add(offset);
+                near_inner=near.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.2+(0.16/AMOUNT)*factorI)).add(center).add(offset);
+                near_outer=near.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.2-(0.16/AMOUNT)*factorI)).add(center).add(offset);
+                round=near_outer.multiply(-1).add(near_inner);
             }else{
                 near_inner=last_inner;
                 near_outer=last_outer;
             }
-            Vector3 far=PosUtil.calCenPos(distance,next_angle,angle).add(new Vector3(0,0,-1)).VecInNewRefer(
+            Vector3 far=PosUtil.calCenPos(distance,next_angle,angle).VecInNewRefer(
                     relative_center,
                     relative_world
             );
 
-            far_inner=far.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.2+factorI*(0.16/AMOUNT))).add(center);
-            far_outer=far.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.2-factorI*(0.16/AMOUNT))).add(center);
+            far_inner=far.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.2+factorI*(0.16/AMOUNT))).add(center).add(offset);
+            far_outer=far.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.2-factorI*(0.16/AMOUNT))).add(center).add(offset);
             last_inner=far_inner;
             last_outer=far_outer;
 
@@ -206,15 +207,28 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
         }
         poseStack.translate(sword_pos.getX(),sword_pos.getY(),sword_pos.getZ());
 
-        if(round!=null){
-            poseStack.mulPose(Quaternion.trans(rotFactor, round).toQuaternionf());
+        Quaternion[] fixed=entity.getFixedPose();
+        Quaternion r1=fixed[0];
+        Quaternion r2=fixed[1];
+        Quaternion r3=fixed[2];
+        Quaternion tmp=r3.multiply(r2).multiply(r1);
+        Vector3 normal=new Vector3(0,1,0).rot(tmp);
+        Quaternion r4=Quaternion.rotate(normal,-PosUtil.getPolar(progress_angle,distance));
+
+        Vector3 toCenter=new Vector3(0,0,1).rot(r4.multiply(tmp));
+        if(round!=null && firstPerson){
+            poseStack.mulPose(Quaternion.trans(toCenter, round).toQuaternionf());
         }
-        poseStack.mulPose(Quaternion.trans(new Vector3(0,0,1),rotFactor).toQuaternionf());
-        poseStack.mulPose(Quaternion.trans(new Vector3(0,0,1),new Vector3(0,1,0)).toQuaternionf());
-        poseStack.mulPose(Quaternion.trans(new Vector3(1,1,0),new Vector3(0,1,0)).toQuaternionf());
+
+        poseStack.mulPose(r4.toQuaternionf());
+        poseStack.mulPose(r3.toQuaternionf());
+        poseStack.mulPose(r2.toQuaternionf());
+        poseStack.mulPose(r1.toQuaternionf());
+
+        poseStack.mulPose(Q2);
+        poseStack.mulPose(Q1);
 
         BakedModel model=this.itemRenderer.getModel(render_item,entity.level(),null,entity.getId());
-
 
         itemRenderer.render(
                 render_item,

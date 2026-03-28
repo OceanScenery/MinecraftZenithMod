@@ -29,13 +29,14 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Stack;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid=TheZenithMod.MOD_ID)
 public class DamageHandle {
     private static boolean caughtException=false;
 
-    @SubscribeEvent(priority=EventPriority.HIGHEST)
+    @SubscribeEvent(priority=EventPriority.HIGHEST,receiveCanceled=true)
     public static void applyPercentage(LivingIncomingDamageEvent event){
         if(event.getSource().is(ZenithDamageType.ZENITH) || event.getSource().is(ZenithDamageType.ZENITH_KNOCKBACK)){
+            event.setCanceled(false);
             LivingEntity living = event.getEntity();
             float maxHealth=living.getMaxHealth();
             float pastDamage=living.getData(ZenithAttachment.ZENITH_INITIAL_DAMAGE_MARK);
@@ -45,7 +46,7 @@ public class DamageHandle {
         }
     }
 
-    @SubscribeEvent(priority=EventPriority.HIGHEST)
+    @SubscribeEvent(priority=EventPriority.LOWEST,receiveCanceled=true)
     public static void onHurtEve(LivingDamageEvent.Pre event){
         if(!event.getEntity().level().isClientSide){
             LivingEntity victim = event.getEntity();
@@ -57,11 +58,11 @@ public class DamageHandle {
                 float non_p=ZenithConfigs.getEnsuredDamageForNonPlayer()*initial_damage;
                 float for_p=ZenithConfigs.getEnsuredDamageForPlayer()*initial_damage;
                 if(victim instanceof Player){
-                    if (damage < for_p) {
+                    if (damage<for_p) {
                         event.setNewDamage(for_p);
                     }
                 }else{
-                    if (damage < non_p) {
+                    if (damage<non_p) {
                         event.setNewDamage(non_p);
                     }
                 }

@@ -205,24 +205,9 @@ public class ZenithItem extends Item {
             Vector3[] reference=Vector3.getReferFromAngle(livingEntity.getXRot(),livingEntity.getYRot());
 
             zenith.setPos(new Vector3(0,0,-1).VecInNewRefer(
-                    reference[0],
-                    reference[1],
-                    reference[2],
-                    new Vector3(1,0,0),
-                    new Vector3(0,1,0),
-                    new Vector3(0,0,1)
+                    reference,
+                    Vector3.WORLD
             ).toVec3().add(livingEntity.getEyePosition()));
-
-            Vector3 initial=new Vector3(0,0,1).VecInNewRefer(
-                    reference[0],
-                    reference[1],
-                    reference[2],
-                    new Vector3(1,0,0),
-                    new Vector3(0,1,0),
-                    new Vector3(0,0,1)
-            );
-            zenith.getEntityData().set(ZenithProjectile.FACING_VECTOR,initial);
-            zenith.getEntityData().set(ZenithProjectile.LAST_VECTOR,initial);
 
             level.addFreshEntity(zenith);
         }

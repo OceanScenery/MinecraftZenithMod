@@ -176,11 +176,15 @@ public class Quaternion implements Serializable {
     public static Quaternion trans(Vector3 v1,Vector3 v2,double delta){
         Vector3 V=v1.normalize().cross(v2.normalize());
         double angle=delta*Math.acos(v1.dot(v2)/(v1.length()*v2.length()));
-        if(V.length()<1e-10){
+        if(V.length()==0){
             if(v1.dot(v2)>=0){
                 return new Quaternion(1,0,0,0);
             }else{
-                return new Quaternion(0,0,1,0);
+                Vector3 axis = new Vector3(1, 0, 0);
+                if (Math.abs(v1.normalize().dot(axis))==1) {
+                    axis = new Vector3(0, 1, 0);
+                }
+                return new Quaternion(0, axis.getX(), axis.getY(), axis.getZ());
             }
         }
         V=V.normalize();
@@ -192,7 +196,16 @@ public class Quaternion implements Serializable {
         ).normalize();
     }
 
-    public static void main(String[] args) {
-        System.out.println(Quaternion.trans(new Vector3(0,0,1),new Vector3(0,0,1)));
+    public static Quaternion rotate(Vector3 normal,double angle){
+        if(normal.length()<1e-8){
+            return new Quaternion(1,0,0,0);
+        }
+        normal=normal.normalize();
+        return new Quaternion(
+                Math.cos(angle/2),
+                normal.getX()*Math.sin(angle/2),
+                normal.getY()*Math.sin(angle/2),
+                normal.getZ()*Math.sin(angle/2)
+        );
     }
 }

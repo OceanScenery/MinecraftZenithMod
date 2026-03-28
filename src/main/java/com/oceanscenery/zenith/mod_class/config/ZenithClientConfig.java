@@ -9,7 +9,7 @@ public class ZenithClientConfig {
 
     public ZenithClientConfig(ModConfigSpec.Builder builder){
         builder.comment("渲染设置").push("render");
-        RENDER_OFFSET= builder.comment("lower the sword's trail by one block").define("render_offset",false);
+        RENDER_OFFSET= builder.comment("lower the sword's trail by one block").define("render_offset",true);
         TRAIL_ANGLE=builder.comment("define the trail's length(360 means full round)").defineInRange("trail_angle",120.0,80.0,200.0);
         builder.pop();
         builder.comment("交互设置").push("interaction");
