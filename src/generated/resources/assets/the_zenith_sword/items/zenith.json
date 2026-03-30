@@ -1,0 +1,152 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "entries": [
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/arkhalis"
+        },
+        "threshold": 1.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/bee_keeper"
+        },
+        "threshold": 2.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/blade_of_grass"
+        },
+        "threshold": 3.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/blood_butcherer"
+        },
+        "threshold": 4.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/copper_shortsword"
+        },
+        "threshold": 5.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/enchanted_sword"
+        },
+        "threshold": 6.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/excalibur"
+        },
+        "threshold": 7.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/influx_waver"
+        },
+        "threshold": 8.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/lights_bane"
+        },
+        "threshold": 9.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/meowmere"
+        },
+        "threshold": 10.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/muramasa"
+        },
+        "threshold": 11.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/nights_edge"
+        },
+        "threshold": 12.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/seedler"
+        },
+        "threshold": 13.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/star_wrath"
+        },
+        "threshold": 14.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/starfury"
+        },
+        "threshold": 15.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/terra_blade"
+        },
+        "threshold": 16.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/the_horsemans_blade"
+        },
+        "threshold": 17.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/true_excalibur"
+        },
+        "threshold": 18.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/true_nights_edge"
+        },
+        "threshold": 19.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "the_zenith_sword:item/volcano"
+        },
+        "threshold": 20.0
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "the_zenith_sword:item/zenith"
+    },
+    "property": "minecraft:custom_model_data"
+  }
+}
