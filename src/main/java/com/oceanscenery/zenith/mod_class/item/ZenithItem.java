@@ -141,7 +141,7 @@ public class ZenithItem extends Item {
             ArrayList<Entity> victim = new ArrayList<>();
 
             for(Entity entity:list){
-                AABB aabb=entity.getBoundingBox().inflate(1);
+                AABB aabb=entity.getBoundingBox().inflate(2);
                 java.util.Optional<Vec3> vec;
                 if((vec=aabb.clip(attacker.getEyePosition(),attacker.getEyePosition().add(initial))).isPresent()){
                     if(DamageHandle.canAttack(entity,usedItem)){
@@ -164,6 +164,11 @@ public class ZenithItem extends Item {
             }else{
                 distance=nearest==200?dist:nearest;
             }
+
+            if(distance<8){
+                distance=8;
+            }
+
             distance+=1;
 
             for(Entity entity:victim){

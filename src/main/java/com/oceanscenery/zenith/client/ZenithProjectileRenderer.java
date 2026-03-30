@@ -177,8 +177,8 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
                         relative_world
                 );
                 sword_pos=near.add(center).add(offset);
-                near_inner=near.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.2+(0.16/AMOUNT)*factorI)).add(center).add(offset);
-                near_outer=near.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.2-(0.16/AMOUNT)*factorI)).add(center).add(offset);
+                near_inner=near.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.1+(0.08/AMOUNT)*factorI)).add(center).add(offset);
+                near_outer=near.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.1-(0.08/AMOUNT)*factorI)).add(center).add(offset);
                 round=near_outer.multiply(-1).add(near_inner);
             }else{
                 near_inner=last_inner;
@@ -189,8 +189,8 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
                     relative_world
             );
 
-            far_inner=far.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.2+factorI*(0.16/AMOUNT))).add(center).add(offset);
-            far_outer=far.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.2-factorI*(0.16/AMOUNT))).add(center).add(offset);
+            far_inner=far.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.1+factorI*(0.08/AMOUNT))).add(center).add(offset);
+            far_outer=far.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.1-factorI*(0.08/AMOUNT))).add(center).add(offset);
             last_inner=far_inner;
             last_outer=far_outer;
 
