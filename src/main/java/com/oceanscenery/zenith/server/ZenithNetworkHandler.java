@@ -2,17 +2,18 @@ package com.oceanscenery.zenith.server;
 
 import com.oceanscenery.zenith.TheZenithMod;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 @EventBusSubscriber(modid = TheZenithMod.MOD_ID)
 public class ZenithNetworkHandler {
-    public static final ResourceLocation resource=ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"main");
+    public static final Identifier resource=Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"main");
     @SubscribeEvent
     public static void registerPackets(final RegisterPayloadHandlersEvent event){
         final PayloadRegistrar REGISTER=event.registrar(resource.toString());
@@ -51,7 +52,7 @@ public class ZenithNetworkHandler {
     }
 
     public static void sendToServer(CustomPacketPayload packet){
-        PacketDistributor.sendToServer(packet);
+        ClientPacketDistributor.sendToServer(packet);
     }
 
     public static void sendToPlayer(ServerPlayer player, CustomPacketPayload packet) {

@@ -10,14 +10,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
-    public static final Type<CycleAttackModePacket> TYPE=new Type<>(ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_cycle_attack_mode"));
-    public static final ResourceLocation ID=ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_cycle_attack_mode");
+    public static final Type<CycleAttackModePacket> TYPE=new Type<>(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_cycle_attack_mode"));
+    public static final Identifier ID=Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_cycle_attack_mode");
 
     public static final StreamCodec<ByteBuf,CycleAttackModePacket> STREAM_CODEC=StreamCodec.composite(
             ByteBufCodecs.INT,CycleAttackModePacket::slot,
@@ -37,7 +37,7 @@ public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
         buf.writeInt(slot);
     }
 
-    public ResourceLocation getId(){
+    public Identifier getId(){
         return ID;
     }
 
@@ -59,7 +59,7 @@ public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
                                 item.set(ZenithDataComponents.ATTACK_MODE.get(),new AttackMode(AttackMode.Mode.values()[id],item.get(ZenithDataComponents.ATTACK_MODE).attackPlayer()));
                             }
 
-                            player.displayClientMessage(
+                            player.sendSystemMessage(
                                     Component.translatable("the_zenith_sword.packet.attack_mode").append(":"+item.get(ZenithDataComponents.ATTACK_MODE).getStrMode()),
                                     true
                             );

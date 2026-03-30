@@ -2,33 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "a": {
-      "item": "minecraft:oak_log"
-    },
-    "b": {
-      "item": "minecraft:cobblestone"
-    },
-    "c": {
-      "item": "minecraft:iron_block"
-    },
-    "d": {
-      "item": "minecraft:gold_block"
-    },
-    "e": {
-      "item": "minecraft:netherite_sword"
-    },
-    "f": {
-      "item": "minecraft:copper_block"
-    },
-    "g": {
-      "item": "minecraft:diamond_block"
-    },
-    "h": {
-      "item": "minecraft:netherite_block"
-    },
-    "i": {
-      "item": "minecraft:enchanted_golden_apple"
-    }
+    "a": "minecraft:oak_log",
+    "b": "minecraft:cobblestone",
+    "c": "minecraft:iron_block",
+    "d": "minecraft:gold_block",
+    "e": "minecraft:netherite_sword",
+    "f": "minecraft:copper_block",
+    "g": "minecraft:diamond_block",
+    "h": "minecraft:netherite_block",
+    "i": "minecraft:enchanted_golden_apple"
   },
   "pattern": [
     "abc",
@@ -36,7 +18,6 @@
     "ghi"
   ],
   "result": {
-    "count": 1,
     "id": "the_zenith_sword:zenith"
   }
 }

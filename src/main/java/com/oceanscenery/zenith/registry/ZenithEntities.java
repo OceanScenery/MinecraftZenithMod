@@ -3,6 +3,8 @@ package com.oceanscenery.zenith.registry;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -19,7 +21,7 @@ public class ZenithEntities {
             ()->EntityType.Builder.<ZenithProjectile>of(
                     ZenithProjectile::new,
                     MobCategory.MISC
-            ).setUpdateInterval(1).clientTrackingRange(60).sized(1f,1f)
-                    .fireImmune().build("zenith_projectile")
+            ).setUpdateInterval(1).clientTrackingRange(60).sized(0f,0f).noSave()
+                    .fireImmune().build(ResourceKey.create(ENTITIES.getRegistryKey(), Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_projectile")))
     );
 }

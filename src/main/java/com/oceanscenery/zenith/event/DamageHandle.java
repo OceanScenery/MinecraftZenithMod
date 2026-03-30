@@ -19,7 +19,6 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
-import net.neoforged.neoforge.event.entity.EntityInvulnerabilityCheckEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +47,7 @@ public class DamageHandle {
 
     @SubscribeEvent(priority=EventPriority.LOWEST,receiveCanceled=true)
     public static void onHurtEve(LivingDamageEvent.Pre event){
-        if(!event.getEntity().level().isClientSide){
+        if(!event.getEntity().level().isClientSide()){
             LivingEntity victim = event.getEntity();
             event.getOriginalDamage();
             DamageSource source = event.getSource();
@@ -76,7 +75,7 @@ public class DamageHandle {
     }
 
     public static boolean applyDamage(LivingEntity attacker, Entity victim, @NotNull ItemStack weapon, float multiply){
-        if(!attacker.level().isClientSide){
+        if(attacker.level() instanceof ServerLevel serverLevel){
             if(!canAttack(victim,weapon)){
                 return false;
             }
@@ -98,11 +97,11 @@ public class DamageHandle {
                 damageProcess(victim,attacker,damage,source);
             }
 
-            if(!victim.hurt(source,damage) && victim instanceof LivingEntity living && weapon.get(ZenithDataComponents.ATTACK_MODE).mode().equals(AttackMode.Mode.ALL)){
+            if(!victim.hurtServer(serverLevel,source,damage) && victim instanceof LivingEntity living && weapon.get(ZenithDataComponents.ATTACK_MODE).mode().equals(AttackMode.Mode.ALL)){
                 try{
                     MethodHandles.Lookup handles=MethodHandles.privateLookupIn(LivingEntity.class,MethodHandles.lookup());
-                    MethodHandle handle=handles.findSpecial(LivingEntity.class,"hurt",MethodType.methodType(boolean.class,DamageSource.class,float.class), LivingEntity.class);
-                    if(!(boolean)handle.invoke(living,source,damage)){
+                    MethodHandle handle=handles.findSpecial(LivingEntity.class,"hurtServer",MethodType.methodType(boolean.class,ServerLevel.class,DamageSource.class,float.class), LivingEntity.class);
+                    if(!(boolean)handle.invoke(living,serverLevel,source,damage)){
                         damage+=living.getMaxHealth()*0.01f;
                         victim.setData(ZenithAttachment.ZENITH_INITIAL_DAMAGE_MARK,damage);
                         MethodHandle dmgCtnr=handles.findGetter(LivingEntity.class,"damageContainers", Stack.class);
@@ -148,7 +147,7 @@ public class DamageHandle {
                 float hp=living.getEntityData().get(health);
                 living.getEntityData().set(health,hp-damage);
                 if(attacker instanceof Player player){
-                    living.setLastHurtByPlayer(player);
+                    living.setLastHurtByPlayer(player,20);
                 }
                 living.getCombatTracker().recordDamage(source,damage);
                 attacker.level().broadcastDamageEvent(living,source);

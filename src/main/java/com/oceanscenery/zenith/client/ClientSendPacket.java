@@ -20,6 +20,7 @@ import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = TheZenithMod.MOD_ID,value = Dist.CLIENT)
 public class ClientSendPacket {
+    public static boolean isUsing=false;
     @SubscribeEvent
     public static void onRightClickItem(ScreenEvent.MouseButtonPressed.Pre event){
         if(event.getButton()!=GLFW.GLFW_MOUSE_BUTTON_RIGHT){
@@ -42,7 +43,7 @@ public class ClientSendPacket {
             if(slot_index<0 || slot_index>=slot.container.getContainerSize()){
                 return;
             }
-            long window=mc.getWindow().getWindow();
+            long window= mc.getWindow().handle();
             boolean ctrlDown=GLFW.glfwGetKey(window,GLFW.GLFW_KEY_LEFT_CONTROL)==GLFW.GLFW_PRESS;
             boolean shiftDown=GLFW.glfwGetKey(window,GLFW.GLFW_KEY_LEFT_SHIFT)==GLFW.GLFW_PRESS;
             if(ctrlDown){

@@ -10,14 +10,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record CycleZenithDefaultDistancePacket(int slot) implements CustomPacketPayload {
-    public static final Type<CycleZenithDefaultDistancePacket> TYPE=new Type<>(ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_cycle_range"));
-    public static final ResourceLocation ID=ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_cycle_range");
+    public static final Type<CycleZenithDefaultDistancePacket> TYPE=new Type<>(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_cycle_range"));
+    public static final Identifier ID=Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_cycle_range");
 
     public static final StreamCodec<ByteBuf,CycleZenithDefaultDistancePacket> STREAM_CODEC=StreamCodec.composite(
             ByteBufCodecs.INT,CycleZenithDefaultDistancePacket::slot,
@@ -37,7 +37,7 @@ public record CycleZenithDefaultDistancePacket(int slot) implements CustomPacket
         buf.writeInt(slot);
     }
 
-    public ResourceLocation getId(){
+    public Identifier getId(){
         return ID;
     }
 
@@ -62,7 +62,7 @@ public record CycleZenithDefaultDistancePacket(int slot) implements CustomPacket
                                 item.set(ZenithDataComponents.DISTANCE.get(),new Distance(preDist));
                             }
 
-                            player.displayClientMessage(
+                            player.sendSystemMessage(
                                     Component.translatable("the_zenith_sword.packet.distance").append(":"+String.valueOf(item.get(ZenithDataComponents.DISTANCE).dist())),
                                     true
                             );

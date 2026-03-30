@@ -11,18 +11,18 @@ import com.oceanscenery.zenith.tool.Vector3;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.context.UseOnContext;
@@ -33,6 +33,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -49,7 +51,7 @@ public class ZenithItem extends Item {
     }
 
     public static Tool createToolProperties(){
-        return new Tool(List.of(),1.0F,0);
+        return new Tool(List.of(),2.0F,0,false);
     }
 
     @Override
@@ -65,13 +67,8 @@ public class ZenithItem extends Item {
     }
 
     @Override
-    public boolean canAttackBlock(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, Player player) {
-        return !player.isCreative();
-    }
-
-    @Override
-    public @NotNull UseAnim getUseAnimation(@NotNull ItemStack stack) {
-            return UseAnim.NONE;
+    public ItemUseAnimation getUseAnimation(ItemStack itemStack) {
+        return ItemUseAnimation.NONE;
     }
 
     @Override
@@ -80,33 +77,13 @@ public class ZenithItem extends Item {
     }
 
     @Override
-    public int getEnchantmentLevel(@NotNull ItemStack stack, @NotNull Holder<Enchantment> enchantment) {
+    public int getEnchantmentLevel(ItemInstance stack, Holder<Enchantment> enchantment) {
         return super.getEnchantmentLevel(stack, enchantment);
     }
 
     @Override
-    public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity p_entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, p_entity, slotId, isSelected);
-    }
-
-    @Override
-    public void appendHoverText(@NotNull ItemStack stack, @NotNull TooltipContext context, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
-        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-        if(stack.get(ZenithDataComponents.DISTANCE)==null){
-            stack.set(ZenithDataComponents.DISTANCE,new Distance(20));
-        }
-        if(stack.get(ZenithDataComponents.ATTACK_MODE)==null){
-            stack.set(ZenithDataComponents.ATTACK_MODE,new AttackMode(AttackMode.Mode.LIVING_ENTITY,true));
-        }
-        double dist=stack.get(ZenithDataComponents.DISTANCE).dist();
-        String atk=stack.get(ZenithDataComponents.ATTACK_MODE).getStrMode();
-        boolean atkP=stack.get(ZenithDataComponents.ATTACK_MODE).attackPlayer();
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.distance.tooltip_pre").append(":"+dist));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.distance.tooltip_post"));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_mode.tooltip_pre").append(":"+atk));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_mode.tooltip_post"));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.pre").append(":"+atkP));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.post"));
+    public void inventoryTick(ItemStack itemStack, ServerLevel level, Entity owner, @Nullable EquipmentSlot slot) {
+        super.inventoryTick(itemStack, level, owner, slot);
     }
 
     @Override
@@ -115,7 +92,7 @@ public class ZenithItem extends Item {
     }
 
     public boolean canAttack(@NotNull ItemStack usedItem,@NotNull LivingEntity attacker){
-        if(!attacker.level().isClientSide){
+        if(!attacker.level().isClientSide()){
             if(usedItem.get(ZenithDataComponents.LAST_USE_TIME)==null && usedItem.is(ZenithItems.ZENITH)){
                 return true;
             }
@@ -129,8 +106,9 @@ public class ZenithItem extends Item {
         return false;
     }
 
-    public void attack(@NotNull ItemStack usedItem,LivingEntity attacker,Level level){
+    public void attack(@NotNull ItemStack usedItem, LivingEntity attacker, Level level, InteractionHand hand){
         if(this.canAttack(usedItem,attacker)){
+            attacker.swing(hand,true);
             usedItem.set(ZenithDataComponents.LAST_USE_TIME,new LastUseTime(level.getGameTime()));
             Vector3[] relative=Vector3.getReferFromAngle(attacker.getXRot(),attacker.getYRot());
             Vec3 initial=new Vector3(0,0,100).VecInNewRefer(relative,Vector3.WORLD).toVec3();
@@ -141,13 +119,13 @@ public class ZenithItem extends Item {
             ArrayList<Entity> victim = new ArrayList<>();
 
             for(Entity entity:list){
-                AABB aabb=entity.getBoundingBox().inflate(1);
-                java.util.Optional<Vec3> vec;
-                if((vec=aabb.clip(attacker.getEyePosition(),attacker.getEyePosition().add(initial))).isPresent()){
+                AABB aabb=entity.getBoundingBox().inflate(2);
+                if(aabb.clip(attacker.getEyePosition(),attacker.getEyePosition().add(initial)).isPresent()){
                     if(DamageHandle.canAttack(entity,usedItem)){
                         victim.add(entity);
-                        farest=Math.max(farest,vec.get().distanceTo(attacker.getEyePosition()));
-                        nearest=Math.min(nearest,vec.get().distanceTo(attacker.getEyePosition()));
+                        Vec3 hit_pos=entity.getBoundingBox().getCenter();
+                        farest=Math.max(farest,hit_pos.distanceTo(attacker.getEyePosition()));
+                        nearest=Math.min(nearest,hit_pos.distanceTo(attacker.getEyePosition()));
                     }
                 }
             }
@@ -160,9 +138,12 @@ public class ZenithItem extends Item {
             }
 
             if(ZenithConfigs.ZENITH_CONFIG.sort_farest.get()){
-                distance=farest==-1?dist:farest;
+                distance=farest<0?dist:farest;
             }else{
-                distance=nearest==200?dist:nearest;
+                distance=nearest>150?dist:nearest;
+            }
+            if(distance<8){
+                distance=8;
             }
             distance+=1;
 
@@ -180,18 +161,8 @@ public class ZenithItem extends Item {
         }
     }
 
-    @Override
-    public boolean isEnchantable(@NotNull ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    public int getEnchantmentValue(@NotNull ItemStack stack) {
-        return 50;
-    }
-
     public void addEntity(Level level, LivingEntity livingEntity, ItemStack stack, double distance, int type){
-        if(!level.isClientSide && stack.is(ZenithItems.ZENITH)){
+        if(!level.isClientSide() && stack.is(ZenithItems.ZENITH)){
             ZenithProjectile zenith=new ZenithProjectile(
                     ZenithEntities.ZENITH_PROJECTILE.get(),
                     level,

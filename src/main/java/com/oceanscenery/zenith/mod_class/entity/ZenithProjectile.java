@@ -13,6 +13,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,6 +21,8 @@ import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -51,8 +54,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level) {
         super(entityType, level);
-        noCulling=true;
-        to_remove=true;
+        this.to_remove=true;
         this.noPhysics=true;
     }
 
@@ -75,8 +77,11 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     }
 
     @Override
-    public void kill() {
-        super.kill();
+    public void kill(ServerLevel level) {
+        if(!this.to_remove){
+            return;
+        }
+        super.kill(level);
     }
 
     @Override
@@ -170,8 +175,8 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     }
 
     @Override
-    protected @NotNull AABB makeBoundingBox() {
-        return new AABB(this.getX(),this.getY(),this.getZ(),this.getX(),this.getY(),this.getZ());
+    protected AABB makeBoundingBox(Vec3 position) {
+        return super.makeBoundingBox(position);
     }
 
     @Override
@@ -184,14 +189,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         builder.define(INI_ROT,new PosUtil.Rotation(0,0));
     }
 
-    @Override
-    protected void readAdditionalSaveData(@NotNull CompoundTag compound) {
-    }
-
-    @Override
-    protected void addAdditionalSaveData(@NotNull CompoundTag compound) {
-    }
-
     public boolean canHit(Entity entity){
         if(entity.getId()==this.getOwnerID() || entity instanceof ZenithProjectile){
             return false;
@@ -200,7 +197,12 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     }
 
     @Override
-    public boolean canChangeDimensions(@NotNull Level oldLevel, @NotNull Level newLevel) {
+    protected boolean canAddPassenger(Entity passenger) {
+        return false;
+    }
+
+    @Override
+    public boolean canTeleport(Level from, Level to) {
         return false;
     }
 
@@ -216,7 +218,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     @Override
     public void tick() {
-        if(!this.level().isClientSide){
+        if(!this.level().isClientSide()){
             super.tick();
             if (this.owner_uuid == null) {
                 return;
@@ -281,6 +283,21 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             }
             local_progress++;
         }
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
+        return false;
+    }
+
+    @Override
+    protected void readAdditionalSaveData(ValueInput input) {
+
+    }
+
+    @Override
+    protected void addAdditionalSaveData(ValueOutput output) {
+
     }
 
     public Vector3[] getReference(){

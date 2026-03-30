@@ -9,13 +9,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record CycleAttackPlayerPacket(int slot) implements CustomPacketPayload {
-    public static final ResourceLocation ID=ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"attack_player_mode");
+    public static final Identifier ID=Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"attack_player_mode");
     public static final Type<CycleAttackPlayerPacket> TYPE=new Type<>(ID);
 
     @Override
@@ -45,7 +45,7 @@ public record CycleAttackPlayerPacket(int slot) implements CustomPacketPayload {
                                 item.set(ZenithDataComponents.ATTACK_MODE,new AttackMode(item.get(ZenithDataComponents.ATTACK_MODE).getStrMode(),!flag));
                             }
 
-                            player.displayClientMessage(
+                            player.sendSystemMessage(
                                     Component.translatable("the_zenith_sword.packet.attack_player_mode").append(":"+item.get(ZenithDataComponents.ATTACK_MODE).attackPlayer()),
                                     true
                             );

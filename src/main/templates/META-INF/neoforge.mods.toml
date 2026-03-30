@@ -8,7 +8,7 @@
 modLoader="javafml" #mandatory
 
 # A version range to match for said mod loader - for regular FML @Mod it will be the FML version. This is currently 2.
-loaderVersion="21.1.219" #mandatory
+loaderVersion="26.1.0.10-beta " #mandatory
 
 # The license for you mod. This is mandatory metadata and allows for easier comprehension of your redistributive properties.
 # Review your options at https://choosealicense.com/. All rights reserved is the default copyright stance, and is thus the default here.
@@ -24,7 +24,7 @@ license="MIT"
 modId="${mod_id}" #mandatory
 
 # The version number of the mod
-version="1.5.11" #mandatory
+version="1.0.0" #mandatory
 
 # A display name for the mod
 displayName="${mod_name}" #mandatory
@@ -73,7 +73,7 @@ config="${mod_id}.mixins.json"
     # Optional field describing why the dependency is required or why it is incompatible
     # reason="..."
     # The version range of the dependency
-    versionRange="[21.1.216,)" #mandatory
+    versionRange="[26.1.0.8-beta,)" #mandatory
     # An ordering relationship for the dependency.
     # BEFORE - This mod is loaded BEFORE the dependency
     # AFTER - This mod is loaded AFTER the dependency

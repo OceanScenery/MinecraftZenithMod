@@ -1,6 +1,7 @@
 package com.oceanscenery.zenith.registry;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.oceanscenery.zenith.TheZenithMod;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -15,8 +16,8 @@ public class ZenithAttachment {
 
     public static final DeferredHolder<AttachmentType<?>,AttachmentType<Float>> ZENITH_INITIAL_DAMAGE_MARK=ATTACHMENTS.register(
             "zenith_initial_damage_mark",
-            resourceLocation -> AttachmentType.<Float>builder(
-                    iAttachmentHolder -> 0f
-            ).serialize(Codec.FLOAT,aFloat -> true).build()
+            () -> AttachmentType.<Float>builder(
+                    () -> 0f
+            ).serialize(Codec.FLOAT.fieldOf("zenith_initial_damage_mark"), aFloat -> true).build()
     );
 }
