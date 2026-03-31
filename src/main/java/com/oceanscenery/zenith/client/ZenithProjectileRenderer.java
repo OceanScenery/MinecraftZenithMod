@@ -146,9 +146,9 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
         Vector3[] relative_center=entity.getReference();
         Vector3[] relative_world=Vector3.WORLD;
         Vector3 sword_pos = new Vector3(0,0,-1).VecInNewRefer(relative_center,relative_world).add(Vector3.transToVector3(owner.getEyePosition(partialTick)));
-        boolean firstPerson=owner==Minecraft.getInstance().cameraEntity&&Minecraft.getInstance().options.getCameraType().isFirstPerson();
+        boolean firstPerson=owner==Minecraft.getInstance().cameraEntity;
 
-        if(firstPerson && ZenithConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()){
+        if(firstPerson && Minecraft.getInstance().options.getCameraType().isFirstPerson() && ZenithConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()){
             Vector3 cameraT=new Vector3(0,-1,0).VecInNewRefer(
                     relative_center,
                     relative_world
