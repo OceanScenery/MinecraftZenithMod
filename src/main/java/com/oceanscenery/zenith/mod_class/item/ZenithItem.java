@@ -142,12 +142,12 @@ public class ZenithItem extends Item {
 
             for(Entity entity:list){
                 AABB aabb=entity.getBoundingBox().inflate(2);
-                java.util.Optional<Vec3> vec;
-                if((vec=aabb.clip(attacker.getEyePosition(),attacker.getEyePosition().add(initial))).isPresent()){
+                if(aabb.clip(attacker.getEyePosition(),attacker.getEyePosition().add(initial)).isPresent()){
                     if(DamageHandle.canAttack(entity,usedItem)){
                         victim.add(entity);
-                        farest=Math.max(farest,vec.get().distanceTo(attacker.getEyePosition()));
-                        nearest=Math.min(nearest,vec.get().distanceTo(attacker.getEyePosition()));
+                        Vec3 vec=entity.getBoundingBox().getCenter();
+                        farest=Math.max(farest,vec.distanceTo(attacker.getEyePosition()));
+                        nearest=Math.min(nearest,vec.distanceTo(attacker.getEyePosition()));
                     }
                 }
             }
