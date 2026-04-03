@@ -125,6 +125,10 @@ public class Vector3 {
         return new Vector3(x+v.x,y+v.y,z+v.z);
     }
 
+    public Vector3 subtract(Vector3 v){
+        return new Vector3(x-v.x,y-v.y,z-v.z);
+    }
+
     public double dot(Vector3 v){
         return x*v.x+y*v.y+z*v.z;
     }

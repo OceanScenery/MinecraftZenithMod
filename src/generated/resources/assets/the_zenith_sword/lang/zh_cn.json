@@ -1,6 +1,8 @@
 {
   "entity.the_zenith_sword.zenith_projectile": "天顶剑射弹",
   "item.the_zenith_sword.zenith": "天顶剑",
+  "the_zenith_sword.configuration.3d_trail": "3D拖尾",
+  "the_zenith_sword.configuration.3d_trail.tooltip": "使天顶剑的拖尾为3D拖尾",
   "the_zenith_sword.configuration.attack_damage": "伤害设置",
   "the_zenith_sword.configuration.block_interaction": "屏蔽交互",
   "the_zenith_sword.configuration.block_interaction.tooltip": "手持天顶剑时,屏蔽除攻击外的右键交互",
