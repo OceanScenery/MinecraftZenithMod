@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "package": "com.oceanscenery.zenith.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "ItemEntityMixin",
+    "LivingEntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  },
+  "client": [
+    "HeaderAndFooterLayoutAccessor",
+    "KeyMappingAccessor",
+    "KeyMappingMixin"
+  ],
+  "refmap": "the_zenith_sword.refmap.json"
+}
