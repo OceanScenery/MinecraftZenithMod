@@ -1,6 +1,8 @@
 {
   "entity.the_zenith_sword.zenith_projectile": "ZenithProjectile",
   "item.the_zenith_sword.zenith": "Zenith Sword",
+  "the_zenith_sword.configuration.3d_trail": "3D trail",
+  "the_zenith_sword.configuration.3d_trail.tooltip": "make the trail of zenith three-dimensional",
   "the_zenith_sword.configuration.attack_damage": "damage settings",
   "the_zenith_sword.configuration.block_interaction": "Block Interaction",
   "the_zenith_sword.configuration.block_interaction.tooltip": "When holding a Zenith Sword, right-click interactions (except for attacks) will be blocked",

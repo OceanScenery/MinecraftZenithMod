@@ -8,6 +8,7 @@ import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.tool.PosUtil;
 import com.oceanscenery.zenith.tool.Quaternion;
+import com.oceanscenery.zenith.tool.RenderUtil;
 import com.oceanscenery.zenith.tool.Vector3;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
@@ -109,8 +110,15 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
     @Override
     public void render(ZenithProjectile entity, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
         double TOTAL_ANGLE=Math.toRadians(ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble());
-        int AMOUNT= (int)(60* ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble()/80);
+        int AMOUNT= ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get()?(int)(60* ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble()/80)/2:(int)(60* ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble()/80);
         double ONCE_ANGLE=TOTAL_ANGLE/AMOUNT;
+
+        Quaternion[] fixed=entity.getFixedPose();
+        Quaternion r1=fixed[0];
+        Quaternion r2=fixed[1];
+        Quaternion r3=fixed[2];
+        Quaternion tmp=r3.multiply(r2).multiply(r1);
+        Vector3 normal=new Vector3(0,1,0).rot(tmp).normalize();
 
         if(!entity.isAlive() || entity.isRemoved()){
             poseStack.popPose();
@@ -164,55 +172,85 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
                 relative_center,relative_world
         );
         Vector3 round=null;
-        Vector3 last_inner=null,last_outer=null;
-        Vector3 near_inner,near_outer,far_inner,far_outer;
-        for(int i=0;i<AMOUNT && (i+1)*ONCE_ANGLE<progress_angle;i++){
+        if(!ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get()){
+            Vector3 last_inner = null, last_outer = null;
+            Vector3 near_inner, near_outer, far_inner, far_outer;
+            for (int i = 0; i < AMOUNT && (i + 1) * ONCE_ANGLE < progress_angle; i++) {
 
-            int factorI=i+AMOUNT-Math.min(AMOUNT,(int)(progress_angle/ONCE_ANGLE));
-            double current_angle=progress_angle-i*ONCE_ANGLE;
-            double next_angle=progress_angle-(i+1)*ONCE_ANGLE;
-            if(last_inner == null){
-                Vector3 near=PosUtil.calCenPos(distance,current_angle,angle).VecInNewRefer(
+                int factorI = i + AMOUNT - Math.min(AMOUNT, (int) (progress_angle / ONCE_ANGLE));
+                double current_angle = progress_angle - i * ONCE_ANGLE;
+                double next_angle = progress_angle - (i + 1) * ONCE_ANGLE;
+                if (last_inner == null) {
+                    Vector3 near = PosUtil.calCenPos(distance, current_angle, angle).VecInNewRefer(
+                            relative_center,
+                            relative_world
+                    );
+                    sword_pos = near.add(center).add(offset);
+                    near_inner = near.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(-0.1 + (0.08 / AMOUNT) * factorI)).add(center).add(offset);
+                    near_outer = near.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(0.1 - (0.08 / AMOUNT) * factorI)).add(center).add(offset);
+                    round = near_outer.multiply(-1).add(near_inner);
+                } else {
+                    near_inner = last_inner;
+                    near_outer = last_outer;
+                }
+                Vector3 far = PosUtil.calCenPos(distance, next_angle, angle).VecInNewRefer(
                         relative_center,
                         relative_world
                 );
-                sword_pos=near.add(center).add(offset);
-                near_inner=near.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.1+(0.08/AMOUNT)*factorI)).add(center).add(offset);
-                near_outer=near.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.1-(0.08/AMOUNT)*factorI)).add(center).add(offset);
-                round=near_outer.multiply(-1).add(near_inner);
-            }else{
-                near_inner=last_inner;
-                near_outer=last_outer;
+
+                far_inner = far.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(-0.1 + factorI * (0.08 / AMOUNT))).add(center).add(offset);
+                far_outer = far.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(0.1 - factorI * (0.08 / AMOUNT))).add(center).add(offset);
+                last_inner = far_inner;
+                last_outer = far_outer;
+
+                vertex.addVertex(poseStack.last(), far_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0, 0)
+                        .setLight(LightTexture.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(poseStack.last(), 0, 1, 0);
+                vertex.addVertex(poseStack.last(), far_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0, 1)
+                        .setLight(LightTexture.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(poseStack.last(), 0, 1, 0);
+                vertex.addVertex(poseStack.last(), near_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1, 1)
+                        .setLight(LightTexture.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(poseStack.last(), 0, 1, 0);
+                vertex.addVertex(poseStack.last(), near_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1, 0)
+                        .setLight(LightTexture.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(poseStack.last(), 0, 1, 0);
             }
-            Vector3 far=PosUtil.calCenPos(distance,next_angle,angle).VecInNewRefer(
-                    relative_center,
-                    relative_world
-            );
+        }else {
+            Vector3[] cp= new Vector3[4],np= new Vector3[4];
+            Vector3[] save=null;
+            for (int i = 0; i < AMOUNT && (i + 1) * ONCE_ANGLE < progress_angle; i++) {
+                int factorI = i + AMOUNT - Math.min(AMOUNT, (int) (progress_angle / ONCE_ANGLE));
+                double current_angle = progress_angle - i * ONCE_ANGLE;
+                double next_angle = progress_angle - (i + 1) * ONCE_ANGLE;
+                if (save == null) {
+                    Vector3 near = PosUtil.calCenPos(distance, current_angle, angle).VecInNewRefer(
+                            relative_center,
+                            relative_world
+                    );
+                    sword_pos = near.add(center).add(offset);
+                    cp[0] = near.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
+                    cp[1] = cp[0].subtract(normal.multiply(0.05));
+                    cp[2] = near.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
+                    cp[3] = cp[2].add(normal.multiply(0.05));
+                    round=null;
+                    save=new Vector3[4];
+                } else {
+                    System.arraycopy(save, 0, cp, 0, 4);
+                }
+                Vector3 far = PosUtil.calCenPos(distance, next_angle, angle).VecInNewRefer(
+                        relative_center,
+                        relative_world
+                );
 
-            far_inner=far.applyOffset(-0.5+factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(-0.1+factorI*(0.08/AMOUNT))).add(center).add(offset);
-            far_outer=far.applyOffset(0.5-factorI*(0.4/AMOUNT)).add(!firstPerson?new Vector3(0,0,0):relative_center[1].multiply(0.1-factorI*(0.08/AMOUNT))).add(center).add(offset);
-            last_inner=far_inner;
-            last_outer=far_outer;
+                np[0] = far.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
+                np[1] = np[0].subtract(normal.multiply(0.05));
+                np[2] = far.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
+                np[3] = np[2].add(normal.multiply(0.05));
 
-            vertex.addVertex(poseStack.last(),far_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0,0)
-                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-(factorI+1)*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
-            vertex.addVertex(poseStack.last(),far_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0,1)
-                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-(factorI+1)*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
-            vertex.addVertex(poseStack.last(),near_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1,1)
-                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-factorI*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
-            vertex.addVertex(poseStack.last(),near_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1,0)
-                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0],color[1],color[2],255-factorI*(240/AMOUNT)).setNormal(poseStack.last(),0,1,0);
+                System.arraycopy(np,0,save,0,4);
 
-
+                RenderUtil.createTrail(vertex,np,cp,poseStack,255 - (factorI + 1) * (240 / AMOUNT),color);
+            }
         }
         poseStack.translate(sword_pos.getX(),sword_pos.getY(),sword_pos.getZ());
 
-        Quaternion[] fixed=entity.getFixedPose();
-        Quaternion r1=fixed[0];
-        Quaternion r2=fixed[1];
-        Quaternion r3=fixed[2];
-        Quaternion tmp=r3.multiply(r2).multiply(r1);
-        Vector3 normal=new Vector3(0,1,0).rot(tmp);
         Quaternion r4=Quaternion.rotate(normal,-PosUtil.getPolar(progress_angle,distance));
 
         Vector3 toCenter=new Vector3(0,0,1).rot(r4.multiply(tmp));

@@ -58,6 +58,8 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.block_interaction.tooltip","手持天顶剑时,屏蔽除攻击外的右键交互");
             add("the_zenith_sword.configuration.enable_terra_damage_modifier.tooltip","装有汇流来世时,大幅度提高天顶剑攻击力");
             add("the_zenith_sword.configuration.enable_terra_damage_modifier","允许汇流来世攻击力调整");
+            add("the_zenith_sword.configuration.3d_trail","3D拖尾");
+            add("the_zenith_sword.configuration.3d_trail.tooltip","使天顶剑的拖尾为3D拖尾");
         }
         if(locale.equals("en_us")){
             add(ZenithItems.ZENITH.get(),"Zenith Sword");
@@ -89,6 +91,8 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.block_interaction.tooltip","When holding a Zenith Sword, right-click interactions (except for attacks) will be blocked");
             add("the_zenith_sword.configuration.enable_terra_damage_modifier","Enable Confluence:Otherworld damage modifier");
             add("the_zenith_sword.configuration.enable_terra_damage_modifier.tooltip","When Confluence:Otherworld is installed, significantly increase Zenith Sword attack power");
+            add("the_zenith_sword.configuration.3d_trail","3D trail");
+            add("the_zenith_sword.configuration.3d_trail.tooltip","make the trail of zenith three-dimensional");
         }
     }
 }
