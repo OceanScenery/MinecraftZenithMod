@@ -289,14 +289,16 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
                 last_inner = far_inner;
                 last_outer = far_outer;
 
+                Vector3 norm=far_inner.subtract(far_outer).cross(far_inner.subtract(near_inner)).normalize();
+
                 vertex.addVertex(pose, far_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0, 0)
-                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(pose, 0, 1, 0);
+                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
                 vertex.addVertex(pose, far_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0, 1)
-                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(pose, 0, 1, 0);
+                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
                 vertex.addVertex(pose, near_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1, 1)
-                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(pose, 0, 1, 0);
+                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
                 vertex.addVertex(pose, near_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1, 0)
-                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(pose, 0, 1, 0);
+                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
             }
         } else {
             Vector3[] cp = new Vector3[4], np = new Vector3[4];

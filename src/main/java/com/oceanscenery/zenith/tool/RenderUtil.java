@@ -18,13 +18,14 @@ public class RenderUtil {
     }
 
     public static void addVertex(VertexConsumer vertex, Vec3 far_inner, Vec3 far_outer, Vec3 near_outer, Vec3 near_inner, PoseStack.Pose pose, int alpha, int[] color){
+        Vector3 normal=new Vector3(far_inner.subtract(far_outer).cross(far_outer.subtract(near_inner)).normalize());
         vertex.addVertex(pose,far_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0,0)
-                .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0],color[1],color[2],alpha).setNormal(pose,0,-1,0);
+                .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0],color[1],color[2],alpha).setNormal(pose,(float) normal.getX(), (float) normal.getY(), (float) normal.getZ());
         vertex.addVertex(pose,far_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0,1)
-                .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0],color[1],color[2],alpha).setNormal(pose,0,-1,0);
+                .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0],color[1],color[2],alpha).setNormal(pose,(float) normal.getX(), (float) normal.getY(), (float) normal.getZ());
         vertex.addVertex(pose,near_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1,1)
-                .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0],color[1],color[2],alpha).setNormal(pose,0,-1,0);
+                .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0],color[1],color[2],alpha).setNormal(pose,(float) normal.getX(), (float) normal.getY(), (float) normal.getZ());
         vertex.addVertex(pose,near_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1,0)
-                .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0],color[1],color[2],alpha).setNormal(pose,0,-1,0);
+                .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0],color[1],color[2],alpha).setNormal(pose,(float) normal.getX(), (float) normal.getY(), (float) normal.getZ());
     }
 }
