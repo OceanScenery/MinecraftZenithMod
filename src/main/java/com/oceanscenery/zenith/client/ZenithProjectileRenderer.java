@@ -189,7 +189,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
 
         submitNodeCollector.submitCustomGeometry(
                 poseStack,
-                RenderTypes.entityTranslucentEmissive(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "textures/entity/trail.png")),
+                RenderTypes.entityTranslucent(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "textures/entity/trail.png")),
                 trailRenderer
         );
 
