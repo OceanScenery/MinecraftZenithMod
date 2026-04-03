@@ -141,7 +141,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
         double distance=entity.getDistance();
         double progress_angle=Mth.TWO_PI*Mth.lerp(partialTick,(double)progress-1, progress)/ZenithProjectile.STAGE_COUNT;
 
-        VertexConsumer vertex= bufferSource.getBuffer(RenderType.entityTranslucentEmissive(ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"textures/entity/trail.png")));
+        VertexConsumer vertex= bufferSource.getBuffer(RenderType.entityTranslucent(ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"textures/entity/trail.png")));
 
         if(!(entity.level().getEntity(entity.getOwnerID()) instanceof LivingEntity owner)){
             poseStack.popPose();
