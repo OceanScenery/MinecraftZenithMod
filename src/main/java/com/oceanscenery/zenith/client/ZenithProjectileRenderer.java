@@ -261,11 +261,11 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
             Vector3 last_inner = null, last_outer = null;
             Vector3 near_inner, near_outer, far_inner, far_outer;
 
-            for (int i = 0; i < AMOUNT && (i + 1) * ONCE_ANGLE < progress_angle; i++) {
+            for (int i = 0; i < AMOUNT && i * ONCE_ANGLE < progress_angle; i++) {
 
                 int factorI = i + AMOUNT - Math.min(AMOUNT, (int) (progress_angle / ONCE_ANGLE));
                 double current_angle = progress_angle - i * ONCE_ANGLE;
-                double next_angle = progress_angle - (i + 1) * ONCE_ANGLE;
+                double next_angle = Math.max(progress_angle - (i + 1) * ONCE_ANGLE,0);
                 if (last_inner == null) {
                     Vector3 near = PosUtil.calCenPos(distance, current_angle, angle).VecInNewRefer(
                             relative_center,
@@ -306,7 +306,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
             for (int i = 0; i < AMOUNT && i * ONCE_ANGLE < progress_angle; i++) {
                 int factorI = i + AMOUNT - Math.min(AMOUNT, (int) (progress_angle / ONCE_ANGLE));
                 double current_angle = progress_angle - i * ONCE_ANGLE;
-                double next_angle = progress_angle - (i + 1) * ONCE_ANGLE<0?0:progress_angle-(i+1)*ONCE_ANGLE;
+                double next_angle = Math.max(progress_angle - (i + 1) * ONCE_ANGLE,0);
                 if (save == null) {
                     Vector3 near = PosUtil.calCenPos(distance, current_angle, angle).VecInNewRefer(
                             relative_center,
