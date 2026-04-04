@@ -303,10 +303,10 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
         } else {
             Vector3[] cp = new Vector3[4], np = new Vector3[4];
             Vector3[] save = null;
-            for (int i = 0; i < AMOUNT && (i + 1) * ONCE_ANGLE < progress_angle; i++) {
+            for (int i = 0; i < AMOUNT && i * ONCE_ANGLE < progress_angle; i++) {
                 int factorI = i + AMOUNT - Math.min(AMOUNT, (int) (progress_angle / ONCE_ANGLE));
                 double current_angle = progress_angle - i * ONCE_ANGLE;
-                double next_angle = progress_angle - (i + 1) * ONCE_ANGLE;
+                double next_angle = progress_angle - (i + 1) * ONCE_ANGLE<0?0:progress_angle-(i+1)*ONCE_ANGLE;
                 if (save == null) {
                     Vector3 near = PosUtil.calCenPos(distance, current_angle, angle).VecInNewRefer(
                             relative_center,
