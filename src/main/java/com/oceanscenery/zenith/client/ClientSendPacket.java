@@ -32,7 +32,7 @@ public class ClientSendPacket {
         }
         Minecraft mc=Minecraft.getInstance();
 
-        Slot slot=((AbstractContainerScreen<?>) screen).getSlotUnderMouse();
+        Slot slot=((AbstractContainerScreen<?>) screen).getHoveredSlot();
         if (slot==null || !(slot.container instanceof Inventory)) {
             return;
         }

@@ -24,6 +24,6 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider registries) {
-        tag(ItemTags.SWORDS).add(ZenithItems.ZENITH.get());
+        tag(ItemTags.SWORDS).add(ZenithItems.ZENITH.getKey());
     }
 }
