@@ -1,4 +1,4 @@
-package com.oceanscenery.zenith.server;
+package com.oceanscenery.zenith.server.packet;
 
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.data_component.AttackMode;
@@ -29,29 +29,25 @@ public record CycleAttackPlayerPacket(int slot) implements CustomPacketPayload {
     );
 
     public static void handle(final CycleAttackPlayerPacket packet, final IPayloadContext context){
-        context.enqueueWork(
-                ()->{
-                    if(context.player() instanceof ServerPlayer player){
-                        if(packet.slot<0 || packet.slot>=player.getInventory().getContainerSize()){
-                            return;
-                        }
+        if(context.player() instanceof ServerPlayer player){
+            if(packet.slot<0 || packet.slot>=player.getInventory().getContainerSize()){
+                return;
+            }
 
-                        ItemStack item=player.getInventory().getItem(packet.slot);
-                        if(item.is(ZenithItems.ZENITH.get())){
-                            if(item.get(ZenithDataComponents.ATTACK_MODE)==null){
-                                item.set(ZenithDataComponents.ATTACK_MODE.get(),new AttackMode(AttackMode.Mode.LIVING_ENTITY,true));
-                            }else{
-                                boolean flag=item.get(ZenithDataComponents.ATTACK_MODE).attackPlayer();
-                                item.set(ZenithDataComponents.ATTACK_MODE,new AttackMode(item.get(ZenithDataComponents.ATTACK_MODE).getStrMode(),!flag));
-                            }
-
-                            player.displayClientMessage(
-                                    Component.translatable("the_zenith_sword.packet.attack_player_mode").append(":"+item.get(ZenithDataComponents.ATTACK_MODE).attackPlayer()),
-                                    true
-                            );
-                        }
-                    }
+            ItemStack item=player.getInventory().getItem(packet.slot);
+            if(item.is(ZenithItems.ZENITH.get())){
+                if(item.get(ZenithDataComponents.ATTACK_MODE)==null){
+                    item.set(ZenithDataComponents.ATTACK_MODE.get(),new AttackMode(AttackMode.Mode.LIVING_ENTITY,true));
+                }else{
+                    boolean flag=item.get(ZenithDataComponents.ATTACK_MODE).attackPlayer();
+                    item.set(ZenithDataComponents.ATTACK_MODE,new AttackMode(item.get(ZenithDataComponents.ATTACK_MODE).getStrMode(),!flag));
                 }
-        );
+
+                player.displayClientMessage(
+                        Component.translatable("the_zenith_sword.packet.attack_player_mode").append(":"+item.get(ZenithDataComponents.ATTACK_MODE).attackPlayer()),
+                        true
+                );
+            }
+        }
     }
 }

@@ -1,6 +1,8 @@
 {
   "entity.the_zenith_sword.zenith_projectile": "天顶剑射弹",
   "item.the_zenith_sword.zenith": "天顶剑",
+  "key.categories.the_zenith_sword": "天顶剑",
+  "key.the_zenith_sword.attack_blacklist": "将选中实体加入攻击黑名单",
   "the_zenith_sword.configuration.3d_trail": "3D拖尾",
   "the_zenith_sword.configuration.3d_trail.tooltip": "使天顶剑的拖尾为3D拖尾",
   "the_zenith_sword.configuration.attack_damage": "伤害设置",
@@ -40,6 +42,10 @@
   "the_zenith_sword.item.attack_player_mode.tooltip.pre": "伤害玩家",
   "the_zenith_sword.item.distance.tooltip_post": "在背包中单独右键物品以改变默认索敌距离",
   "the_zenith_sword.item.distance.tooltip_pre": "当前物品的默认索敌距离",
+  "the_zenith_sword.message.add_group_entities_to_list": "已将此类生物添加进天顶剑攻击黑名单",
+  "the_zenith_sword.message.add_single_entity_to_list": "已将此生物添加进天顶剑攻击黑名单",
+  "the_zenith_sword.message.remove_group_entities_to_list": "已将此类生物移出天顶剑攻击黑名单",
+  "the_zenith_sword.message.remove_single_entity_to_list": "已将此生物移出天顶剑攻击黑名单",
   "the_zenith_sword.packet.attack_mode": "攻击模式(实体类型)",
   "the_zenith_sword.packet.attack_player_mode": "伤害玩家",
   "the_zenith_sword.packet.distance": "默认索敌距离"

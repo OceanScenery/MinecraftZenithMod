@@ -17,16 +17,16 @@ public class ZenithDataComponents {
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<LastUseTime>> LAST_USE_TIME=DATA_COMPONENTS.registerComponentType(
             "last_use_time",
-            lastUseTimeBuilder -> lastUseTimeBuilder.persistent(LastUseTime.CODEC)
+            lastUseTimeBuilder -> lastUseTimeBuilder.persistent(LastUseTime.CODEC).networkSynchronized(LastUseTime.STREAM_CODEC)
     );
 
     public static final DeferredHolder<DataComponentType<?>,DataComponentType<Distance>> DISTANCE=DATA_COMPONENTS.registerComponentType(
             "distance",
-            distanceBuilder -> distanceBuilder.persistent(Distance.CODEC)
+            distanceBuilder -> distanceBuilder.persistent(Distance.CODEC).networkSynchronized(Distance.STREAM_CODEC)
     );
 
     public static final DeferredHolder<DataComponentType<?>,DataComponentType<AttackMode>> ATTACK_MODE=DATA_COMPONENTS.registerComponentType(
             "attack_mode",
-            attackModeBuilder -> attackModeBuilder.persistent(AttackMode.CODEC)
+            attackModeBuilder -> attackModeBuilder.persistent(AttackMode.CODEC).networkSynchronized(AttackMode.STREAM_CODEC)
     );
 }

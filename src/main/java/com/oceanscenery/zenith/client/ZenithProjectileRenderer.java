@@ -6,10 +6,10 @@ import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithItems;
-import com.oceanscenery.zenith.tool.PosUtil;
-import com.oceanscenery.zenith.tool.Quaternion;
-import com.oceanscenery.zenith.tool.RenderUtil;
-import com.oceanscenery.zenith.tool.Vector3;
+import com.oceanscenery.zenith.util.PosUtil;
+import com.oceanscenery.zenith.util.Quaternion;
+import com.oceanscenery.zenith.util.RenderUtil;
+import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -25,7 +25,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
@@ -121,7 +120,6 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
         Vector3 normal=new Vector3(0,1,0).rot(tmp).normalize();
 
         if(!entity.isAlive() || entity.isRemoved()){
-            poseStack.popPose();
             return;
         }
 
@@ -226,9 +224,9 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
                     );
                     sword_pos = near.add(center).add(offset);
                     cp[0] = near.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
-                    cp[1] = cp[0].subtract(normal.multiply(0.05));
+                    cp[1] = cp[0].subtract(normal.multiply(0.03));
                     cp[2] = near.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
-                    cp[3] = cp[2].add(normal.multiply(0.05));
+                    cp[3] = cp[2].add(normal.multiply(0.03));
                     round=null;
                     save=new Vector3[4];
                 } else {
@@ -240,9 +238,9 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
                 );
 
                 np[0] = far.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
-                np[1] = np[0].subtract(normal.multiply(0.05));
+                np[1] = np[0].subtract(normal.multiply(0.03));
                 np[2] = far.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
-                np[3] = np[2].add(normal.multiply(0.05));
+                np[3] = np[2].add(normal.multiply(0.03));
 
                 System.arraycopy(np,0,save,0,4);
 

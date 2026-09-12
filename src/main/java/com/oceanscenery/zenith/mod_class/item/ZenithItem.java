@@ -1,18 +1,20 @@
 package com.oceanscenery.zenith.mod_class.item;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.event.DamageHandle;
+import com.oceanscenery.zenith.util.DamageHandler;
+import com.oceanscenery.zenith.event.ServerTickTask;
+import com.oceanscenery.zenith.event.ServerTicker;
 import com.oceanscenery.zenith.mod_class.data_component.AttackMode;
 import com.oceanscenery.zenith.mod_class.data_component.Distance;
 import com.oceanscenery.zenith.mod_class.data_component.LastUseTime;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.*;
-import com.oceanscenery.zenith.tool.Vector3;
+import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,7 +28,6 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -60,11 +61,6 @@ public class ZenithItem extends Item {
     }
 
     @Override
-    public float getAttackDamageBonus(@NotNull Entity target, float damage, @NotNull DamageSource damageSource) {
-        return super.getAttackDamageBonus(target, damage, damageSource);
-    }
-
-    @Override
     public boolean canAttackBlock(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, Player player) {
         return !player.isCreative();
     }
@@ -77,16 +73,6 @@ public class ZenithItem extends Item {
     @Override
     public int getUseDuration(@NotNull ItemStack stack, @NotNull LivingEntity entity) {
         return 0;
-    }
-
-    @Override
-    public int getEnchantmentLevel(@NotNull ItemStack stack, @NotNull Holder<Enchantment> enchantment) {
-        return super.getEnchantmentLevel(stack, enchantment);
-    }
-
-    @Override
-    public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity p_entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, p_entity, slotId, isSelected);
     }
 
     @Override
@@ -116,10 +102,11 @@ public class ZenithItem extends Item {
 
     public boolean canAttack(@NotNull ItemStack usedItem,@NotNull LivingEntity attacker){
         if(!attacker.level().isClientSide){
-            if(usedItem.get(ZenithDataComponents.LAST_USE_TIME)==null && usedItem.is(ZenithItems.ZENITH)){
+            LastUseTime lastUseTime=usedItem.get(ZenithDataComponents.LAST_USE_TIME);
+            if(lastUseTime==null){
                 return true;
             }
-            long last_tick=usedItem.get(ZenithDataComponents.LAST_USE_TIME).tickTime();
+            long last_tick=lastUseTime.tickTime();
             long this_tick=attacker.level().getGameTime();
             if(this_tick>=last_tick+USE_INTERVAL || this_tick<last_tick){
                 return true;
@@ -131,6 +118,14 @@ public class ZenithItem extends Item {
 
     public void attack(@NotNull ItemStack usedItem,LivingEntity attacker,Level level){
         if(this.canAttack(usedItem,attacker)){
+            if(attacker instanceof ServerPlayer serverPlayer){
+                if(attacker.getMainHandItem()==usedItem){
+                    serverPlayer.swing(InteractionHand.MAIN_HAND,true);
+                }else{
+                    serverPlayer.swing(InteractionHand.OFF_HAND,true);
+                }
+            }
+
             usedItem.set(ZenithDataComponents.LAST_USE_TIME,new LastUseTime(level.getGameTime()));
             Vector3[] relative=Vector3.getReferFromAngle(attacker.getXRot(),attacker.getYRot());
             Vec3 initial=new Vector3(0,0,100).VecInNewRefer(relative,Vector3.WORLD).toVec3();
@@ -143,7 +138,7 @@ public class ZenithItem extends Item {
             for(Entity entity:list){
                 AABB aabb=entity.getBoundingBox().inflate(2);
                 if(aabb.clip(attacker.getEyePosition(),attacker.getEyePosition().add(initial)).isPresent()){
-                    if(DamageHandle.canAttack(entity,usedItem)){
+                    if(DamageHandler.canAttack(attacker,entity,usedItem)){
                         victim.add(entity);
                         Vec3 vec=entity.getBoundingBox().getCenter();
                         farest=Math.max(farest,vec.distanceTo(attacker.getEyePosition()));
@@ -172,7 +167,7 @@ public class ZenithItem extends Item {
             distance+=1;
 
             for(Entity entity:victim){
-                DamageHandle.applyDamage(attacker,entity,usedItem,3);
+                DamageHandler.applyDirectDamage(attacker,entity,usedItem,3,(float)attacker.getAttributeValue(Attributes.ATTACK_DAMAGE));
             }
 
             Random random = new Random();
@@ -180,8 +175,16 @@ public class ZenithItem extends Item {
             int type2 = random.nextInt(1, TYPE_AMOUNT);
 
             this.addEntity(level,attacker,usedItem,distance,0);
-            this.addEntity(level,attacker,usedItem,distance,type1);
-            this.addEntity(level,attacker,usedItem,distance,type2);
+
+            double finalDistance=distance;
+            ServerTicker.taskList.add(new ServerTickTask(
+                    2,
+                    ()->this.addEntity(level,attacker,usedItem,finalDistance,type1)
+            ));
+            ServerTicker.taskList.add(new ServerTickTask(
+                    4,
+                    ()->this.addEntity(level,attacker,usedItem,finalDistance,type2)
+            ));
         }
     }
 
@@ -213,6 +216,7 @@ public class ZenithItem extends Item {
                     reference,
                     Vector3.WORLD
             ).toVec3().add(livingEntity.getEyePosition()));
+            zenith.setDamage((float)livingEntity.getAttributeValue(Attributes.ATTACK_DAMAGE));
 
             level.addFreshEntity(zenith);
         }
