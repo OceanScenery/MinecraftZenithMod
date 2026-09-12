@@ -1,4 +1,4 @@
-package com.oceanscenery.zenith.server;
+package com.oceanscenery.zenith.server.packet;
 
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.data_component.Distance;
@@ -42,33 +42,29 @@ public record CycleZenithDefaultDistancePacket(int slot) implements CustomPacket
     }
 
     public static void handle(final CycleZenithDefaultDistancePacket packet, final IPayloadContext context){
-        context.enqueueWork(
-                ()->{
-                    if(context.player() instanceof ServerPlayer player){
-                        if(packet.slot<0 || packet.slot>=player.getInventory().getContainerSize()){
-                            return;
-                        }
+        if(context.player() instanceof ServerPlayer player){
+            if(packet.slot<0 || packet.slot>=player.getInventory().getContainerSize()){
+                return;
+            }
 
-                        ItemStack item=player.getInventory().getItem(packet.slot);
-                        if(item.is(ZenithItems.ZENITH.get())){
-                            if(item.get(ZenithDataComponents.DISTANCE)==null){
-                                item.set(ZenithDataComponents.DISTANCE.get(),new Distance(20));
-                            }else{
-                                double preDist=item.get(ZenithDataComponents.DISTANCE.get()).dist();
-                                preDist+=20;
-                                if(preDist>100){
-                                    preDist=20;
-                                }
-                                item.set(ZenithDataComponents.DISTANCE.get(),new Distance(preDist));
-                            }
-
-                            player.sendSystemMessage(
-                                    Component.translatable("the_zenith_sword.packet.distance").append(":"+String.valueOf(item.get(ZenithDataComponents.DISTANCE).dist())),
-                                    true
-                            );
-                        }
+            ItemStack item=player.getInventory().getItem(packet.slot);
+            if(item.is(ZenithItems.ZENITH.get())){
+                if(item.get(ZenithDataComponents.DISTANCE)==null){
+                    item.set(ZenithDataComponents.DISTANCE.get(),new Distance(20));
+                }else{
+                    double preDist=item.get(ZenithDataComponents.DISTANCE.get()).dist();
+                    preDist+=20;
+                    if(preDist>100){
+                        preDist=20;
                     }
+                    item.set(ZenithDataComponents.DISTANCE.get(),new Distance(preDist));
                 }
-        );
+
+                player.sendSystemMessage(
+                        Component.translatable("the_zenith_sword.packet.distance").append(":"+String.valueOf(item.get(ZenithDataComponents.DISTANCE).dist())),
+                        true
+                );
+            }
+        }
     }
 }

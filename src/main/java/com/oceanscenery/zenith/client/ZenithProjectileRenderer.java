@@ -6,35 +6,28 @@ import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithItems;
-import com.oceanscenery.zenith.tool.PosUtil;
-import com.oceanscenery.zenith.tool.Quaternion;
-import com.oceanscenery.zenith.tool.RenderUtil;
-import com.oceanscenery.zenith.tool.Vector3;
+import com.oceanscenery.zenith.util.PosUtil;
+import com.oceanscenery.zenith.util.Quaternion;
+import com.oceanscenery.zenith.util.RenderUtil;
+import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.geometry.BakedQuad;
-import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.model.standalone.StandaloneModelLoader;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
@@ -189,7 +182,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
 
         submitNodeCollector.submitCustomGeometry(
                 poseStack,
-                RenderTypes.entityTranslucent(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "textures/entity/trail.png")),
+                RenderTypes.entityTranslucentEmissive(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "textures/entity/trail.png")),
                 trailRenderer
         );
 
@@ -313,9 +306,9 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
                             relative_world
                     );
                     cp[0] = near.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
-                    cp[1] = cp[0].subtract(normal.multiply(0.05));
+                    cp[1] = cp[0].subtract(normal.multiply(0.03));
                     cp[2] = near.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
-                    cp[3] = cp[2].add(normal.multiply(0.05));
+                    cp[3] = cp[2].add(normal.multiply(0.03));
                     save = new Vector3[4];
                 } else {
                     System.arraycopy(save, 0, cp, 0, 4);
@@ -326,9 +319,9 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
                 );
 
                 np[0] = far.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
-                np[1] = np[0].subtract(normal.multiply(0.05));
+                np[1] = np[0].subtract(normal.multiply(0.03));
                 np[2] = far.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
-                np[3] = np[2].add(normal.multiply(0.05));
+                np[3] = np[2].add(normal.multiply(0.03));
 
                 System.arraycopy(np, 0, save, 0, 4);
 

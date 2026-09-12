@@ -1,4 +1,4 @@
-package com.oceanscenery.zenith.tool;
+package com.oceanscenery.zenith.util;
 
 import com.oceanscenery.zenith.client.ZenithProjectileRenderer;
 

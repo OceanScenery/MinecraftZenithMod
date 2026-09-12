@@ -2,6 +2,9 @@ package com.oceanscenery.zenith.mod_class.data_component;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -26,9 +29,13 @@ public record Distance(double dist) {
         return Objects.hashCode(dist);
     }
 
-    public static final Codec<Distance> CODEC= RecordCodecBuilder.create(
-            distanceInstance -> distanceInstance.group(
-                    Codec.DOUBLE.fieldOf("distance").forGetter(Distance::dist)
-            ).apply(distanceInstance,Distance::new)
+    public static final Codec<Distance> CODEC=Codec.DOUBLE.xmap(
+            Distance::new,
+            Distance::dist
+    );
+
+    public static final StreamCodec<ByteBuf,Distance> STREAM_CODEC=ByteBufCodecs.DOUBLE.map(
+            Distance::new,
+            Distance::dist
     );
 }

@@ -1,4 +1,4 @@
-package com.oceanscenery.zenith.server;
+package com.oceanscenery.zenith.server.packet;
 
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.item.ZenithItem;
@@ -24,29 +24,25 @@ public record ZenithAttackPacket(int id) implements CustomPacketPayload{
     }
 
     public static final StreamCodec<ByteBuf,ZenithAttackPacket> STREAM_CODEC=StreamCodec.composite(
-            ByteBufCodecs.INT, ZenithAttackPacket::id,
+            ByteBufCodecs.INT,ZenithAttackPacket::id,
             ZenithAttackPacket::new
     );
 
     public static void handle(final ZenithAttackPacket packet, final IPayloadContext context){
-        context.enqueueWork(
-                ()->{
-                    if(context.player() instanceof ServerPlayer player && player.level() instanceof ServerLevel){
-                        if(player.getId()!=packet.id){
-                            return;
-                        }
-                        ItemStack m_item=player.getMainHandItem();
-                        ItemStack o_item=player.getOffhandItem();
-                        if(m_item.getItem() instanceof ZenithItem zenithItem){
-                            zenithItem.attack(m_item,player,player.level(),InteractionHand.MAIN_HAND);
-                            return;
-                        }
-                        if(o_item.getItem() instanceof ZenithItem zenithItem){
-                            zenithItem.attack(o_item,player,player.level(),InteractionHand.OFF_HAND);
-                            return;
-                        }
-                    }
-                }
-        );
+        if(context.player() instanceof ServerPlayer player && player.level() instanceof ServerLevel){
+            if(player.getId()!=packet.id){
+                return;
+            }
+            ItemStack m_item=player.getMainHandItem();
+            ItemStack o_item=player.getOffhandItem();
+            if(m_item.getItem() instanceof ZenithItem zenithItem){
+                zenithItem.attack(m_item,player,player.level(),InteractionHand.MAIN_HAND);
+                return;
+            }
+            if(o_item.getItem() instanceof ZenithItem zenithItem){
+                zenithItem.attack(o_item,player,player.level(),InteractionHand.OFF_HAND);
+                return;
+            }
+        }
     }
 }

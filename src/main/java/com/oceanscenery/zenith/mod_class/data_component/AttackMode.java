@@ -2,17 +2,27 @@ package com.oceanscenery.zenith.mod_class.data_component;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 
 import java.util.HashMap;
 import java.util.Objects;
 
 public record AttackMode(Mode mode,boolean attackPlayer) {
 
-    public static final HashMap<String,Mode> MODE_HASH_MAP=new HashMap<>();
+    private static final HashMap<String,Mode> MODE_HASH_MAP=new HashMap<>();
     static{
         MODE_HASH_MAP.put("living_entity",Mode.LIVING_ENTITY);
         MODE_HASH_MAP.put("attackable_entity",Mode.ATTACKABLE_ENTITY);
         MODE_HASH_MAP.put("all",Mode.ALL);
+    }
+
+    public static Mode modeFromString(String atk){
+        if(MODE_HASH_MAP.containsKey(atk)){
+            return MODE_HASH_MAP.get(atk);
+        }
+        return Mode.LIVING_ENTITY;
     }
 
     public enum Mode{
@@ -28,7 +38,7 @@ public record AttackMode(Mode mode,boolean attackPlayer) {
     }
 
     public AttackMode(String atk,boolean attackPlayer){
-        this(MODE_HASH_MAP.get(atk),attackPlayer);
+        this(modeFromString(atk),attackPlayer);
     }
 
     public Mode getMode(){
@@ -55,5 +65,11 @@ public record AttackMode(Mode mode,boolean attackPlayer) {
                     Codec.STRING.fieldOf("attack_mode").forGetter(AttackMode::getStrMode),
                     Codec.BOOL.fieldOf("attack_player").forGetter(AttackMode::attackPlayer)
             ).apply(attackModeInstance,(str,boo)-> MODE_HASH_MAP.containsKey(str)?new AttackMode(str,boo):new AttackMode(Mode.LIVING_ENTITY,true))
+    );
+
+    public static final StreamCodec<ByteBuf,AttackMode> STREAM_CODEC=StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8,AttackMode::getStrMode,
+            ByteBufCodecs.BOOL,AttackMode::attackPlayer,
+            AttackMode::new
     );
 }

@@ -1,4 +1,4 @@
-package com.oceanscenery.zenith.tool;
+package com.oceanscenery.zenith.util;
 
 import org.joml.Quaternionf;
 

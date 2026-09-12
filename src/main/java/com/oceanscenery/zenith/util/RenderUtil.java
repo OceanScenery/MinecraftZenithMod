@@ -1,4 +1,4 @@
-package com.oceanscenery.zenith.tool;
+package com.oceanscenery.zenith.util;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -12,9 +12,9 @@ public class RenderUtil {
         Vec3 cp0=cp[0].toVec3(),cp1=cp[1].toVec3(),cp2=cp[2].toVec3(),cp3=cp[3].toVec3();
 
         addVertex(vertex,np0,np1,cp1,cp0,pose,alpha,color);
-        addVertex(vertex,np2,np1,cp1,cp2,pose,alpha,color);
+        addVertex(vertex,np1,np2,cp2,cp1,pose,alpha,color);
         addVertex(vertex,np2,np3,cp3,cp2,pose,alpha,color);
-        addVertex(vertex,np0,np3,cp3,cp0,pose,alpha,color);
+        addVertex(vertex,np3,np0,cp0,cp3,pose,alpha,color);
     }
 
     public static void addVertex(VertexConsumer vertex, Vec3 far_inner, Vec3 far_outer, Vec3 near_outer, Vec3 near_inner, PoseStack.Pose pose, int alpha, int[] color){

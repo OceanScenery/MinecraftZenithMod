@@ -1,8 +1,9 @@
 package com.oceanscenery.zenith.server;
 
 import com.oceanscenery.zenith.TheZenithMod;
+import com.oceanscenery.zenith.client.packet.ZenithSendPickedEntityInfPacket;
+import com.oceanscenery.zenith.server.packet.*;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -13,10 +14,10 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 @EventBusSubscriber(modid = TheZenithMod.MOD_ID)
 public class ZenithNetworkHandler {
-    public static final Identifier resource=Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"main");
+    public static final String resource=TheZenithMod.MOD_ID+"-network";
     @SubscribeEvent
     public static void registerPackets(final RegisterPayloadHandlersEvent event){
-        final PayloadRegistrar REGISTER=event.registrar(resource.toString());
+        final PayloadRegistrar REGISTER=event.registrar(resource);
 
         REGISTER.playToServer(
                 CycleZenithDefaultDistancePacket.TYPE,
@@ -48,6 +49,30 @@ public class ZenithNetworkHandler {
                 (payload, context) -> {
                     context.enqueueWork(()->ZenithAttackPacket.handle(payload,context));
                 }
+        );
+
+        REGISTER.playToServer(
+                ToggleBlacklistPacket.TYPE,
+                ToggleBlacklistPacket.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        ()->ToggleBlacklistPacket.handle(payload,context)
+                )
+        );
+
+        REGISTER.playToServer(
+                ZenithUpdatePickedEntityQuestPacket.TYPE,
+                ZenithUpdatePickedEntityQuestPacket.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        ()-> ZenithUpdatePickedEntityQuestPacket.handle(payload,context)
+                )
+        );
+
+        REGISTER.playToClient(
+                ZenithSendPickedEntityInfPacket.TYPE,
+                ZenithSendPickedEntityInfPacket.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        ()-> ZenithSendPickedEntityInfPacket.handle(payload,context)
+                )
         );
     }
 

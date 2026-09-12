@@ -1,8 +1,8 @@
 package com.oceanscenery.zenith.registry;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.tool.PosUtil;
-import com.oceanscenery.zenith.tool.Vector3;
+import com.oceanscenery.zenith.util.PosUtil;
+import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.neoforged.neoforge.registries.DeferredHolder;
