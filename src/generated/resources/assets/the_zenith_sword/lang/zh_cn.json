@@ -1,7 +1,7 @@
 {
   "entity.the_zenith_sword.zenith_projectile": "天顶剑射弹",
   "item.the_zenith_sword.zenith": "天顶剑",
-  "key.categories.the_zenith_sword.main": "天顶剑",
+  "key.category.the_zenith_sword.main": "天顶剑",
   "key.the_zenith_sword.attack_blacklist": "将选中实体加入攻击黑名单",
   "the_zenith_sword.configuration.3d_trail": "3D拖尾",
   "the_zenith_sword.configuration.3d_trail.tooltip": "使天顶剑的拖尾为3D拖尾",

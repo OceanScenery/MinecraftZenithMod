@@ -63,7 +63,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.3d_trail","3D拖尾");
             add("the_zenith_sword.configuration.3d_trail.tooltip","使天顶剑的拖尾为3D拖尾");
             add("key.the_zenith_sword.attack_blacklist","将选中实体加入攻击黑名单");
-            add("key.categories.the_zenith_sword.main","天顶剑");
+            add("key.category.the_zenith_sword.main","天顶剑");
             add("the_zenith_sword.message.remove_group_entities_to_list","已将此类生物移出天顶剑攻击黑名单");
             add("the_zenith_sword.message.add_group_entities_to_list","已将此类生物添加进天顶剑攻击黑名单");
             add("the_zenith_sword.message.remove_single_entity_to_list","已将此生物移出天顶剑攻击黑名单");
@@ -104,7 +104,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.3d_trail","3D trail");
             add("the_zenith_sword.configuration.3d_trail.tooltip","make the trail of zenith three-dimensional");
             add("key.the_zenith_sword.attack_blacklist","add selected entity to blacklist of attacking");
-            add("key.categories.the_zenith_sword.main","The Zenith Sword");
+            add("key.category.the_zenith_sword.main","The Zenith Sword");
             add("the_zenith_sword.message.add_group_entities_to_list","Added this entity type to the Zenith Sword attack blacklist");
             add("the_zenith_sword.message.remove_group_entities_to_list","Removed this entity type from the Zenith Sword attack blacklist");
             add("the_zenith_sword.message.add_single_entity_to_list","Added this entity to the Zenith Sword attack blacklist");

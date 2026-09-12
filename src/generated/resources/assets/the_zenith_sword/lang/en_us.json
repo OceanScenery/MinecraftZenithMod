@@ -1,7 +1,7 @@
 {
   "entity.the_zenith_sword.zenith_projectile": "ZenithProjectile",
   "item.the_zenith_sword.zenith": "Zenith Sword",
-  "key.categories.the_zenith_sword.main": "The Zenith Sword",
+  "key.category.the_zenith_sword.main": "The Zenith Sword",
   "key.the_zenith_sword.attack_blacklist": "add selected entity to blacklist of attacking",
   "the_zenith_sword.configuration.3d_trail": "3D trail",
   "the_zenith_sword.configuration.3d_trail.tooltip": "make the trail of zenith three-dimensional",
