@@ -23,6 +23,8 @@
   "the_zenith_sword.configuration.ensured_damage_for_player": "minimum damage ratio for player (0.0-1.0), damage will be raised to this ratio of original damage if lower",
   "the_zenith_sword.configuration.ensured_damage_for_player.tooltip": "set the minimum damage dealt to players",
   "the_zenith_sword.configuration.interaction": "Interaction",
+  "the_zenith_sword.configuration.percentage_damage_factor": "zenith percentage damage",
+  "the_zenith_sword.configuration.percentage_damage_factor.tooltip": "this value determines the percentage of the enemy’s maximum health dealt as bonus damage on attacks.",
   "the_zenith_sword.configuration.ranged_damage_factor": "ranged damage factor",
   "the_zenith_sword.configuration.ranged_damage_factor.tooltip": "set the ratio of ranged damage to melee damage",
   "the_zenith_sword.configuration.render": "render settings",

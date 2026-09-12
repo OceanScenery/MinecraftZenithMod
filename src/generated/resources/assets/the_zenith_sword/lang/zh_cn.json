@@ -23,6 +23,8 @@
   "the_zenith_sword.configuration.ensured_damage_for_player": "对玩家保底伤害比例",
   "the_zenith_sword.configuration.ensured_damage_for_player.tooltip": "设置对玩家的保底伤害",
   "the_zenith_sword.configuration.interaction": "交互设置",
+  "the_zenith_sword.configuration.percentage_damage_factor": "百分比伤害",
+  "the_zenith_sword.configuration.percentage_damage_factor.tooltip": "设置天顶剑造成伤害时附带敌方最大生命值伤害的比例",
   "the_zenith_sword.configuration.ranged_damage_factor": "远程伤害系数",
   "the_zenith_sword.configuration.ranged_damage_factor.tooltip": "设置远程伤害与近战伤害的比例",
   "the_zenith_sword.configuration.render": "渲染设置",

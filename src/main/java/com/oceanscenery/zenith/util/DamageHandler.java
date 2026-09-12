@@ -23,8 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class DamageHandler {
-    public static final float EXTRA_DAMAGE_PERCENTAGE =0.01f;
-
     public static class VictimRecord{
         public VictimRecord(float health,float damage){
             expectedDamage=damage;
@@ -70,7 +68,7 @@ public class DamageHandler {
 
         victim.hurt(source,damage);
         if(victim instanceof LivingEntity livingVictim && !checkedVictims.containsKey(livingVictim)){
-            addLivingVictim(livingVictim,damage+EXTRA_DAMAGE_PERCENTAGE*livingVictim.getMaxHealth());
+            addLivingVictim(livingVictim,damage+ConfigUtil.healthPercentage()*livingVictim.getMaxHealth());
         }
 
         for (Map.Entry<LivingEntity,VictimRecord> current:new ArrayList<>(checkedVictims.entrySet())) {

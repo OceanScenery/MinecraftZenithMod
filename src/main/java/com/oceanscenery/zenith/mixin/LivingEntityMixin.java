@@ -2,6 +2,7 @@ package com.oceanscenery.zenith.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.oceanscenery.zenith.registry.ZenithDamageType;
+import com.oceanscenery.zenith.util.ConfigUtil;
 import com.oceanscenery.zenith.util.DamageHandler;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -15,7 +16,7 @@ public class LivingEntityMixin {
     private float modifyHurt(float value, @Local(argsOnly = true,index = 1) DamageSource source){
         LivingEntity livingVictim=(LivingEntity) (Object)this;
         if(source.is(ZenithDamageType.ZENITH) || source.is(ZenithDamageType.ZENITH_KNOCKBACK)){
-            float expectedDamage=value+livingVictim.getMaxHealth()*DamageHandler.EXTRA_DAMAGE_PERCENTAGE;
+            float expectedDamage=value+livingVictim.getMaxHealth()*ConfigUtil.healthPercentage();
             DamageHandler.addLivingVictim(livingVictim,expectedDamage);
             return expectedDamage;
         }

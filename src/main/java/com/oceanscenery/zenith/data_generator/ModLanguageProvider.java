@@ -39,6 +39,8 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.default_damage.tooltip","设置物品的默认攻击属性");
             add("the_zenith_sword.configuration.sort_farest.tooltip","设置弹射物索敌是否优先为远处敌人");
             add("the_zenith_sword.configuration.disable_knockback.tooltip","是否禁用击退");
+            add("the_zenith_sword.configuration.percentage_damage_factor","百分比伤害");
+            add("the_zenith_sword.configuration.percentage_damage_factor.tooltip","设置天顶剑造成伤害时附带敌方最大生命值伤害的比例");
             add("the_zenith_sword.configuration.render_offset.tooltip","将剑的轨迹在第一人称下的渲染向下偏移一格,以凸显轨道的弧形");
             add("the_zenith_sword.configuration.trail_angle","剑轨角度");
             add("the_zenith_sword.configuration.trail_angle.tooltip","决定剑的拖尾占总飞行轨道的比例(中心角)");
@@ -78,6 +80,8 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.sort_farest","sort farest enemy first");
             add("the_zenith_sword.configuration.disable_knockback","disable knockback");
             add("the_zenith_sword.configuration.enable_bypass_invulnerable","use damage type that bypasses most damage reduction");
+            add("the_zenith_sword.configuration.percentage_damage_factor","zenith percentage damage");
+            add("the_zenith_sword.configuration.percentage_damage_factor.tooltip","this value determines the percentage of the enemy’s maximum health dealt as bonus damage on attacks.");
             add("the_zenith_sword.configuration.render","render settings");
             add("the_zenith_sword.configuration.render_offset","trail offset(1 block down)");
             add("the_zenith_sword.configuration.trail_angle","trail_angle");
