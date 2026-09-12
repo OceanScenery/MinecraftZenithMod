@@ -39,6 +39,8 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.default_damage.tooltip","设置物品的默认攻击属性");
             add("the_zenith_sword.configuration.sort_farest.tooltip","设置弹射物索敌是否优先为远处敌人");
             add("the_zenith_sword.configuration.disable_knockback.tooltip","是否禁用击退");
+            add("the_zenith_sword.configuration.percentage_damage_factor","百分比伤害");
+            add("the_zenith_sword.configuration.percentage_damage_factor.tooltip","设置天顶剑造成伤害时附带敌方最大生命值伤害的比例");
             add("the_zenith_sword.configuration.render_offset.tooltip","将剑的轨迹在第一人称下的渲染向下偏移一格,以凸显轨道的弧形");
             add("the_zenith_sword.configuration.trail_angle","剑轨角度");
             add("the_zenith_sword.configuration.trail_angle.tooltip","决定剑的拖尾占总飞行轨道的比例(中心角)");
@@ -60,6 +62,12 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.enable_terra_damage_modifier","允许汇流来世攻击力调整");
             add("the_zenith_sword.configuration.3d_trail","3D拖尾");
             add("the_zenith_sword.configuration.3d_trail.tooltip","使天顶剑的拖尾为3D拖尾");
+            add("key.the_zenith_sword.attack_blacklist","将选中实体加入攻击黑名单");
+            add("key.category.the_zenith_sword.main","天顶剑");
+            add("the_zenith_sword.message.remove_group_entities_to_list","已将此类生物移出天顶剑攻击黑名单");
+            add("the_zenith_sword.message.add_group_entities_to_list","已将此类生物添加进天顶剑攻击黑名单");
+            add("the_zenith_sword.message.remove_single_entity_to_list","已将此生物移出天顶剑攻击黑名单");
+            add("the_zenith_sword.message.add_single_entity_to_list","已将此生物添加进天顶剑攻击黑名单");
         }
         if(locale.equals("en_us")){
             add(ZenithItems.ZENITH.get(),"Zenith Sword");
@@ -72,6 +80,8 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.sort_farest","sort farest enemy first");
             add("the_zenith_sword.configuration.disable_knockback","disable knockback");
             add("the_zenith_sword.configuration.enable_bypass_invulnerable","use damage type that bypasses most damage reduction");
+            add("the_zenith_sword.configuration.percentage_damage_factor","zenith percentage damage");
+            add("the_zenith_sword.configuration.percentage_damage_factor.tooltip","this value determines the percentage of the enemy’s maximum health dealt as bonus damage on attacks.");
             add("the_zenith_sword.configuration.render","render settings");
             add("the_zenith_sword.configuration.render_offset","trail offset(1 block down)");
             add("the_zenith_sword.configuration.trail_angle","trail_angle");
@@ -93,6 +103,25 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.enable_terra_damage_modifier.tooltip","When Confluence:Otherworld is installed, significantly increase Zenith Sword attack power");
             add("the_zenith_sword.configuration.3d_trail","3D trail");
             add("the_zenith_sword.configuration.3d_trail.tooltip","make the trail of zenith three-dimensional");
+            add("key.the_zenith_sword.attack_blacklist","add selected entity to blacklist of attacking");
+            add("key.category.the_zenith_sword.main","The Zenith Sword");
+            add("the_zenith_sword.message.add_group_entities_to_list","Added this entity type to the Zenith Sword attack blacklist");
+            add("the_zenith_sword.message.remove_group_entities_to_list","Removed this entity type from the Zenith Sword attack blacklist");
+            add("the_zenith_sword.message.add_single_entity_to_list","Added this entity to the Zenith Sword attack blacklist");
+            add("the_zenith_sword.message.remove_single_entity_to_list","Removed this entity from the Zenith Sword attack blacklist");
+            add("the_zenith_sword.configuration.default_damage.tooltip","set the default attack attribute of the item");
+            add("the_zenith_sword.configuration.disable_knockback.tooltip","whether to disable knockback");
+            add("the_zenith_sword.configuration.enable_bypass_invulnerable.tooltip","whether to use damage that bypasses damage reduction (lacks damage effects, unstable, not recommended)");
+            add("the_zenith_sword.configuration.ensured_damage_for_non_player.tooltip","set the minimum damage dealt to non-player mobs");
+            add("the_zenith_sword.configuration.ensured_damage_for_player.tooltip","set the minimum damage dealt to players");
+            add("the_zenith_sword.configuration.ranged_damage_factor.tooltip","set the ratio of ranged damage to melee damage");
+            add("the_zenith_sword.configuration.render_offset.tooltip","lower the sword's trail by one block in first person, to emphasize the curve of the trajectory");
+            add("the_zenith_sword.configuration.section.the.zenith.sword.client.toml","Client Settings");
+            add("the_zenith_sword.configuration.section.the.zenith.sword.server.toml","Server Settings");
+            add("the_zenith_sword.configuration.section.the.zenith.sword.server.toml.title","Server Settings");
+            add("the_zenith_sword.configuration.sort_farest.tooltip","whether projectiles should target the farthest enemy first");
+            add("the_zenith_sword.configuration.title","Mod Settings");
+            add("the_zenith_sword.configuration.trail_angle.tooltip","determines the proportion of the sword's trail to the total flight path (central angle)");
         }
     }
 }

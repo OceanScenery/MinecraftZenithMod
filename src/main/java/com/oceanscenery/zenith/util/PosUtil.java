@@ -1,12 +1,10 @@
-package com.oceanscenery.zenith.tool;
+package com.oceanscenery.zenith.util;
 
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
-
-import java.util.UUID;
 
 public class PosUtil {
     public static Vector3 calPos(double distance,int progress,double angle){

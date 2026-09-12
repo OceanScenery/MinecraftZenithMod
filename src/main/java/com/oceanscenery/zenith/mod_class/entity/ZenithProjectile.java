@@ -1,14 +1,11 @@
 package com.oceanscenery.zenith.mod_class.entity;
 
-import com.oceanscenery.zenith.event.DamageHandle;
-import com.oceanscenery.zenith.mod_class.config.ZenithConfig;
-import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithEntityDataSerializer;
 import com.oceanscenery.zenith.registry.ZenithItems;
-import com.oceanscenery.zenith.tool.PosUtil;
-import com.oceanscenery.zenith.tool.Quaternion;
-import com.oceanscenery.zenith.tool.Vector3;
-import net.minecraft.nbt.CompoundTag;
+import com.oceanscenery.zenith.util.PosUtil;
+import com.oceanscenery.zenith.util.Quaternion;
+import com.oceanscenery.zenith.util.Vector3;
+import com.oceanscenery.zenith.util.DamageHandler;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -43,6 +40,8 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     private Vector3[] relative=null;
     private Quaternion[] fixedPose=null;
 
+    private float innerDamage=0;
+
     private LivingEntity owner;
     private UUID owner_uuid;
     private Vec3 center_pos=null;
@@ -54,7 +53,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level) {
         super(entityType, level);
-        this.to_remove=true;
+        to_remove=true;
         this.noPhysics=true;
     }
 
@@ -158,6 +157,10 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         this.getEntityData().set(PROGRESS,progress);
     }
 
+    public void setDamage(float value){
+        this.innerDamage=value;
+    }
+
     public void setAngle(double angle){
         this.getEntityData().set(ANGLE,angle);
     }
@@ -168,6 +171,10 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     public int getLocalProgress(){
         return this.local_progress;
+    }
+
+    public float getDamage(){
+        return this.innerDamage;
     }
 
     public void setLocalProgress(int value){
@@ -257,7 +264,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             AABB box=new AABB(real_pos,last_pos).inflate(2);
             List<Entity> list=this.level().getEntitiesOfClass(Entity.class,box,this::canHit);
             for(Entity entity:list){
-                DamageHandle.applyDamage(owner,entity,weapon);
+                DamageHandler.applyDamage(this,entity,weapon);
             }
 
             last_pos=real_pos;

@@ -1,16 +1,11 @@
 package com.oceanscenery.zenith.client;
 
-import com.oceanscenery.zenith.tool.Quaternion;
-import com.oceanscenery.zenith.tool.Vector3;
+import com.oceanscenery.zenith.util.Quaternion;
+import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.phys.Vec3;
-
-import java.util.logging.Level;
 
 public class ZenithProjectileRenderState extends EntityRenderState {
     public int swordType;
