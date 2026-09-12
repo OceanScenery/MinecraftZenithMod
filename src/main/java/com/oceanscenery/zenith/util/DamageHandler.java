@@ -39,8 +39,6 @@ import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = TheZenithMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class DamageHandler {
-    public static final float EXTRA_DAMAGE_PERCENTAGE =0.01f;
-
     public static Holder<DamageType> ZENITH;
     public static Holder<DamageType> ZENITH_KNOCKBACK;
     private static boolean initialized=false;
@@ -105,7 +103,7 @@ public class DamageHandler {
 
         victim.hurt(source,damage);
         if(victim instanceof LivingEntity livingVictim && !checkedVictims.containsKey(livingVictim)){
-            addLivingVictim(livingVictim,damage+EXTRA_DAMAGE_PERCENTAGE*livingVictim.getMaxHealth());
+            addLivingVictim(livingVictim,damage+ConfigUtil.healthPercentage()*livingVictim.getMaxHealth());
         }
 
         for (Map.Entry<LivingEntity,VictimRecord> current:new ArrayList<>(checkedVictims.entrySet())) {

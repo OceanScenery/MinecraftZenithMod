@@ -13,6 +13,7 @@ public class ZenithConfig {
     public final ForgeConfigSpec.BooleanValue enable_bypass_invulnerable;
     public final ForgeConfigSpec.BooleanValue enable_attack_item;
     public final ForgeConfigSpec.BooleanValue enable_terra_damage_modifier;
+    public final ForgeConfigSpec.DoubleValue percentage_damage_factor;
 
     public ZenithConfig(ForgeConfigSpec.Builder builder){
         builder.comment("combat").push("attack_damage");
@@ -25,6 +26,7 @@ public class ZenithConfig {
         enable_bypass_invulnerable=builder.comment("whether to bypass the damage reduction of living entity(which may disrupt game balance,not recommended)").define("enable_bypass_invulnerable",false);
         enable_attack_item=builder.comment("whether to attack item or xp orb in \"all\" mode").define("enable_attack_item",false);
         enable_terra_damage_modifier=builder.comment("whether to enable the attack boost when mod \"confluence\" is loaded").define("enable_terra_damage_modifier",true);
+        percentage_damage_factor=builder.comment("determines the percentage of the enemy’s max health dealt as bonus damage on attack").defineInRange("percentage_damage_factor",0.01f,0f,1f);
         builder.pop();
     }
 }

@@ -1,35 +1,35 @@
-[129月2026 17:30:40.783] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgedatauserdev, --assetIndex, 5, --assetsDir, G:\code-java\Gradle\caches\forge_gradle\assets, --gameDir, ., --fml.forgeVersion, 47.4.10, --fml.mcVersion, 1.20.1, --fml.forgeGroup, net.minecraftforge, --fml.mcpVersion, 20230612.114412, --mod, the_zenith_sword, --all, --output, G:\code-java\IdeaProjects\forge-1.20.1-47.4.10-zenith\src\generated\resources, --existing, G:\code-java\IdeaProjects\forge-1.20.1-47.4.10-zenith\src\main\resources, --mixin.config, the_zenith_sword.mixins.json]
-[129月2026 17:30:40.787] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher 10.0.9+10.0.9+main.dcd20f30 starting: java version 17.0.3 by Microsoft; OS Windows 11 arch amd64 version 10.0
-[129月2026 17:30:40.892] [main/INFO] [net.minecraftforge.fml.loading.ImmediateWindowHandler/]: ImmediateWindowProvider not loading because launch target is forgedatauserdev
-[129月2026 17:30:40.932] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.5 Source=union:/G:/code-java/Gradle/caches/modules-2/files-2.1/org.spongepowered/mixin/0.8.5/9d1c0c3a304ae6697ecd477218fa61b850bf57fc/mixin-0.8.5.jar%23128!/ Service=ModLauncher Env=CLIENT
-[129月2026 17:30:41.168] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file G:\code-java\Gradle\caches\modules-2\files-2.1\net.minecraftforge\javafmllanguage\1.20.1-47.4.10\ccc533c7dd67e0983217197d7549c8b49e7ab453\javafmllanguage-1.20.1-47.4.10.jar is missing mods.toml file
-[129月2026 17:30:41.173] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file G:\code-java\Gradle\caches\modules-2\files-2.1\net.minecraftforge\lowcodelanguage\1.20.1-47.4.10\e9a2879fe3612ea34b9728ec2633304a1e67d480\lowcodelanguage-1.20.1-47.4.10.jar is missing mods.toml file
-[129月2026 17:30:41.177] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file G:\code-java\Gradle\caches\modules-2\files-2.1\net.minecraftforge\mclanguage\1.20.1-47.4.10\ec5cefbbc65c67302b8fac317010faab85fa14b9\mclanguage-1.20.1-47.4.10.jar is missing mods.toml file
-[129月2026 17:30:41.182] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file G:\code-java\Gradle\caches\modules-2\files-2.1\net.minecraftforge\fmlcore\1.20.1-47.4.10\94dae566be650566ea9115a1414ab76bfcf5a804\fmlcore-1.20.1-47.4.10.jar is missing mods.toml file
-[129月2026 17:30:41.316] [main/INFO] [net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator/]: Found 1 dependencies adding them to mods collection
-[129月2026 17:30:42.473] [main/INFO] [mixin/]: Compatibility level set to JAVA_17
-[129月2026 17:30:42.474] [main/ERROR] [mixin/]: Mixin config the_zenith_sword.mixins.json does not specify "minVersion" property
-[129月2026 17:30:42.480] [main/INFO] [cpw.mods.modlauncher.LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgedatauserdev' with arguments [--gameDir, ., --assetsDir, G:\code-java\Gradle\caches\forge_gradle\assets, --assetIndex, 5, --mod, the_zenith_sword, --all, --output, G:\code-java\IdeaProjects\forge-1.20.1-47.4.10-zenith\src\generated\resources, --existing, G:\code-java\IdeaProjects\forge-1.20.1-47.4.10-zenith\src\main\resources]
-[129月2026 17:30:42.574] [main/WARN] [mixin/]: Reference map 'the_zenith_sword.refmap.json' for the_zenith_sword.mixins.json could not be read. If this is a development environment you can ignore this message
-[129月2026 17:30:42.956] [main/INFO] [net.minecraftforge.data.loading.DatagenModLoader/]: Initializing Data Gatherer for mods [the_zenith_sword]
-[129月2026 17:30:43.049] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
-[129月2026 17:30:46.868] [modloading-worker-0/INFO] [net.minecraftforge.common.ForgeMod/FORGEMOD]: Forge mod loading, version 47.4.10, for MC 1.20.1 with MCP 20230612.114412
-[129月2026 17:30:46.871] [modloading-worker-0/INFO] [net.minecraftforge.common.MinecraftForge/FORGE]: MinecraftForge v47.4.10 Initialized
-[129月2026 17:30:47.367] [main/WARN] [net.minecraft.server.packs.VanillaPackResourcesBuilder/]: Assets URL 'union:/G:/code-java/Gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1-recomp.jar%23191!/assets/.mcassetsroot' uses unexpected schema
-[129月2026 17:30:47.367] [main/WARN] [net.minecraft.server.packs.VanillaPackResourcesBuilder/]: Assets URL 'union:/G:/code-java/Gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1-recomp.jar%23191!/data/.mcassetsroot' uses unexpected schema
-[129月2026 17:30:47.617] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Tags for minecraft:block mod id the_zenith_sword
-[129月2026 17:30:47.765] [main/INFO] [net.minecraft.data.DataGenerator/]: Tags for minecraft:block mod id the_zenith_sword finished after 147 ms
-[129月2026 17:30:47.766] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Tags for minecraft:item mod id the_zenith_sword
-[129月2026 17:30:47.780] [main/INFO] [net.minecraft.data.DataGenerator/]: Tags for minecraft:item mod id the_zenith_sword finished after 13 ms
-[129月2026 17:30:47.780] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Tags for minecraft:damage_type mod id the_zenith_sword
-[129月2026 17:30:47.786] [main/INFO] [net.minecraft.data.DataGenerator/]: Tags for minecraft:damage_type mod id the_zenith_sword finished after 6 ms
-[129月2026 17:30:47.787] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Item Models: the_zenith_sword
-[129月2026 17:30:47.819] [main/INFO] [net.minecraft.data.DataGenerator/]: Item Models: the_zenith_sword finished after 32 ms
-[129月2026 17:30:47.820] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Languages: zh_cn
-[129月2026 17:30:47.822] [main/INFO] [net.minecraft.data.DataGenerator/]: Languages: zh_cn finished after 2 ms
-[129月2026 17:30:47.822] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Languages: en_us
-[129月2026 17:30:47.826] [main/INFO] [net.minecraft.data.DataGenerator/]: Languages: en_us finished after 3 ms
-[129月2026 17:30:47.827] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Recipes
-[129月2026 17:30:47.857] [main/INFO] [net.minecraft.data.DataGenerator/]: Recipes finished after 30 ms
-[129月2026 17:30:47.857] [main/INFO] [net.minecraft.data.DataGenerator/]: All providers took: 240 ms
-[129月2026 17:30:47.867] [main/INFO] [net.minecraft.data.HashCache/]: Caching: total files: 28, old count: 30, new count: 31, removed stale: 0, written: 1
+[129月2026 19:33:55.882] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgedatauserdev, --assetIndex, 5, --assetsDir, G:\code-java\Gradle\caches\forge_gradle\assets, --gameDir, ., --fml.forgeVersion, 47.4.10, --fml.mcVersion, 1.20.1, --fml.forgeGroup, net.minecraftforge, --fml.mcpVersion, 20230612.114412, --mod, the_zenith_sword, --all, --output, G:\code-java\IdeaProjects\forge-1.20.1-47.4.10-zenith\src\generated\resources, --existing, G:\code-java\IdeaProjects\forge-1.20.1-47.4.10-zenith\src\main\resources, --mixin.config, the_zenith_sword.mixins.json]
+[129月2026 19:33:55.887] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher 10.0.9+10.0.9+main.dcd20f30 starting: java version 17.0.3 by Microsoft; OS Windows 11 arch amd64 version 10.0
+[129月2026 19:33:56.027] [main/INFO] [net.minecraftforge.fml.loading.ImmediateWindowHandler/]: ImmediateWindowProvider not loading because launch target is forgedatauserdev
+[129月2026 19:33:56.105] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.5 Source=union:/G:/code-java/Gradle/caches/modules-2/files-2.1/org.spongepowered/mixin/0.8.5/9d1c0c3a304ae6697ecd477218fa61b850bf57fc/mixin-0.8.5.jar%23128!/ Service=ModLauncher Env=CLIENT
+[129月2026 19:33:56.922] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file G:\code-java\Gradle\caches\modules-2\files-2.1\net.minecraftforge\javafmllanguage\1.20.1-47.4.10\ccc533c7dd67e0983217197d7549c8b49e7ab453\javafmllanguage-1.20.1-47.4.10.jar is missing mods.toml file
+[129月2026 19:33:56.933] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file G:\code-java\Gradle\caches\modules-2\files-2.1\net.minecraftforge\lowcodelanguage\1.20.1-47.4.10\e9a2879fe3612ea34b9728ec2633304a1e67d480\lowcodelanguage-1.20.1-47.4.10.jar is missing mods.toml file
+[129月2026 19:33:56.954] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file G:\code-java\Gradle\caches\modules-2\files-2.1\net.minecraftforge\mclanguage\1.20.1-47.4.10\ec5cefbbc65c67302b8fac317010faab85fa14b9\mclanguage-1.20.1-47.4.10.jar is missing mods.toml file
+[129月2026 19:33:56.967] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file G:\code-java\Gradle\caches\modules-2\files-2.1\net.minecraftforge\fmlcore\1.20.1-47.4.10\94dae566be650566ea9115a1414ab76bfcf5a804\fmlcore-1.20.1-47.4.10.jar is missing mods.toml file
+[129月2026 19:33:57.418] [main/INFO] [net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator/]: Found 1 dependencies adding them to mods collection
+[129月2026 19:34:00.295] [main/INFO] [mixin/]: Compatibility level set to JAVA_17
+[129月2026 19:34:00.295] [main/ERROR] [mixin/]: Mixin config the_zenith_sword.mixins.json does not specify "minVersion" property
+[129月2026 19:34:00.314] [main/INFO] [cpw.mods.modlauncher.LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgedatauserdev' with arguments [--gameDir, ., --assetsDir, G:\code-java\Gradle\caches\forge_gradle\assets, --assetIndex, 5, --mod, the_zenith_sword, --all, --output, G:\code-java\IdeaProjects\forge-1.20.1-47.4.10-zenith\src\generated\resources, --existing, G:\code-java\IdeaProjects\forge-1.20.1-47.4.10-zenith\src\main\resources]
+[129月2026 19:34:00.468] [main/WARN] [mixin/]: Reference map 'the_zenith_sword.refmap.json' for the_zenith_sword.mixins.json could not be read. If this is a development environment you can ignore this message
+[129月2026 19:34:01.633] [main/INFO] [net.minecraftforge.data.loading.DatagenModLoader/]: Initializing Data Gatherer for mods [the_zenith_sword]
+[129月2026 19:34:01.870] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
+[129月2026 19:34:10.601] [modloading-worker-0/INFO] [net.minecraftforge.common.ForgeMod/FORGEMOD]: Forge mod loading, version 47.4.10, for MC 1.20.1 with MCP 20230612.114412
+[129月2026 19:34:10.606] [modloading-worker-0/INFO] [net.minecraftforge.common.MinecraftForge/FORGE]: MinecraftForge v47.4.10 Initialized
+[129月2026 19:34:11.361] [main/WARN] [net.minecraft.server.packs.VanillaPackResourcesBuilder/]: Assets URL 'union:/G:/code-java/Gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1-recomp.jar%23191!/assets/.mcassetsroot' uses unexpected schema
+[129月2026 19:34:11.361] [main/WARN] [net.minecraft.server.packs.VanillaPackResourcesBuilder/]: Assets URL 'union:/G:/code-java/Gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1-recomp.jar%23191!/data/.mcassetsroot' uses unexpected schema
+[129月2026 19:34:11.838] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Tags for minecraft:block mod id the_zenith_sword
+[129月2026 19:34:12.040] [main/INFO] [net.minecraft.data.DataGenerator/]: Tags for minecraft:block mod id the_zenith_sword finished after 201 ms
+[129月2026 19:34:12.040] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Tags for minecraft:item mod id the_zenith_sword
+[129月2026 19:34:12.073] [main/INFO] [net.minecraft.data.DataGenerator/]: Tags for minecraft:item mod id the_zenith_sword finished after 31 ms
+[129月2026 19:34:12.073] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Tags for minecraft:damage_type mod id the_zenith_sword
+[129月2026 19:34:12.082] [main/INFO] [net.minecraft.data.DataGenerator/]: Tags for minecraft:damage_type mod id the_zenith_sword finished after 9 ms
+[129月2026 19:34:12.082] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Item Models: the_zenith_sword
+[129月2026 19:34:12.132] [main/INFO] [net.minecraft.data.DataGenerator/]: Item Models: the_zenith_sword finished after 49 ms
+[129月2026 19:34:12.133] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Languages: zh_cn
+[129月2026 19:34:12.138] [main/INFO] [net.minecraft.data.DataGenerator/]: Languages: zh_cn finished after 5 ms
+[129月2026 19:34:12.139] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Languages: en_us
+[129月2026 19:34:12.143] [main/INFO] [net.minecraft.data.DataGenerator/]: Languages: en_us finished after 3 ms
+[129月2026 19:34:12.143] [main/INFO] [net.minecraft.data.DataGenerator/]: Starting provider: Recipes
+[129月2026 19:34:12.179] [main/INFO] [net.minecraft.data.DataGenerator/]: Recipes finished after 35 ms
+[129月2026 19:34:12.180] [main/INFO] [net.minecraft.data.DataGenerator/]: All providers took: 342 ms
+[129月2026 19:34:12.200] [main/INFO] [net.minecraft.data.HashCache/]: Caching: total files: 28, old count: 30, new count: 31, removed stale: 0, written: 2
