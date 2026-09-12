@@ -1,7 +1,7 @@
 package com.oceanscenery.zenith.registry;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.tool.PosUtil;
+import com.oceanscenery.zenith.util.PosUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraftforge.registries.DeferredRegister;

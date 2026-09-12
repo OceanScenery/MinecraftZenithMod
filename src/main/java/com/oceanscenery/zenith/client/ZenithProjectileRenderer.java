@@ -1,21 +1,18 @@
 package com.oceanscenery.zenith.client;
 
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithItems;
-import com.oceanscenery.zenith.tool.PosUtil;
-import com.oceanscenery.zenith.tool.Quaternion;
-import com.oceanscenery.zenith.tool.RenderUtil;
-import com.oceanscenery.zenith.tool.Vector3;
+import com.oceanscenery.zenith.util.PosUtil;
+import com.oceanscenery.zenith.util.Quaternion;
+import com.oceanscenery.zenith.util.RenderUtil;
+import com.oceanscenery.zenith.util.Vector3;
 import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -26,7 +23,6 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -111,7 +107,8 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
     @Override
     public void render(ZenithProjectile entity, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
         double TOTAL_ANGLE = Math.toRadians(ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.get());
-        int AMOUNT = (int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.get() / 80);
+        int AMOUNT = ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get()?(int)(60* ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.get()/80)/2:(int)(60* ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.get()/80);
+
         double ONCE_ANGLE = TOTAL_ANGLE / AMOUNT;
 
         Quaternion[] fixed = entity.getFixedPose();
@@ -119,7 +116,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
         Quaternion r2 = fixed[1];
         Quaternion r3 = fixed[2];
         Quaternion tmp = r3.multiply(r2).multiply(r1);
-        Vector3 normal = new Vector3(0, 1, 0).rot(tmp);
+        Vector3 normal = new Vector3(0, 1, 0).rot(tmp).normalize();
 
         if (!entity.isAlive() || entity.isRemoved()) {
             return;
@@ -142,7 +139,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
         double progress_angle = Mth.TWO_PI * Mth.lerp(partialTick, (double) progress - 1, progress) / ZenithProjectile.STAGE_COUNT;
 
         VertexConsumer vertex = bufferSource.getBuffer(
-                RenderType.entityTranslucentEmissive(ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "textures/entity/trail.png"))
+                RenderType.entityTranslucent(ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "textures/entity/trail.png"))
         );
 
         if (!(entity.level().getEntity(entity.getOwnerID()) instanceof LivingEntity owner)) {
@@ -239,9 +236,9 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
                     );
                     sword_pos = near.add(center).add(offset);
                     cp[0] = near.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
-                    cp[1] = cp[0].subtract(normal.multiply(0.05));
+                    cp[1] = cp[0].subtract(normal.multiply(0.03));
                     cp[2] = near.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
-                    cp[3] = cp[2].add(normal.multiply(0.05));
+                    cp[3] = cp[2].add(normal.multiply(0.03));
                     round = null;
                     save = new Vector3[4];
                 } else {
@@ -253,9 +250,9 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
                 );
 
                 np[0] = far.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
-                np[1] = np[0].subtract(normal.multiply(0.05));
+                np[1] = np[0].subtract(normal.multiply(0.03));
                 np[2] = far.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
-                np[3] = np[2].add(normal.multiply(0.05));
+                np[3] = np[2].add(normal.multiply(0.03));
 
                 System.arraycopy(np, 0, save, 0, 4);
 

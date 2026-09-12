@@ -4,7 +4,7 @@ import com.oceanscenery.zenith.registry.ZenithItems;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 
-public class WeaponHandler {
+public class    WeaponHandler {
     public static void checkExist(CompoundTag tag){
         if(!tag.contains("Zenith")){
             CompoundTag z_tag=new CompoundTag();

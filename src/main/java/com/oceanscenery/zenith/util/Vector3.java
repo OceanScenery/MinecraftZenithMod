@@ -1,6 +1,5 @@
-package com.oceanscenery.zenith.tool;
+package com.oceanscenery.zenith.util;
 
-import io.netty.buffer.ByteBuf;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 

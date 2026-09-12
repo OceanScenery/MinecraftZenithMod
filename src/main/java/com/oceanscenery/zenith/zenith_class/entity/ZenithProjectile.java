@@ -1,11 +1,11 @@
 package com.oceanscenery.zenith.zenith_class.entity;
 
-import com.oceanscenery.zenith.event.DamageHandler;
+import com.oceanscenery.zenith.util.DamageHandler;
 import com.oceanscenery.zenith.registry.ZenithEntityDataSerializers;
 import com.oceanscenery.zenith.registry.ZenithItems;
-import com.oceanscenery.zenith.tool.PosUtil;
-import com.oceanscenery.zenith.tool.Quaternion;
-import com.oceanscenery.zenith.tool.Vector3;
+import com.oceanscenery.zenith.util.PosUtil;
+import com.oceanscenery.zenith.util.Quaternion;
+import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -36,6 +36,8 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     private Vector3[] relative=null;
     private Quaternion[] fixedPose=null;
+
+    private float innerDamage=0;
 
     private LivingEntity owner;
     private UUID owner_uuid;
@@ -121,6 +123,11 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     }
 
     @Override
+    public boolean canChangeDimensions() {
+        return false;
+    }
+
+    @Override
     public void remove(RemovalReason reason) {
         if(reason.equals(RemovalReason.KILLED) && !this.to_remove){
             return;
@@ -174,6 +181,14 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     public void setAngle(double angle){
         this.getEntityData().set(ANGLE,angle);
+    }
+
+    public void setDamage(float value){
+        this.innerDamage=value;
+    }
+
+    public float getDamage(){
+        return this.innerDamage;
     }
 
     public void setDistance(double distance){
@@ -251,7 +266,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             AABB box=new AABB(real_pos,last_pos).inflate(2);
             List<Entity> list=this.level().getEntitiesOfClass(Entity.class,box,this::canHit);
             for(Entity entity:list){
-                DamageHandler.applyDamage(owner,entity,weapon);
+                DamageHandler.applyDamage(this,entity,weapon);
             }
 
             last_pos=real_pos;

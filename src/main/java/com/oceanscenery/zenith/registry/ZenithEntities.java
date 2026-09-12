@@ -19,7 +19,7 @@ public class ZenithEntities {
             ()->EntityType.Builder.<ZenithProjectile>of(
                             ZenithProjectile::new,
                             MobCategory.MISC
-                    ).setUpdateInterval(1).clientTrackingRange(60).sized(1f,1f)
+                    ).setUpdateInterval(1).clientTrackingRange(60).sized(0f,0f)
                     .fireImmune().build("zenith_projectile")
     );
 }

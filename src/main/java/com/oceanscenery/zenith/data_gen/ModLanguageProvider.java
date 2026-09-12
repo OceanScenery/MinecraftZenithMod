@@ -58,6 +58,12 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.block_interaction.tooltip","手持天顶剑时,屏蔽除攻击外的右键交互");
             add("the_zenith_sword.configuration.enable_terra_damage_modifier.tooltip","装有汇流来世时,大幅度提高天顶剑攻击力");
             add("the_zenith_sword.configuration.enable_terra_damage_modifier","允许汇流来世攻击力调整");
+            add("key.the_zenith_sword.attack_blacklist","将选中实体加入攻击黑名单");
+            add("key.categories.the_zenith_sword","天顶剑");
+            add("the_zenith_sword.message.remove_group_entities_to_list","已将此类生物移出天顶剑攻击黑名单");
+            add("the_zenith_sword.message.add_group_entities_to_list","已将此类生物添加进天顶剑攻击黑名单");
+            add("the_zenith_sword.message.remove_single_entity_to_list","已将此生物移出天顶剑攻击黑名单");
+            add("the_zenith_sword.message.add_single_entity_to_list","已将此生物添加进天顶剑攻击黑名单");
         }
         if(locale.equals("en_us")){
             add(ZenithItems.ZENITH.get(),"Zenith Sword");
@@ -89,6 +95,27 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.block_interaction.tooltip","When holding a Zenith Sword, right-click interactions (except for attacks) will be blocked");
             add("the_zenith_sword.configuration.enable_terra_damage_modifier","Enable Confluence:Otherworld damage modifier");
             add("the_zenith_sword.configuration.enable_terra_damage_modifier.tooltip","When Confluence:Otherworld is installed, significantly increase Zenith Sword attack power");
+            add("the_zenith_sword.configuration.3d_trail","3D trail");
+            add("the_zenith_sword.configuration.3d_trail.tooltip","make the trail of zenith three-dimensional");
+            add("key.the_zenith_sword.attack_blacklist","add selected entity to blacklist of attacking");
+            add("key.categories.the_zenith_sword","The Zenith Sword");
+            add("the_zenith_sword.message.add_group_entities_to_list","Added this entity type to the Zenith Sword attack blacklist");
+            add("the_zenith_sword.message.remove_group_entities_to_list","Removed this entity type from the Zenith Sword attack blacklist");
+            add("the_zenith_sword.message.add_single_entity_to_list","Added this entity to the Zenith Sword attack blacklist");
+            add("the_zenith_sword.message.remove_single_entity_to_list","Removed this entity from the Zenith Sword attack blacklist");
+            add("the_zenith_sword.configuration.default_damage.tooltip","set the default attack attribute of the item");
+            add("the_zenith_sword.configuration.disable_knockback.tooltip","whether to disable knockback");
+            add("the_zenith_sword.configuration.enable_bypass_invulnerable.tooltip","whether to use damage that bypasses damage reduction (lacks damage effects, unstable, not recommended)");
+            add("the_zenith_sword.configuration.ensured_damage_for_non_player.tooltip","set the minimum damage dealt to non-player mobs");
+            add("the_zenith_sword.configuration.ensured_damage_for_player.tooltip","set the minimum damage dealt to players");
+            add("the_zenith_sword.configuration.ranged_damage_factor.tooltip","set the ratio of ranged damage to melee damage");
+            add("the_zenith_sword.configuration.render_offset.tooltip","lower the sword's trail by one block in first person, to emphasize the curve of the trajectory");
+            add("the_zenith_sword.configuration.section.the.zenith.sword.client.toml","Client Settings");
+            add("the_zenith_sword.configuration.section.the.zenith.sword.server.toml","Server Settings");
+            add("the_zenith_sword.configuration.section.the.zenith.sword.server.toml.title","Server Settings");
+            add("the_zenith_sword.configuration.sort_farest.tooltip","whether projectiles should target the farthest enemy first");
+            add("the_zenith_sword.configuration.title","Mod Settings");
+            add("the_zenith_sword.configuration.trail_angle.tooltip","determines the proportion of the sword's trail to the total flight path (central angle)");
         }
     }
 }

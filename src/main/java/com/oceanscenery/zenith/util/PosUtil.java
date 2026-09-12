@@ -1,7 +1,6 @@
-package com.oceanscenery.zenith.tool;
+package com.oceanscenery.zenith.util;
 
 import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.util.Mth;
 
 public class PosUtil {

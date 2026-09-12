@@ -2,24 +2,25 @@ package com.oceanscenery.zenith.zenith_class.item;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import com.oceanscenery.zenith.event.DamageHandler;
+import com.oceanscenery.zenith.TheZenithMod;
+import com.oceanscenery.zenith.event.ServerTickTask;
+import com.oceanscenery.zenith.event.ServerTicker;
+import com.oceanscenery.zenith.util.DamageHandler;
 import com.oceanscenery.zenith.event.WeaponHandler;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithEntities;
 import com.oceanscenery.zenith.registry.ZenithItems;
-import com.oceanscenery.zenith.tool.Vector3;
+import com.oceanscenery.zenith.util.Vector3;
 import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -48,7 +49,7 @@ public class ZenithItem extends Item {
     public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
         if(slot==EquipmentSlot.MAINHAND){
             return ImmutableMultimap.of(
-                    Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "zenith", ZenithConfigs.ZENITH_CONFIG.default_damage.get(), AttributeModifier.Operation.ADDITION),
+                    Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "zenith", ZenithConfigs.getDefaultDamage()*((TheZenithMod.TERRA_LOADED&&ZenithConfigs.ZENITH_CONFIG.enable_terra_damage_modifier.get())?24:1), AttributeModifier.Operation.ADDITION),
                     Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID, "zenith", isBetterCombatLoaded?-2.4:30, AttributeModifier.Operation.ADDITION)
             );
         }
@@ -125,7 +126,7 @@ public class ZenithItem extends Item {
             for(Entity entity:list){
                 AABB aabb=entity.getBoundingBox().inflate(2);
                 if(aabb.clip(attacker.getEyePosition(),attacker.getEyePosition().add(initial)).isPresent()){
-                    if(DamageHandler.canAttack(entity,usedItem)){
+                    if(DamageHandler.canAttack(attacker,entity,usedItem)){
                         Vec3 vec=entity.getBoundingBox().getCenter();
                         victim.add(entity);
                         farest=Math.max(farest,vec.distanceTo(attacker.getEyePosition()));
@@ -148,7 +149,7 @@ public class ZenithItem extends Item {
             distance+=1;
 
             for(Entity entity:victim){
-                DamageHandler.applyDamage(attacker,entity,usedItem,3);
+                DamageHandler.applyDirectDamage(attacker,entity,usedItem,3,(float)attacker.getAttributeValue(Attributes.ATTACK_DAMAGE));
             }
 
             Random random = new Random();
@@ -156,8 +157,15 @@ public class ZenithItem extends Item {
             int type2 = random.nextInt(1, TYPE_AMOUNT);
 
             this.addEntity(level,attacker,usedItem,distance,0);
-            this.addEntity(level,attacker,usedItem,distance,type1);
-            this.addEntity(level,attacker,usedItem,distance,type2);
+            double finalDistance=distance;
+            ServerTicker.taskList.add(new ServerTickTask(
+                    2,
+                    ()->this.addEntity(level,attacker,usedItem,finalDistance,type1)
+            ));
+            ServerTicker.taskList.add(new ServerTickTask(
+                    4,
+                    ()->this.addEntity(level,attacker,usedItem,finalDistance,type2)
+            ));
         }
     }
 
@@ -179,6 +187,7 @@ public class ZenithItem extends Item {
                     reference,
                     Vector3.WORLD
             ).toVec3().add(livingEntity.getEyePosition()));
+            zenith.setDamage((float)livingEntity.getAttributeValue(Attributes.ATTACK_DAMAGE));
 
             level.addFreshEntity(zenith);
         }
