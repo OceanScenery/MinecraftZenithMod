@@ -53,7 +53,7 @@ public class DamageHandler {
         return applyDamage(projectile,victim,weapon,1);
     }
 
-    private static boolean applyDamageAmount(Entity victim,DamageSource source,float damage,ItemStack weapon,float scale){
+    private static boolean applyDamageAmount(Entity victim,ZenithDamageSource source,float damage,ItemStack weapon,float scale){
         Entity attacker=source.getEntity();
 
         if(attacker==null || !(attacker.level() instanceof ServerLevel serverLevel)){
@@ -67,7 +67,7 @@ public class DamageHandler {
 
         checkedVictims.clear();
 
-        victim.hurtServer(serverLevel,source,damage);
+        victim.hurtServer(serverLevel,source.setDamage(damage),damage);
         if(victim instanceof LivingEntity livingVictim && !checkedVictims.containsKey(livingVictim)){
             addLivingVictim(livingVictim,damage+ConfigUtil.healthPercentage()*livingVictim.getMaxHealth());
         }
