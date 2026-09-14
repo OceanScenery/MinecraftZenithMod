@@ -8,6 +8,7 @@ import com.oceanscenery.zenith.mixin.LivingEntityAccessor;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithDamageTypes;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.zenith_class.ZenithDamageSource;
 import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -39,10 +40,6 @@ import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = TheZenithMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class DamageHandler {
-    public static Holder<DamageType> ZENITH;
-    public static Holder<DamageType> ZENITH_KNOCKBACK;
-    private static boolean initialized=false;
-
     public static class VictimRecord{
         public VictimRecord(float health,float damage){
             expectedDamage=damage;
@@ -66,21 +63,6 @@ public class DamageHandler {
     public static float getTrueHealth(LivingEntity livingVictim){
         SynchedEntityData data=((EntityAccessor)livingVictim).getRealEntityData();
         return data.get(LivingEntityAccessor.getHealthId());
-    }
-
-    public static void initialize(Level level){
-        RegistryAccess access=level.registryAccess();
-        Registry<DamageType> registry=access.registryOrThrow(Registries.DAMAGE_TYPE);
-        ZENITH=registry.getHolderOrThrow(ZenithDamageTypes.ZENITH);
-        ZENITH_KNOCKBACK=registry.getHolderOrThrow(ZenithDamageTypes.ZENITH_KNOCKBACK);
-        initialized=true;
-    }
-
-    public static DamageSource getSource(Entity attacker){
-        if(!initialized){
-            initialize(attacker.level());
-        }
-        return ZenithConfigs.ZENITH_CONFIG.disable_knockback.get()?new DamageSource(ZENITH,attacker):new DamageSource(ZENITH_KNOCKBACK,attacker);
     }
 
     private static boolean applyDamageAmount(Entity victim,DamageSource source,float damage,ItemStack weapon,float scale){
@@ -138,16 +120,20 @@ public class DamageHandler {
         if(!projectile.level().isClientSide){
             float damage=projectile.getDamage();
             Entity attacker=projectile.getOwner();
-            DamageSource source;
+            ZenithDamageSource source;
 
             if(!canAttack(attacker,victim,weapon)){
                 return false;
             }
 
             if(attacker==null){
-                source=getSource(projectile);
+                source=ZenithDamageSource.zenith(projectile);
             }else{
-                source=getSource(attacker);
+                if(ZenithConfigs.ZENITH_CONFIG.disable_knockback.get()){
+                    source=ZenithDamageSource.zenith(attacker);
+                }else{
+                    source=ZenithDamageSource.zenith_knock(attacker);
+                }
             }
             return applyDamageAmount(victim,source,damage,weapon,scale);
         }
@@ -163,7 +149,11 @@ public class DamageHandler {
                 return false;
             }
 
-            source=getSource(attacker);
+            if(ZenithConfigs.ZENITH_CONFIG.disable_knockback.get()){
+                source=ZenithDamageSource.zenith(attacker);
+            }else{
+                source=ZenithDamageSource.zenith_knock(attacker);
+            }
             return applyDamageAmount(victim,source,damage,weapon,scale);
         }
         return false;
