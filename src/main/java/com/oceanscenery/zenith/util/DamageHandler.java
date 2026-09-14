@@ -3,6 +3,7 @@ package com.oceanscenery.zenith.util;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mixin.EntityAccessor;
 import com.oceanscenery.zenith.mixin.LivingEntityAccessor;
+import com.oceanscenery.zenith.mod_class.ZenithDamageSource;
 import com.oceanscenery.zenith.mod_class.data_component.AttackMode;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.*;
@@ -52,7 +53,7 @@ public class DamageHandler {
         return applyDamage(projectile,victim,weapon,1);
     }
 
-    private static boolean applyDamageAmount(Entity victim,DamageSource source,float damage,ItemStack weapon,float scale){
+    private static boolean applyDamageAmount(Entity victim, ZenithDamageSource source, float damage, ItemStack weapon, float scale){
         Entity attacker=source.getEntity();
 
         if(attacker==null || !(attacker.level() instanceof ServerLevel)){
@@ -66,7 +67,7 @@ public class DamageHandler {
 
         checkedVictims.clear();
 
-        victim.hurt(source,damage);
+        victim.hurt(source.setDamage(damage),damage);
         if(victim instanceof LivingEntity livingVictim && !checkedVictims.containsKey(livingVictim)){
             addLivingVictim(livingVictim,damage+ConfigUtil.healthPercentage()*livingVictim.getMaxHealth());
         }
@@ -99,19 +100,19 @@ public class DamageHandler {
         if(!projectile.level().isClientSide){
             float damage=projectile.getDamage();
             Entity attacker=projectile.getOwner();
-            DamageSource source;
+            ZenithDamageSource source;
 
             if(!canAttack(attacker,victim,weapon)){
                 return false;
             }
 
             if(attacker==null){
-                source=projectile.damageSources().source(ZenithDamageType.ZENITH,projectile);
+                source=ZenithDamageSource.zenith(projectile);
             }else{
                 if(ZenithConfigs.ZENITH_CONFIG.disable_knockback.get()){
-                    source=attacker.damageSources().source(ZenithDamageType.ZENITH,attacker);
+                    source=ZenithDamageSource.zenith(attacker);
                 }else{
-                    source=attacker.damageSources().source(ZenithDamageType.ZENITH_KNOCKBACK,attacker);
+                    source=ZenithDamageSource.zenith_knock(attacker);
                 }
             }
             return applyDamageAmount(victim,source,damage,weapon,scale);
@@ -122,16 +123,16 @@ public class DamageHandler {
     public static boolean applyDirectDamage(@NotNull Entity attacker, Entity victim, ItemStack weapon, float scale, float damageCount){
         if(!attacker.level().isClientSide){
             float damage=damageCount;
-            DamageSource source;
+            ZenithDamageSource source;
 
             if(!canAttack(attacker,victim,weapon)){
                 return false;
             }
 
-            if (ZenithConfigs.ZENITH_CONFIG.disable_knockback.get()) {
-                source=attacker.damageSources().source(ZenithDamageType.ZENITH, attacker);
-            } else {
-                source=attacker.damageSources().source(ZenithDamageType.ZENITH_KNOCKBACK, attacker);
+            if(ZenithConfigs.ZENITH_CONFIG.disable_knockback.get()){
+                source=ZenithDamageSource.zenith(attacker);
+            }else{
+                source=ZenithDamageSource.zenith_knock(attacker);
             }
             return applyDamageAmount(victim,source,damage,weapon,scale);
         }
