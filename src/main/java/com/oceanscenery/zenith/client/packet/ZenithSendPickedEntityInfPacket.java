@@ -9,26 +9,28 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.NonNull;
 
-public record ZenithSendPickedEntityInfPacket(int entityId,boolean inList) implements CustomPacketPayload {
-    public static final Identifier ID=Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_select_entity_inf");
-    public static final CustomPacketPayload.Type<ZenithSendPickedEntityInfPacket> TYPE=new CustomPacketPayload.Type<>(ID);
+public record ZenithSendPickedEntityInfPacket(int entityId,
+                                              boolean inList) implements CustomPacketPayload {
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_select_entity_inf");
+    public static final CustomPacketPayload.Type<ZenithSendPickedEntityInfPacket> TYPE = new CustomPacketPayload.Type<>(ID);
 
-    public static final StreamCodec<ByteBuf,ZenithSendPickedEntityInfPacket> STREAM_CODEC=StreamCodec.composite(
-            ByteBufCodecs.INT,ZenithSendPickedEntityInfPacket::entityId,
-            ByteBufCodecs.BOOL,ZenithSendPickedEntityInfPacket::inList,
-            ZenithSendPickedEntityInfPacket::new
+    public static final StreamCodec<ByteBuf, ZenithSendPickedEntityInfPacket> STREAM_CODEC = StreamCodec.composite(
+        ByteBufCodecs.INT, ZenithSendPickedEntityInfPacket::entityId,
+        ByteBufCodecs.BOOL, ZenithSendPickedEntityInfPacket::inList,
+        ZenithSendPickedEntityInfPacket::new
     );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
-    public static void handle(final ZenithSendPickedEntityInfPacket packet, final IPayloadContext context){
-        if(context.player() instanceof LocalPlayer){
-            RenderEntityTip.serverBackId =packet.entityId;
-            RenderEntityTip.canAttack=!packet.inList;
+    public static void handle(final ZenithSendPickedEntityInfPacket packet, final IPayloadContext context) {
+        if (context.player() instanceof LocalPlayer) {
+            RenderEntityTip.serverBackId = packet.entityId;
+            RenderEntityTip.canAttack = !packet.inList;
         }
     }
 }

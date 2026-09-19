@@ -13,44 +13,46 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.NonNull;
 
-public record ToggleBlacklistPacket(int playerId,int entityId,boolean shifted) implements CustomPacketPayload{
-    public static final Identifier ID=Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_blacklist");
-    public static final CustomPacketPayload.Type<ToggleBlacklistPacket> TYPE=new CustomPacketPayload.Type<>(ID);
+public record ToggleBlacklistPacket(int playerId, int entityId,
+                                    boolean shifted) implements CustomPacketPayload {
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_blacklist");
+    public static final CustomPacketPayload.Type<ToggleBlacklistPacket> TYPE = new CustomPacketPayload.Type<>(ID);
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
-    public static final StreamCodec<ByteBuf,ToggleBlacklistPacket> STREAM_CODEC=StreamCodec.composite(
-            ByteBufCodecs.INT,ToggleBlacklistPacket::playerId,
-            ByteBufCodecs.INT,ToggleBlacklistPacket::entityId,
-            ByteBufCodecs.BOOL,ToggleBlacklistPacket::shifted,
-            ToggleBlacklistPacket::new
+    public static final StreamCodec<ByteBuf, ToggleBlacklistPacket> STREAM_CODEC = StreamCodec.composite(
+        ByteBufCodecs.INT, ToggleBlacklistPacket::playerId,
+        ByteBufCodecs.INT, ToggleBlacklistPacket::entityId,
+        ByteBufCodecs.BOOL, ToggleBlacklistPacket::shifted,
+        ToggleBlacklistPacket::new
     );
 
-    public static void handle(final ToggleBlacklistPacket packet, final IPayloadContext context){
-        if(context.player() instanceof ServerPlayer player && player.level() instanceof ServerLevel serverLevel){
-            if(player.getId()!=packet.playerId){
+    public static void handle(final ToggleBlacklistPacket packet, final IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player && player.level() instanceof ServerLevel serverLevel) {
+            if (player.getId() != packet.playerId) {
                 return;
             }
-            Entity selected=serverLevel.getEntity(packet.entityId);
+            Entity selected = serverLevel.getEntity(packet.entityId);
 
-            if(selected==null){
+            if (selected == null) {
                 return;
             }
-            if(packet.shifted()){
-                AttachmentUtil.toggleIdAttachment(player,selected);
-            }else{
-                AttachmentUtil.toggleUuidAttachment(player,selected);
+            if (packet.shifted()) {
+                AttachmentUtil.toggleIdAttachment(player, selected);
+            } else {
+                AttachmentUtil.toggleUuidAttachment(player, selected);
             }
             ZenithNetworkHandler.sendToPlayer(
-                    player,
-                    new ZenithSendPickedEntityInfPacket(
-                            selected.getId(),
-                            !AttachmentUtil.checkCanAttack(player,selected)
-                    )
+                player,
+                new ZenithSendPickedEntityInfPacket(
+                    selected.getId(),
+                    !AttachmentUtil.checkCanAttack(player, selected)
+                )
             );
         }
     }

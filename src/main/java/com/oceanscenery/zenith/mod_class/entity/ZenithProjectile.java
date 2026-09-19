@@ -2,10 +2,10 @@ package com.oceanscenery.zenith.mod_class.entity;
 
 import com.oceanscenery.zenith.registry.ZenithEntityDataSerializer;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.util.DamageHandler;
 import com.oceanscenery.zenith.util.PosUtil;
 import com.oceanscenery.zenith.util.Quaternion;
 import com.oceanscenery.zenith.util.Vector3;
-import com.oceanscenery.zenith.util.DamageHandler;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -24,60 +24,61 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.UUID;
 
 public class ZenithProjectile extends Entity implements TraceableEntity {
-    public static final EntityDataAccessor<Integer> PROGRESS=SynchedEntityData.defineId(ZenithProjectile.class,EntityDataSerializers.INT);
-    public static final EntityDataAccessor<Double> ANGLE=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.DOUBLE.get());
-    public static final EntityDataAccessor<Double> DISTANCE=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.DOUBLE.get());
-    public static final EntityDataAccessor<Integer> OWNER_ID =SynchedEntityData.defineId(ZenithProjectile.class,EntityDataSerializers.INT);
-    public static final EntityDataAccessor<Integer> SWORD_TYPE =SynchedEntityData.defineId(ZenithProjectile.class,EntityDataSerializers.INT);
-    public static final EntityDataAccessor<PosUtil.Rotation> INI_ROT=SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.ROTATION.get());
+    public static final EntityDataAccessor<Integer> PROGRESS = SynchedEntityData.defineId(ZenithProjectile.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Double> ANGLE = SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.DOUBLE.get());
+    public static final EntityDataAccessor<Double> DISTANCE = SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.DOUBLE.get());
+    public static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(ZenithProjectile.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Integer> SWORD_TYPE = SynchedEntityData.defineId(ZenithProjectile.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<PosUtil.Rotation> INI_ROT = SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.ROTATION.get());
 
     //缓存数据,避免计算
-    private Vector3[] relative=null;
-    private Quaternion[] fixedPose=null;
+    private Vector3[] relative = null;
+    private Quaternion[] fixedPose = null;
 
-    private float innerDamage=0;
+    private float innerDamage = 0;
 
     private LivingEntity owner;
     private UUID owner_uuid;
-    private Vec3 center_pos=null;
-    private Vec3 last_pos=null;
+    private Vec3 center_pos = null;
+    private Vec3 last_pos = null;
     private boolean to_remove;
-    public static final int STAGE_COUNT=20;
-    private int local_progress=0;
-    public ItemStack weapon=ZenithItems.ZENITH.toStack();
+    public static final int STAGE_COUNT = 20;
+    private int local_progress = 0;
+    public ItemStack weapon = ZenithItems.ZENITH.toStack();
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level) {
         super(entityType, level);
-        to_remove=true;
-        this.noPhysics=true;
+        to_remove = true;
+        this.noPhysics = true;
     }
 
-    public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level, @NotNull LivingEntity owner, boolean to_remove){
-        this(entityType,level);
-        this.owner=owner;
-        this.owner_uuid=owner.getUUID();
-        this.to_remove=to_remove;
-        this.setOwnerID(this.getOwner()==null?-1:this.getOwner().getId());
-        this.setIniRot(new PosUtil.Rotation(owner.getXRot(),owner.getYRot()));
+    public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level, @NotNull LivingEntity owner, boolean toRemove) {
+        this(entityType, level);
+        this.owner = owner;
+        this.owner_uuid = owner.getUUID();
+        this.to_remove = toRemove;
+        this.setOwnerID(this.getOwner() == null ? -1 : this.getOwner().getId());
+        this.setIniRot(new PosUtil.Rotation(owner.getXRot(), owner.getYRot()));
     }
 
-    public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType,Level level,LivingEntity owner,boolean to_remove,double angle,int type,double distance,ItemStack weapon){
-        this(entityType,level,owner,to_remove);
+    public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level, LivingEntity owner, boolean toRemove, double angle, int type, double distance, ItemStack weapon) {
+        this(entityType, level, owner, toRemove);
         this.setAngle(angle);
         this.setSwordType(type);
         this.setDistance(distance);
-        this.center_pos=owner.getEyePosition().relative(owner.getDirection(),(distance-1)/2);
-        this.weapon=weapon;
+        this.center_pos = owner.getEyePosition().relative(owner.getDirection(), (distance - 1) / 2);
+        this.weapon = weapon;
     }
 
     @Override
-    public void kill(ServerLevel level) {
-        if(!this.to_remove){
+    public void kill(@NonNull ServerLevel level) {
+        if (!this.to_remove) {
             return;
         }
         super.kill(level);
@@ -85,7 +86,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     @Override
     public @NotNull PushReaction getPistonPushReaction() {
-        return PushReaction.IGNORE;
+        return PushReaction.IMMOVEABLE;
     }
 
     @Override
@@ -107,109 +108,109 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     @Override
     public void remove(RemovalReason reason) {
-        if(reason.equals(RemovalReason.KILLED) && !this.to_remove){
+        if (reason.equals(RemovalReason.KILLED) && !this.to_remove) {
             return;
         }
         super.remove(reason);
     }
 
-    public UUID getOwnerUUID(){
+    public UUID getOwnerUuid() {
         return this.owner_uuid;
     }
 
-    public int getSwordType(){
+    public int getSwordType() {
         return this.getEntityData().get(SWORD_TYPE);
     }
 
-    public void setSwordType(int type){
-        this.getEntityData().set(SWORD_TYPE,type);
+    public void setSwordType(int type) {
+        this.getEntityData().set(SWORD_TYPE, type);
     }
 
-    public int getOwnerID(){
+    public int getOwnerID() {
         return this.getEntityData().get(OWNER_ID);
     }
 
-    public int getProgress(){
+    public int getProgress() {
         return this.getEntityData().get(PROGRESS);
     }
 
-    public double getAngle(){
+    public double getAngle() {
         return this.getEntityData().get(ANGLE);
     }
 
-    public double getDistance(){
+    public double getDistance() {
         return this.getEntityData().get(DISTANCE);
     }
 
-    public PosUtil.Rotation getIniRot(){
+    public PosUtil.Rotation getIniRot() {
         return this.getEntityData().get(INI_ROT);
     }
 
-    public void setIniRot(PosUtil.Rotation rot){
-        this.getEntityData().set(INI_ROT,rot);
+    public void setIniRot(PosUtil.Rotation rot) {
+        this.getEntityData().set(INI_ROT, rot);
     }
 
-    private void setOwnerID(int id){
-        this.getEntityData().set(OWNER_ID,id);
+    private void setOwnerID(int id) {
+        this.getEntityData().set(OWNER_ID, id);
     }
 
-    public void setProgress(int progress){
-        this.getEntityData().set(PROGRESS,progress);
+    public void setProgress(int progress) {
+        this.getEntityData().set(PROGRESS, progress);
     }
 
-    public void setDamage(float value){
-        this.innerDamage=value;
+    public void setDamage(float value) {
+        this.innerDamage = value;
     }
 
-    public void setAngle(double angle){
-        this.getEntityData().set(ANGLE,angle);
+    public void setAngle(double angle) {
+        this.getEntityData().set(ANGLE, angle);
     }
 
-    public void setDistance(double distance){
-        this.getEntityData().set(DISTANCE,distance);
+    public void setDistance(double distance) {
+        this.getEntityData().set(DISTANCE, distance);
     }
 
-    public int getLocalProgress(){
+    public int getLocalProgress() {
         return this.local_progress;
     }
 
-    public float getDamage(){
+    public float getDamage() {
         return this.innerDamage;
     }
 
-    public void setLocalProgress(int value){
-        this.local_progress=value;
+    public void setLocalProgress(int value) {
+        this.local_progress = value;
     }
 
     @Override
-    protected AABB makeBoundingBox(Vec3 position) {
+    protected @NonNull AABB makeBoundingBox(@NonNull Vec3 position) {
         return super.makeBoundingBox(position);
     }
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(ANGLE, 0.0);
-        builder.define(DISTANCE,20.0);
-        builder.define(PROGRESS,0);
-        builder.define(OWNER_ID,-1);
-        builder.define(SWORD_TYPE,0);
-        builder.define(INI_ROT,new PosUtil.Rotation(0,0));
+        builder.define(DISTANCE, 20.0);
+        builder.define(PROGRESS, 0);
+        builder.define(OWNER_ID, -1);
+        builder.define(SWORD_TYPE, 0);
+        builder.define(INI_ROT, new PosUtil.Rotation(0, 0));
     }
 
-    public boolean canHit(Entity entity){
-        if(entity.getId()==this.getOwnerID() || entity instanceof ZenithProjectile){
+    public boolean canHit(Entity entity) {
+        if (entity.getId() == this.getOwnerID() || entity instanceof ZenithProjectile) {
             return false;
         }
         return true;
     }
 
     @Override
-    protected boolean canAddPassenger(Entity passenger) {
+    protected boolean canAddPassenger(@NonNull Entity passenger) {
         return false;
     }
 
     @Override
-    public boolean canTeleport(Level from, Level to) {
+    public boolean canTeleport(@NonNull Level from, @NonNull Level to) {
         return false;
     }
 
@@ -225,7 +226,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     @Override
     public void tick() {
-        if(!this.level().isClientSide()){
+        if (!this.level().isClientSide()) {
             super.tick();
             if (this.owner_uuid == null) {
                 return;
@@ -234,92 +235,92 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
                 this.discard();
                 return;
             }
-            if(this.getOwnerID()==-1){
+            if (this.getOwnerID() == -1) {
                 this.setOwnerID(this.getOwner().getId());
             }
             Vector3 pos = PosUtil.calPos(this.getDistance(), this.getProgress(), this.getAngle());
-            Vector3 mark_center = new Vector3(0, 0, this.getDistance()/2);
-            Vector3[] reference=this.getReference();
-            Vector3[] world=Vector3.WORLD;
+            Vector3 markCenter = new Vector3(0, 0, this.getDistance() / 2);
+            Vector3[] reference = this.getReference();
+            Vector3[] world = Vector3.WORLD;
 
-            Vec3 real_pos = pos.setZ(pos.getZ()-1).VecInNewRefer(
-                    reference,world
+            Vec3 realPos = pos.setZ(pos.getZ() - 1).VecInNewRefer(
+                reference, world
             ).toVec3().add(this.owner.getEyePosition());
 
-            Vec3 real_center = mark_center.setZ((mark_center.getZ() - 1)).VecInNewRefer(
-                    reference,world
+            Vec3 realCenter = markCenter.setZ((markCenter.getZ() - 1)).VecInNewRefer(
+                reference, world
             ).toVec3().add(this.owner.getEyePosition());
 
-            Vec3 player_back=new Vector3(0,0,-1).VecInNewRefer(
-                    reference,
-                    world
+            Vec3 playerBack = new Vector3(0, 0, -1).VecInNewRefer(
+                reference,
+                world
             ).toVec3().add(this.owner.getEyePosition());
 
-            this.setPos(player_back);
+            this.setPos(playerBack);
 
-            if(last_pos==null){
-                last_pos=real_pos;
+            if (last_pos == null) {
+                last_pos = realPos;
             }
 
-            AABB box=new AABB(real_pos,last_pos).inflate(2);
-            List<Entity> list=this.level().getEntitiesOfClass(Entity.class,box,this::canHit);
-            for(Entity entity:list){
-                DamageHandler.applyDamage(this,entity,weapon);
+            AABB box = new AABB(realPos, last_pos).inflate(2);
+            List<Entity> list = this.level().getEntitiesOfClass(Entity.class, box, this::canHit);
+            for (Entity entity : list) {
+                DamageHandler.applyDamage(this, entity, weapon);
             }
 
-            last_pos=real_pos;
+            last_pos = realPos;
 
-            if(this.getProgress() > STAGE_COUNT && !this.to_remove) {
-                this.to_remove=true;
+            if (this.getProgress() > STAGE_COUNT && !this.to_remove) {
+                this.to_remove = true;
             }
 
             if (this.center_pos == null) {
                 this.discard();
                 return;
             }
-            this.center_pos = real_center;
+            this.center_pos = realCenter;
             this.setProgress(this.getProgress() + 1);
             if (this.getProgress() > STAGE_COUNT) {
                 this.discard();
             }
 
 
-        }else{
-            if(local_progress==-1){
-                local_progress=getProgress();
+        } else {
+            if (local_progress == -1) {
+                local_progress = getProgress();
             }
             local_progress++;
         }
     }
 
     @Override
-    public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
+    public boolean hurtServer(@NonNull ServerLevel level, @NonNull DamageSource source, float damage) {
         return false;
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {
+    protected void readAdditionalSaveData(@NonNull ValueInput input) {
 
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
+    protected void addAdditionalSaveData(@NonNull ValueOutput output) {
 
     }
 
-    public Vector3[] getReference(){
-        if(this.relative==null){
-            this.relative=Vector3.getReferFromAngle(this.getIniRot().getPitch(),this.getIniRot().getYaw());
+    public Vector3[] getReference() {
+        if (this.relative == null) {
+            this.relative = Vector3.getReferFromAngle(this.getIniRot().getPitch(), this.getIniRot().getYaw());
         }
         return this.relative;
     }
 
-    public Quaternion[] getFixedPose(){
-        if(this.fixedPose==null){
-            this.fixedPose=new Quaternion[3];
-            this.fixedPose[0]=Quaternion.trans(new Vector3(0,0,1),new Vector3(this.getReference()[2].getX(),0,this.getReference()[2].getZ()));
-            this.fixedPose[1]=Quaternion.trans(new Vector3(this.getReference()[2].getX(),0,this.getReference()[2].getZ()),this.getReference()[2]);
-            this.fixedPose[2]=Quaternion.rotate(this.getReference()[2],this.getAngle());
+    public Quaternion[] getFixedPose() {
+        if (this.fixedPose == null) {
+            this.fixedPose = new Quaternion[3];
+            this.fixedPose[0] = Quaternion.trans(new Vector3(0, 0, 1), new Vector3(this.getReference()[2].getX(), 0, this.getReference()[2].getZ()));
+            this.fixedPose[1] = Quaternion.trans(new Vector3(this.getReference()[2].getX(), 0, this.getReference()[2].getZ()), this.getReference()[2]);
+            this.fixedPose[2] = Quaternion.rotate(this.getReference()[2], this.getAngle());
         }
         return this.fixedPose;
     }
