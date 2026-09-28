@@ -17,12 +17,6 @@ import org.jetbrains.annotations.NotNull;
 public record ZenithAttackPacket(int id) implements CustomPacketPayload {
     public static final Identifier ID = Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_attack");
     public static final CustomPacketPayload.Type<ZenithAttackPacket> TYPE = new CustomPacketPayload.Type<>(ID);
-
-    @Override
-    public CustomPacketPayload.@NotNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<ByteBuf, ZenithAttackPacket> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.INT, ZenithAttackPacket::id,
         ZenithAttackPacket::new
@@ -41,8 +35,12 @@ public record ZenithAttackPacket(int id) implements CustomPacketPayload {
             }
             if (offhandItem.getItem() instanceof ZenithItem zenithItem) {
                 zenithItem.attack(offhandItem, player, player.level(), InteractionHand.OFF_HAND);
-                return;
             }
         }
+    }
+
+    @Override
+    public CustomPacketPayload.@NotNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

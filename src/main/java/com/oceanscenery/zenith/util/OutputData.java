@@ -3,7 +3,7 @@ package com.oceanscenery.zenith.util;
 import com.oceanscenery.zenith.client.ZenithProjectileRenderer;
 
 public class OutputData {
-    public static void main(String[] args) {
+    static void main(String[] args) {
         for (int i = 1; i < 21; i++) {
             System.out.println(".override()\n" +
                 "                .predicate(ResourceLocation.parse(\"custom_model_data\"), " + i + ")\n" +

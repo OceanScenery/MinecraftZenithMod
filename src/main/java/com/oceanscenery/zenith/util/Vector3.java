@@ -11,15 +11,14 @@ import java.util.Objects;
 import java.util.Scanner;
 
 public class Vector3 {
-    private double x, y, z;
     public static final Vector3[] WORLD = new Vector3[]{new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1)};
-
     public static final StreamCodec<ByteBuf, Vector3> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.DOUBLE, Vector3::getX,
         ByteBufCodecs.DOUBLE, Vector3::getY,
         ByteBufCodecs.DOUBLE, Vector3::getZ,
         Vector3::new
     );
+    private double x, y, z;
 
     public Vector3() {
     }
@@ -63,16 +62,43 @@ public class Vector3 {
         }
     }
 
+    public static Vector3 transToVector3(Vec3 vec) {
+        return new Vector3(vec.x, vec.y, vec.z);
+    }
+
+    public static Vector3 fromPitchAndYaw(double pitch, double yaw) {
+        yaw = Math.toRadians(yaw);
+        pitch = Math.toRadians(pitch);
+        return new Vector3(-Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+    }
+
+    public static Vector3[] getReferFromAngle(double pitch, double yaw) {
+        Vector3[] result = new Vector3[3];
+        result[2] = fromPitchAndYaw(pitch, yaw).normalize();
+        pitch = Math.toRadians(pitch);
+        yaw = Math.toRadians(yaw);
+        Vector3 tmp = new Vector3(0, 1, 0).cross(result[2]);
+        result[0] = Math.abs(tmp.length()) < 1e-8 ? new Vector3(Math.cos(-yaw), 0, -Math.sin(-yaw)) : tmp.normalize();
+        result[1] = result[2].cross(result[0]).normalize();
+        return result;
+    }
+
+    public static Vector3[] getReferFromVec(Vector3 vecZ) {
+        Vector3[] result = new Vector3[3];
+        result[2] = vecZ.normalize();
+        Vector3 tmp = new Vector3(0, 1, 0).cross(result[2]);
+        result[0] = Math.abs(tmp.length()) < 1e-8 ? new Vector3(1, 0, 0) : tmp.normalize().multiply(-1);
+        result[1] = result[2].cross(result[0]).normalize();
+        return result;
+    }
+
+    static void main() {
+        System.out.println(PosUtil.calCenPos(10, Math.PI / 4, 0).normalize());
+        System.out.println(new Vector3(0, 0, -1).rot(Quaternion.rotate(new Vector3(0, 1, 0), 5)).normalize());
+    }
+
     public double getX() {
         return x;
-    }
-
-    public double getY() {
-        return y;
-    }
-
-    public double getZ() {
-        return z;
     }
 
     public Vector3 setX(double x) {
@@ -80,9 +106,17 @@ public class Vector3 {
         return this;
     }
 
+    public double getY() {
+        return y;
+    }
+
     public Vector3 setY(double y) {
         this.y = y;
         return this;
+    }
+
+    public double getZ() {
+        return z;
     }
 
     public Vector3 setZ(double z) {
@@ -158,10 +192,6 @@ public class Vector3 {
         return new Vector3f((float) this.x, (float) this.y, (float) this.z);
     }
 
-    public static Vector3 transToVector3(Vec3 vec) {
-        return new Vector3(vec.x, vec.y, vec.z);
-    }
-
     public Vector3 rotLerp(double delta, Vector3 start, Vector3 end) {
         Quaternion transfer = Quaternion.trans(start, end, delta);
         Quaternion result = transfer.multiply(new Quaternion(0, start)).multiply(transfer.inverse());
@@ -191,32 +221,6 @@ public class Vector3 {
         );
     }
 
-    public static Vector3 fromPitchAndYaw(double pitch, double yaw) {
-        yaw = Math.toRadians(yaw);
-        pitch = Math.toRadians(pitch);
-        return new Vector3(-Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
-    }
-
-    public static Vector3[] getReferFromAngle(double pitch, double yaw) {
-        Vector3[] result = new Vector3[3];
-        result[2] = fromPitchAndYaw(pitch, yaw).normalize();
-        pitch = Math.toRadians(pitch);
-        yaw = Math.toRadians(yaw);
-        Vector3 tmp = new Vector3(0, 1, 0).cross(result[2]);
-        result[0] = Math.abs(tmp.length()) < 1e-8 ? new Vector3(Math.cos(-yaw), 0, -Math.sin(-yaw)) : tmp.normalize();
-        result[1] = result[2].cross(result[0]).normalize();
-        return result;
-    }
-
-    public static Vector3[] getReferFromVec(Vector3 vecZ) {
-        Vector3[] result = new Vector3[3];
-        result[2] = vecZ.normalize();
-        Vector3 tmp = new Vector3(0, 1, 0).cross(result[2]);
-        result[0] = Math.abs(tmp.length()) < 1e-8 ? new Vector3(1, 0, 0) : tmp.normalize().multiply(-1);
-        result[1] = result[2].cross(result[0]).normalize();
-        return result;
-    }
-
     public Vector3 applyOffset(double offset) {
         if (this.length() != 0) {
             return this.add(this.normalize().multiply(offset));
@@ -227,10 +231,5 @@ public class Vector3 {
 
     public double radiusTo(Vector3 vec) {
         return Math.acos(this.dot(vec) / this.length() / vec.length());
-    }
-
-    static void main() {
-        System.out.println(PosUtil.calCenPos(10, Math.PI / 4, 0).normalize());
-        System.out.println(new Vector3(0, 0, -1).rot(Quaternion.rotate(new Vector3(0, 1, 0), 5)).normalize());
     }
 }

@@ -24,15 +24,6 @@ public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
         CycleAttackModePacket::new
     );
 
-    @Override
-    public @NonNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
-
-    public Identifier getId() {
-        return ID;
-    }
-
     public static void handle(final CycleAttackModePacket packet, final IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
             if (packet.slot < 0 || packet.slot >= player.getInventory().getContainerSize()) {
@@ -55,5 +46,14 @@ public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
                 );
             }
         }
+    }
+
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public Identifier getId() {
+        return ID;
     }
 }

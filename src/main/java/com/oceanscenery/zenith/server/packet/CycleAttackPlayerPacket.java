@@ -18,12 +18,6 @@ import org.jspecify.annotations.NonNull;
 public record CycleAttackPlayerPacket(int slot) implements CustomPacketPayload {
     public static final Identifier ID = Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "attack_player_mode");
     public static final Type<CycleAttackPlayerPacket> TYPE = new Type<>(ID);
-
-    @Override
-    public @NonNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<ByteBuf, CycleAttackPlayerPacket> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.INT, CycleAttackPlayerPacket::slot,
         CycleAttackPlayerPacket::new
@@ -50,5 +44,10 @@ public record CycleAttackPlayerPacket(int slot) implements CustomPacketPayload {
                 );
             }
         }
+    }
+
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

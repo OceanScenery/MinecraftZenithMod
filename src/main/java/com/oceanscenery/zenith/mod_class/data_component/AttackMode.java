@@ -12,6 +12,17 @@ import java.util.Objects;
 public record AttackMode(Mode mode, boolean attackPlayer) {
 
     private static final HashMap<String, Mode> MODE_HASH_MAP = new HashMap<>();
+    public static final Codec<AttackMode> CODEC = RecordCodecBuilder.create(
+        attackModeInstance -> attackModeInstance.group(
+            Codec.STRING.fieldOf("attack_mode").forGetter(AttackMode::getStrMode),
+            Codec.BOOL.fieldOf("attack_player").forGetter(AttackMode::attackPlayer)
+        ).apply(attackModeInstance, (str, boo) -> MODE_HASH_MAP.containsKey(str) ? new AttackMode(str, boo) : new AttackMode(Mode.LIVING_ENTITY, true))
+    );
+    public static final StreamCodec<ByteBuf, AttackMode> STREAM_CODEC = StreamCodec.composite(
+        ByteBufCodecs.STRING_UTF8, AttackMode::getStrMode,
+        ByteBufCodecs.BOOL, AttackMode::attackPlayer,
+        AttackMode::new
+    );
 
     static {
         MODE_HASH_MAP.put("living_entity", Mode.LIVING_ENTITY);
@@ -19,27 +30,15 @@ public record AttackMode(Mode mode, boolean attackPlayer) {
         MODE_HASH_MAP.put("all", Mode.ALL);
     }
 
+    public AttackMode(String atk, boolean attackPlayer) {
+        this(modeFromString(atk), attackPlayer);
+    }
+
     public static Mode modeFromString(String atk) {
         if (MODE_HASH_MAP.containsKey(atk)) {
             return MODE_HASH_MAP.get(atk);
         }
         return Mode.LIVING_ENTITY;
-    }
-
-    public enum Mode {
-        LIVING_ENTITY("living_entity"),
-        ATTACKABLE_ENTITY("attackable_entity"),
-        ALL("all");
-
-        public final String entityMode;
-
-        Mode(String entityMode) {
-            this.entityMode = entityMode;
-        }
-    }
-
-    public AttackMode(String atk, boolean attackPlayer) {
-        this(modeFromString(atk), attackPlayer);
     }
 
     public Mode getMode() {
@@ -63,16 +62,15 @@ public record AttackMode(Mode mode, boolean attackPlayer) {
         return Objects.hash(mode, attackPlayer);
     }
 
-    public static final Codec<AttackMode> CODEC = RecordCodecBuilder.create(
-        attackModeInstance -> attackModeInstance.group(
-            Codec.STRING.fieldOf("attack_mode").forGetter(AttackMode::getStrMode),
-            Codec.BOOL.fieldOf("attack_player").forGetter(AttackMode::attackPlayer)
-        ).apply(attackModeInstance, (str, boo) -> MODE_HASH_MAP.containsKey(str) ? new AttackMode(str, boo) : new AttackMode(Mode.LIVING_ENTITY, true))
-    );
+    public enum Mode {
+        LIVING_ENTITY("living_entity"),
+        ATTACKABLE_ENTITY("attackable_entity"),
+        ALL("all");
 
-    public static final StreamCodec<ByteBuf, AttackMode> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.STRING_UTF8, AttackMode::getStrMode,
-        ByteBufCodecs.BOOL, AttackMode::attackPlayer,
-        AttackMode::new
-    );
+        public final String entityMode;
+
+        Mode(String entityMode) {
+            this.entityMode = entityMode;
+        }
+    }
 }

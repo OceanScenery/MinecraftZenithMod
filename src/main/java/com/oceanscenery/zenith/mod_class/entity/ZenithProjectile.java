@@ -36,21 +36,18 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     public static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(ZenithProjectile.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> SWORD_TYPE = SynchedEntityData.defineId(ZenithProjectile.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<PosUtil.Rotation> INI_ROT = SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.ROTATION.get());
-
+    public static final int STAGE_COUNT = 20;
+    public ItemStack weapon = ZenithItems.ZENITH.toStack();
     //缓存数据,避免计算
     private Vector3[] relative = null;
     private Quaternion[] fixedPose = null;
-
     private float innerDamage = 0;
-
     private LivingEntity owner;
     private UUID owner_uuid;
     private Vec3 center_pos = null;
     private Vec3 last_pos = null;
     private boolean to_remove;
-    public static final int STAGE_COUNT = 20;
     private int local_progress = 0;
-    public ItemStack weapon = ZenithItems.ZENITH.toStack();
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level) {
         super(entityType, level);
@@ -130,16 +127,32 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         return this.getEntityData().get(OWNER_ID);
     }
 
+    private void setOwnerID(int id) {
+        this.getEntityData().set(OWNER_ID, id);
+    }
+
     public int getProgress() {
         return this.getEntityData().get(PROGRESS);
+    }
+
+    public void setProgress(int progress) {
+        this.getEntityData().set(PROGRESS, progress);
     }
 
     public double getAngle() {
         return this.getEntityData().get(ANGLE);
     }
 
+    public void setAngle(double angle) {
+        this.getEntityData().set(ANGLE, angle);
+    }
+
     public double getDistance() {
         return this.getEntityData().get(DISTANCE);
+    }
+
+    public void setDistance(double distance) {
+        this.getEntityData().set(DISTANCE, distance);
     }
 
     public PosUtil.Rotation getIniRot() {
@@ -150,36 +163,20 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         this.getEntityData().set(INI_ROT, rot);
     }
 
-    private void setOwnerID(int id) {
-        this.getEntityData().set(OWNER_ID, id);
-    }
-
-    public void setProgress(int progress) {
-        this.getEntityData().set(PROGRESS, progress);
-    }
-
-    public void setDamage(float value) {
-        this.innerDamage = value;
-    }
-
-    public void setAngle(double angle) {
-        this.getEntityData().set(ANGLE, angle);
-    }
-
-    public void setDistance(double distance) {
-        this.getEntityData().set(DISTANCE, distance);
-    }
-
     public int getLocalProgress() {
         return this.local_progress;
+    }
+
+    public void setLocalProgress(int value) {
+        this.local_progress = value;
     }
 
     public float getDamage() {
         return this.innerDamage;
     }
 
-    public void setLocalProgress(int value) {
-        this.local_progress = value;
+    public void setDamage(float value) {
+        this.innerDamage = value;
     }
 
     @Override
@@ -198,10 +195,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     }
 
     public boolean canHit(Entity entity) {
-        if (entity.getId() == this.getOwnerID() || entity instanceof ZenithProjectile) {
-            return false;
-        }
-        return true;
+        return entity.getId() != this.getOwnerID() && !(entity instanceof ZenithProjectile);
     }
 
     @Override

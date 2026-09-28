@@ -79,9 +79,6 @@ public class AttachmentUtil {
         Set<UUID> onVictim = victim.getData(ZenithAttachments.ZENITH_PLAYER_MARK);
         Set<String> onAttacker = attacker.getData(ZenithAttachments.ZENITH_ID_MARK);
 
-        if (onVictim.contains(uuid) || onAttacker.contains(id)) {
-            return false;
-        }
-        return true;
+        return !onVictim.contains(uuid) && !onAttacker.contains(id);
     }
 }

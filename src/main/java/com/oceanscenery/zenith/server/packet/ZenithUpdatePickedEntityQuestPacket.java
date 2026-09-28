@@ -26,11 +26,6 @@ public record ZenithUpdatePickedEntityQuestPacket(int playerId,
         ZenithUpdatePickedEntityQuestPacket::new
     );
 
-    @Override
-    public @NonNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
-
     public static void handle(final ZenithUpdatePickedEntityQuestPacket packet, final IPayloadContext context) {
         if (context.player() instanceof ServerPlayer serverPlayer) {
 
@@ -46,5 +41,10 @@ public record ZenithUpdatePickedEntityQuestPacket(int playerId,
             ZenithSendPickedEntityInfPacket replyPacket = new ZenithSendPickedEntityInfPacket(packet.entityId, !result);
             ZenithNetworkHandler.sendToPlayer(serverPlayer, replyPacket);
         }
+    }
+
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

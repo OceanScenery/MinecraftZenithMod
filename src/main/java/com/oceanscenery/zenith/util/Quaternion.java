@@ -61,20 +61,76 @@ public class Quaternion implements Serializable {
         this(s, vec.getX(), vec.getY(), vec.getZ());
     }
 
+    public static Quaternion trans(Vector3 v1, Vector3 v2) {
+        return trans(v1, v2, 1);
+    }
+
+    public static Quaternion trans(Vector3 v1, Vector3 v2, double delta) {
+        Vector3 V = v1.normalize().cross(v2.normalize());
+        double angle = delta * Math.acos(v1.dot(v2) / (v1.length() * v2.length()));
+        if (V.length() == 0) {
+            if (v1.dot(v2) >= 0) {
+                return new Quaternion(1, 0, 0, 0);
+            } else {
+                Vector3 axis = new Vector3(1, 0, 0);
+                if (Math.abs(v1.normalize().dot(axis)) == 1) {
+                    axis = new Vector3(0, 1, 0);
+                }
+                return new Quaternion(0, axis.getX(), axis.getY(), axis.getZ());
+            }
+        }
+        V = V.normalize();
+        return new Quaternion(
+            Math.cos(angle / 2),
+            V.getX() * Math.sin(angle / 2),
+            V.getY() * Math.sin(angle / 2),
+            V.getZ() * Math.sin(angle / 2)
+        ).normalize();
+    }
+
+    public static Quaternion rotate(Vector3 normal, double angle) {
+        if (normal.length() < 1e-8) {
+            return new Quaternion(1, 0, 0, 0);
+        }
+        normal = normal.normalize();
+        return new Quaternion(
+            Math.cos(angle / 2),
+            normal.getX() * Math.sin(angle / 2),
+            normal.getY() * Math.sin(angle / 2),
+            normal.getZ() * Math.sin(angle / 2)
+        );
+    }
+
     public double getS() {
         return s;
+    }
+
+    public void setS(double s) {
+        this.s = s;
     }
 
     public double getX() {
         return x;
     }
 
+    public void setX(double x) {
+        this.x = x;
+    }
+
     public double getY() {
         return y;
     }
 
+    public void setY(double y) {
+        this.y = y;
+    }
+
     public double getZ() {
         return z;
+    }
+
+    public void setZ(double z) {
+        this.z = z;
     }
 
     public void setValue(double s, double x, double y, double z) {
@@ -88,22 +144,6 @@ public class Quaternion implements Serializable {
         String[] tmp = s.split("[,\\[\\]]");
         this.setValue(new Scanner(tmp[4]).nextDouble(), new Scanner(tmp[1]).nextDouble(), new Scanner(tmp[2]).nextDouble(), new Scanner(tmp[3]).nextDouble());
         return this;
-    }
-
-    public void setS(double s) {
-        this.s = s;
-    }
-
-    public void setX(double x) {
-        this.x = x;
-    }
-
-    public void setY(double y) {
-        this.y = y;
-    }
-
-    public void setZ(double z) {
-        this.z = z;
     }
 
     @Override
@@ -170,46 +210,6 @@ public class Quaternion implements Serializable {
 
     public Quaternionf toQuaternionf() {
         return new Quaternionf(this.x, this.y, this.z, this.s);
-    }
-
-    public static Quaternion trans(Vector3 v1, Vector3 v2) {
-        return trans(v1, v2, 1);
-    }
-
-    public static Quaternion trans(Vector3 v1, Vector3 v2, double delta) {
-        Vector3 V = v1.normalize().cross(v2.normalize());
-        double angle = delta * Math.acos(v1.dot(v2) / (v1.length() * v2.length()));
-        if (V.length() == 0) {
-            if (v1.dot(v2) >= 0) {
-                return new Quaternion(1, 0, 0, 0);
-            } else {
-                Vector3 axis = new Vector3(1, 0, 0);
-                if (Math.abs(v1.normalize().dot(axis)) == 1) {
-                    axis = new Vector3(0, 1, 0);
-                }
-                return new Quaternion(0, axis.getX(), axis.getY(), axis.getZ());
-            }
-        }
-        V = V.normalize();
-        return new Quaternion(
-            Math.cos(angle / 2),
-            V.getX() * Math.sin(angle / 2),
-            V.getY() * Math.sin(angle / 2),
-            V.getZ() * Math.sin(angle / 2)
-        ).normalize();
-    }
-
-    public static Quaternion rotate(Vector3 normal, double angle) {
-        if (normal.length() < 1e-8) {
-            return new Quaternion(1, 0, 0, 0);
-        }
-        normal = normal.normalize();
-        return new Quaternion(
-            Math.cos(angle / 2),
-            normal.getX() * Math.sin(angle / 2),
-            normal.getY() * Math.sin(angle / 2),
-            normal.getZ() * Math.sin(angle / 2)
-        );
     }
 
     public Matrix4f toMatrix() {

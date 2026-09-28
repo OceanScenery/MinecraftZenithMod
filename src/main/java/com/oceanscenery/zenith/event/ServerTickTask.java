@@ -1,8 +1,8 @@
 package com.oceanscenery.zenith.event;
 
 public class ServerTickTask {
-    private int ticks = 0;
     private final Runnable task;
+    private int ticks = 0;
     private boolean shouldRun = true;
 
     public ServerTickTask(int ticks, Runnable task) {

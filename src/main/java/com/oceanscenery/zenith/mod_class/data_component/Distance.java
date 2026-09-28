@@ -10,6 +10,15 @@ import java.util.Objects;
 
 public record Distance(double dist) {
 
+    public static final Codec<Distance> CODEC = Codec.DOUBLE.xmap(
+        Distance::new,
+        Distance::dist
+    );
+    public static final StreamCodec<ByteBuf, Distance> STREAM_CODEC = ByteBufCodecs.DOUBLE.map(
+        Distance::new,
+        Distance::dist
+    );
+
     @Override
     public @NotNull String toString() {
         return "Distance{" +
@@ -29,14 +38,4 @@ public record Distance(double dist) {
     public int hashCode() {
         return Objects.hashCode(dist);
     }
-
-    public static final Codec<Distance> CODEC = Codec.DOUBLE.xmap(
-        Distance::new,
-        Distance::dist
-    );
-
-    public static final StreamCodec<ByteBuf, Distance> STREAM_CODEC = ByteBufCodecs.DOUBLE.map(
-        Distance::new,
-        Distance::dist
-    );
 }

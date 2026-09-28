@@ -34,11 +34,8 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, ZenithProjectileRenderState> {
-    protected ItemModelResolver resolver;
-
     public static final Matrix4f Q1 = Quaternion.trans(new Vector3(1, 1, 0), new Vector3(0, 1, 0)).toMatrix();
     public static final Matrix4f Q2 = Quaternion.trans(new Vector3(0, 1, 0), new Vector3(0, 0, -1)).toMatrix();
-
     public static final int[][] COLOR = new int[][]{
         {204, 255, 255},
         {153, 255, 204},
@@ -62,7 +59,6 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, Z
         {204, 153, 255},
         {255, 64, 0}
     };
-
     public static final String[] SWORD_MODEL = new String[]{
         "zenith",
         "arkhalis",
@@ -86,6 +82,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, Z
         "true_nights_edge",
         "volcano"
     };
+    protected ItemModelResolver resolver;
 
     protected ZenithProjectileRenderer(EntityRendererProvider.Context context) {
         super(context);

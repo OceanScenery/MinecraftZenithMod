@@ -9,6 +9,15 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 public record LastUseTime(long tickTime) {
+    public static final Codec<LastUseTime> CODEC = Codec.LONG.xmap(
+        LastUseTime::new,
+        LastUseTime::tickTime
+    );
+    public static final StreamCodec<ByteBuf, LastUseTime> STREAM_CODEC = ByteBufCodecs.VAR_LONG.map(
+        LastUseTime::new,
+        LastUseTime::tickTime
+    );
+
     @Override
     public long tickTime() {
         return tickTime;
@@ -31,14 +40,4 @@ public record LastUseTime(long tickTime) {
     public int hashCode() {
         return Objects.hashCode(tickTime);
     }
-
-    public static final Codec<LastUseTime> CODEC = Codec.LONG.xmap(
-        LastUseTime::new,
-        LastUseTime::tickTime
-    );
-
-    public static final StreamCodec<ByteBuf, LastUseTime> STREAM_CODEC = ByteBufCodecs.VAR_LONG.map(
-        LastUseTime::new,
-        LastUseTime::tickTime
-    );
 }

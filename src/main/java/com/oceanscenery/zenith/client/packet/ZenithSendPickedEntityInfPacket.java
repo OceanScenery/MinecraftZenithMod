@@ -22,15 +22,15 @@ public record ZenithSendPickedEntityInfPacket(int entityId,
         ZenithSendPickedEntityInfPacket::new
     );
 
-    @Override
-    public @NonNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
-
     public static void handle(final ZenithSendPickedEntityInfPacket packet, final IPayloadContext context) {
         if (context.player() instanceof LocalPlayer) {
             RenderEntityTip.serverBackId = packet.entityId;
             RenderEntityTip.canAttack = !packet.inList;
         }
+    }
+
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

@@ -34,7 +34,7 @@ public class DamageHandler {
             initialHealth = health;
         }
 
-        public float expectedDamage;
+        public float expectedDamage = 0f;
         public float initialHealth;
     }
 
@@ -144,6 +144,7 @@ public class DamageHandler {
 
     public static void setHealthAndHurt(LivingEntity livingVictim, float health, DamageSource source) {
         Entity attacker = source.getEntity();
+        float prevCheckedHealth = livingVictim.getHealth();
         if (attacker instanceof Player player) {
             livingVictim.setLastHurtByPlayer(player, 100);
         } else if (attacker instanceof LivingEntity livingAttacker) {
@@ -162,9 +163,16 @@ public class DamageHandler {
         }
 
         data.set(healthId, health);
+        float postCheckedHealth = livingVictim.getHealth();
+        if (postCheckedHealth >= prevCheckedHealth) {
+            if (livingVictim.level() instanceof ServerLevel serverLevel) {
+                ((LivingEntityAccessor) livingVictim).callDropAllDeathLoot(serverLevel, source);
+            }
+            livingVictim.setRemoved(Entity.RemovalReason.KILLED);
+        }
 
-        if (shouldCheck) {
-            checkDeath(livingVictim, source);
+        if (shouldCheck && livingVictim.level() instanceof ServerLevel serverLevel) {
+            checkDeath(livingVictim, serverLevel, source);
         }
     }
 
@@ -203,13 +211,17 @@ public class DamageHandler {
         return false;
     }
 
-    public static void checkDeath(LivingEntity livingEntity, DamageSource source) {
+    public static void checkDeath(LivingEntity livingEntity, ServerLevel serverLevel, DamageSource source) {
         SynchedEntityData data = ((EntityAccessor) livingEntity).getRealEntityData();
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
         if (data.get(healthId) <= 0f) {
             if (!((LivingEntityAccessor) livingEntity).callCheckTotemDeathProtection(source)) {
                 livingEntity.die(source);
+                if (!livingEntity.isDeadOrDying()) {
+                    ((LivingEntityAccessor) livingEntity).callDropAllDeathLoot(serverLevel, source);
+                    livingEntity.setRemoved(Entity.RemovalReason.KILLED);
+                }
             }
         }
     }

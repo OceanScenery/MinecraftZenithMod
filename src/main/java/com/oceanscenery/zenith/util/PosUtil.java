@@ -7,6 +7,12 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
 
 public class PosUtil {
+    public static final StreamCodec<ByteBuf, Rotation> STREAM_CODEC = StreamCodec.composite(
+        ByteBufCodecs.DOUBLE, Rotation::getPitch,
+        ByteBufCodecs.DOUBLE, Rotation::getYaw,
+        Rotation::new
+    );
+
     public static Vector3 calPos(double distance, int progress, double angle) {
         double a = distance / 2;
         double b = Math.min(distance / 4, 10);
@@ -52,22 +58,16 @@ public class PosUtil {
             return pitch;
         }
 
-        public double getYaw() {
-            return yaw;
-        }
-
         public void setPitch(double pitch) {
             this.pitch = pitch;
+        }
+
+        public double getYaw() {
+            return yaw;
         }
 
         public void setYaw(double yaw) {
             this.yaw = yaw;
         }
     }
-
-    public static final StreamCodec<ByteBuf, Rotation> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.DOUBLE, Rotation::getPitch,
-        ByteBufCodecs.DOUBLE, Rotation::getYaw,
-        Rotation::new
-    );
 }

@@ -19,12 +19,6 @@ public record ToggleBlacklistPacket(int playerId, int entityId,
                                     boolean shifted) implements CustomPacketPayload {
     public static final Identifier ID = Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_blacklist");
     public static final CustomPacketPayload.Type<ToggleBlacklistPacket> TYPE = new CustomPacketPayload.Type<>(ID);
-
-    @Override
-    public @NonNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<ByteBuf, ToggleBlacklistPacket> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.INT, ToggleBlacklistPacket::playerId,
         ByteBufCodecs.INT, ToggleBlacklistPacket::entityId,
@@ -55,5 +49,10 @@ public record ToggleBlacklistPacket(int playerId, int entityId,
                 )
             );
         }
+    }
+
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

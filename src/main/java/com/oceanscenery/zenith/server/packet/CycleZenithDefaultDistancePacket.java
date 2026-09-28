@@ -24,15 +24,6 @@ public record CycleZenithDefaultDistancePacket(int slot) implements CustomPacket
         CycleZenithDefaultDistancePacket::new
     );
 
-    @Override
-    public @NonNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
-
-    public Identifier getId() {
-        return ID;
-    }
-
     public static void handle(final CycleZenithDefaultDistancePacket packet, final IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
             if (packet.slot < 0 || packet.slot >= player.getInventory().getContainerSize()) {
@@ -58,5 +49,14 @@ public record CycleZenithDefaultDistancePacket(int slot) implements CustomPacket
                 );
             }
         }
+    }
+
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public Identifier getId() {
+        return ID;
     }
 }
