@@ -1,6 +1,7 @@
 package com.oceanscenery.zenith;
 
 import com.mojang.logging.LogUtils;
+import com.oceanscenery.zenith.client.ZenithConfigScreen;
 import com.oceanscenery.zenith.registry.*;
 import com.oceanscenery.zenith.server.ZenithNetworkHandler;
 import net.minecraftforge.api.distmarker.Dist;
@@ -26,6 +27,12 @@ public class TheZenithMod {
         context.registerConfig(ModConfig.Type.SERVER,ZenithConfigs.CONFIG);
         if(FMLEnvironment.dist == Dist.CLIENT){
             context.registerConfig(ModConfig.Type.CLIENT,ZenithConfigs.CLIENT_CONFIG);
+            context.registerExtensionPoint(
+                    ConfigScreenHandler.ConfigScreenFactory.class,
+                    () -> new ConfigScreenHandler.ConfigScreenFactory(
+                            (minecraft, parent) -> new ZenithConfigScreen(parent)
+                    )
+            );
         }
         ZenithItems.ITEMS.register(context.getModEventBus());
         ZenithEntityDataSerializers.ENTITY_DATA_SERIALIZERS.register(context.getModEventBus());

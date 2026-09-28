@@ -44,6 +44,13 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.render_offset.tooltip","将剑的轨迹在第一人称下的渲染向下偏移一格,以凸显轨道的弧形");
             add("the_zenith_sword.configuration.trail_angle","剑轨角度");
             add("the_zenith_sword.configuration.trail_angle.tooltip","决定剑的拖尾占总飞行轨道的比例(中心角)");
+            add("the_zenith_sword.configuration.3d_trail","三维剑轨");
+            add("the_zenith_sword.configuration.3d_trail.tooltip","使天顶剑的拖尾具有三维效果");
+            add("the_zenith_sword.configuration.native.invalid_value","无效数值: %s");
+            add("the_zenith_sword.configuration.native.server_unavailable","服务端配置仅在进入本地世界后可用");
+            add("the_zenith_sword.configuration.native.tab.client","客户端");
+            add("the_zenith_sword.configuration.native.tab.combat","战斗");
+            add("the_zenith_sword.configuration.native.tab.behavior","行为");
             add("the_zenith_sword.packet.distance","默认索敌距离");
             add("the_zenith_sword.item.distance.tooltip_pre","当前物品的默认索敌距离");
             add("the_zenith_sword.item.distance.tooltip_post","在背包中单独右键物品以改变默认索敌距离");
@@ -120,6 +127,11 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.sort_farest.tooltip","whether projectiles should target the farthest enemy first");
             add("the_zenith_sword.configuration.title","Mod Settings");
             add("the_zenith_sword.configuration.trail_angle.tooltip","determines the proportion of the sword's trail to the total flight path (central angle)");
+            add("the_zenith_sword.configuration.native.invalid_value","Invalid value: %s");
+            add("the_zenith_sword.configuration.native.server_unavailable","Server settings are only available after entering a local world");
+            add("the_zenith_sword.configuration.native.tab.client","Client");
+            add("the_zenith_sword.configuration.native.tab.combat","Combat");
+            add("the_zenith_sword.configuration.native.tab.behavior","Behavior");
         }
     }
 }
