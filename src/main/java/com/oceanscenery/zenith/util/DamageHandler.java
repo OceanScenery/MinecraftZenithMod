@@ -28,16 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DamageHandler {
-    public static class VictimRecord {
-        public VictimRecord(float health, float damage) {
-            expectedDamage = damage;
-            initialHealth = health;
-        }
-
-        public float expectedDamage = 0f;
-        public float initialHealth;
-    }
-
     public static final Map<LivingEntity, VictimRecord> checkedVictims = new HashMap<>();
 
     public static void addLivingVictim(LivingEntity livingVictim, float currDamage) {
@@ -145,6 +135,7 @@ public class DamageHandler {
 
     public static void setHealthAndHurt(LivingEntity livingVictim, float health, DamageSource source) {
         Entity attacker = source.getEntity();
+        float prevCheckedHealth = livingVictim.getHealth();
         if (attacker instanceof Player player) {
             livingVictim.setLastHurtByPlayer(player);
         } else if (attacker instanceof LivingEntity livingAttacker) {
@@ -157,15 +148,19 @@ public class DamageHandler {
         SynchedEntityData data = ((EntityAccessor) livingVictim).getRealEntityData();
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
-        boolean shouldCheck = false;
-        if (data.get(healthId) > 0f) {
-            shouldCheck = true;
-        }
+        boolean shouldCheck = data.get(healthId) > 0f;
 
         data.set(healthId, health);
+        float postCheckedHealth = livingVictim.getHealth();
+        if (postCheckedHealth >= prevCheckedHealth) {
+            if (livingVictim.level() instanceof ServerLevel serverLevel) {
+                ((LivingEntityAccessor) livingVictim).callDropAllDeathLoot(serverLevel, source);
+            }
+            livingVictim.setRemoved(Entity.RemovalReason.KILLED);
+        }
 
-        if (shouldCheck) {
-            checkDeath(livingVictim, source);
+        if (shouldCheck && livingVictim.level() instanceof ServerLevel serverLevel) {
+            checkDeath(livingVictim, serverLevel, source);
         }
     }
 
@@ -196,22 +191,33 @@ public class DamageHandler {
             if (atk != null && victim instanceof ArmorStand && !atk.getMode().equals(AttackMode.Mode.ALL)) {
                 return false;
             }
-            if (!AttachmentUtil.checkCanAttack(attacker, victim)) {
-                return false;
-            }
-            return true;
+            return AttachmentUtil.checkCanAttack(attacker, victim);
         }
         return false;
     }
 
-    public static void checkDeath(LivingEntity livingEntity, DamageSource source) {
+    public static void checkDeath(LivingEntity livingEntity, ServerLevel serverLevel, DamageSource source) {
         SynchedEntityData data = ((EntityAccessor) livingEntity).getRealEntityData();
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
         if (data.get(healthId) <= 0f) {
             if (!((LivingEntityAccessor) livingEntity).callCheckTotemDeathProtection(source)) {
                 livingEntity.die(source);
+                if (!livingEntity.isDeadOrDying()) {
+                    ((LivingEntityAccessor) livingEntity).callDropAllDeathLoot(serverLevel, source);
+                    livingEntity.setRemoved(Entity.RemovalReason.KILLED);
+                }
             }
+        }
+    }
+
+    public static class VictimRecord {
+        public float expectedDamage = 0f;
+        public float initialHealth;
+
+        public VictimRecord(float health, float damage) {
+            expectedDamage = damage;
+            initialHealth = health;
         }
     }
 }

@@ -7,13 +7,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageType;
 
 public class ZenithDamageType {
-    public static final ResourceKey<DamageType> ZENITH=ResourceKey.create(
-            Registries.DAMAGE_TYPE,
-            ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith")
+    public static final ResourceKey<DamageType> ZENITH = ResourceKey.create(
+        Registries.DAMAGE_TYPE,
+        ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith")
     );
 
-    public static final ResourceKey<DamageType> ZENITH_KNOCKBACK=ResourceKey.create(
-            Registries.DAMAGE_TYPE,
-            ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_knockback")
+    public static final ResourceKey<DamageType> ZENITH_KNOCKBACK = ResourceKey.create(
+        Registries.DAMAGE_TYPE,
+        ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_knockback")
     );
 }

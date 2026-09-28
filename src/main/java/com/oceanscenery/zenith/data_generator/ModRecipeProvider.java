@@ -22,11 +22,11 @@ public class ModRecipeProvider extends RecipeProvider {
     protected void buildRecipes(RecipeOutput recipeOutput) {
         ShapedRecipeBuilder.shaped(
                 RecipeCategory.COMBAT, ZenithItems.ZENITH.get()
-        ).pattern("abc").pattern("def").pattern("ghi").define('a', Items.OAK_LOG).define('b',Items.COBBLESTONE)
-                .define('c',Items.IRON_BLOCK).define('d',Items.GOLD_BLOCK).define('e', Items.NETHERITE_SWORD)
-                .define('f',Items.COPPER_BLOCK).define('g',Items.DIAMOND_BLOCK).define('h',Items.NETHERITE_BLOCK)
-                .define('i',Items.ENCHANTED_GOLDEN_APPLE).unlockedBy("get_netherite_sword_for_zenith",has(Items.NETHERITE_SWORD))
-                .showNotification(true)
-                .save(recipeOutput,ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith"));
+            ).pattern("abc").pattern("def").pattern("ghi").define('a', Items.OAK_LOG).define('b', Items.COBBLESTONE)
+            .define('c', Items.IRON_BLOCK).define('d', Items.GOLD_BLOCK).define('e', Items.NETHERITE_SWORD)
+            .define('f', Items.COPPER_BLOCK).define('g', Items.DIAMOND_BLOCK).define('h', Items.NETHERITE_BLOCK)
+            .define('i', Items.ENCHANTED_GOLDEN_APPLE).unlockedBy("get_netherite_sword_for_zenith", has(Items.NETHERITE_SWORD))
+            .showNotification(true)
+            .save(recipeOutput, ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith"));
     }
 }

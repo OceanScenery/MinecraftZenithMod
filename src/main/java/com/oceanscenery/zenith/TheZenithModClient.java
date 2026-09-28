@@ -9,13 +9,13 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
-@Mod(value=TheZenithMod.MOD_ID,dist= Dist.CLIENT)
+@Mod(value = TheZenithMod.MOD_ID, dist = Dist.CLIENT)
 public class TheZenithModClient {
-    public TheZenithModClient(ModContainer modContainer){
+    public TheZenithModClient(ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.CLIENT, ZenithConfigs.CLIENT_CONFIG);
         ModLoadingContext.get().registerExtensionPoint(
-                IConfigScreenFactory.class,
-                () -> (mc, parent) -> new ConfigurationScreen(modContainer,parent)
+            IConfigScreenFactory.class,
+            () -> (mc, parent) -> new ConfigurationScreen(modContainer, parent)
         );
     }
 }

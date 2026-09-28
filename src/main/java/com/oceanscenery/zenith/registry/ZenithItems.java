@@ -12,15 +12,15 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ZenithItems {
-    public static final DeferredRegister.Items ITEMS=DeferredRegister.createItems(TheZenithMod.MOD_ID);
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(TheZenithMod.MOD_ID);
 
-    public static final DeferredItem<Item> ZENITH =ITEMS.registerItem(
-            "zenith",
-            properties -> new ZenithItem(properties.stacksTo(1).rarity(Rarity.EPIC).fireResistant().setNoRepair()
-                    .component(DataComponents.TOOL,ZenithItem.createToolProperties())
-                    .component(ZenithDataComponents.LAST_USE_TIME.get(),new LastUseTime(0))
-                    .component(ZenithDataComponents.DISTANCE.get(),new Distance(20))
-                    .component(ZenithDataComponents.ATTACK_MODE.get(),new AttackMode(AttackMode.Mode.LIVING_ENTITY,true))
-            )
+    public static final DeferredItem<Item> ZENITH = ITEMS.registerItem(
+        "zenith",
+        properties -> new ZenithItem(properties.stacksTo(1).rarity(Rarity.EPIC).fireResistant().setNoRepair()
+            .component(DataComponents.TOOL, ZenithItem.createToolProperties())
+            .component(ZenithDataComponents.LAST_USE_TIME.get(), new LastUseTime(0))
+            .component(ZenithDataComponents.DISTANCE.get(), new Distance(20))
+            .component(ZenithDataComponents.ATTACK_MODE.get(), new AttackMode(AttackMode.Mode.LIVING_ENTITY, true))
+        )
     );
 }
