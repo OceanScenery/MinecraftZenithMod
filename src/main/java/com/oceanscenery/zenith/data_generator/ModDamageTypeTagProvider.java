@@ -3,12 +3,9 @@ package com.oceanscenery.zenith.data_generator;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.registry.ZenithDamageType;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.DamageTypeTagsProvider;
 import net.minecraft.tags.DamageTypeTags;
-import net.minecraft.world.damagesource.DamageType;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 

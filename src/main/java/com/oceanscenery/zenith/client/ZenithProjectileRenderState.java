@@ -16,26 +16,26 @@ public class ZenithProjectileRenderState extends EntityRenderState {
     public int ownerId;
     public ClientLevel level;
     public Quaternion[] fixed;
+    public ItemStackRenderState itemState = new ItemStackRenderState();
     Vector3 render_pos;
     Vector3 round;
-    public ItemStackRenderState itemState=new ItemStackRenderState();
-
-    public Entity getOwner(){
-        return level.getEntity(ownerId);
-    }
 
     public ZenithProjectileRenderState(
-            int swordType,int local_progress,double distance,double angle,int ownerId
-    ){
-        this.swordType=swordType;
-        this.actuallyProgress=local_progress;
-        this.distance=distance;
-        this.angle=angle;
-        this.ownerId=ownerId;
-        this.level=null;
-        this.itemState=null;
-        this.reference=null;
-        this.fixed=null;
-        this.round=null;
+        int swordType, int local_progress, double distance, double angle, int ownerId
+    ) {
+        this.swordType = swordType;
+        this.actuallyProgress = local_progress;
+        this.distance = distance;
+        this.angle = angle;
+        this.ownerId = ownerId;
+        this.level = null;
+        this.itemState = null;
+        this.reference = null;
+        this.fixed = null;
+        this.round = null;
+    }
+
+    public Entity getOwner() {
+        return level.getEntity(ownerId);
     }
 }
