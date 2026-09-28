@@ -8,17 +8,17 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ZenithCreativeTab {
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_TAB=DeferredRegister.create(
-            BuiltInRegistries.CREATIVE_MODE_TAB,
-            TheZenithMod.MOD_ID
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_TAB = DeferredRegister.create(
+        BuiltInRegistries.CREATIVE_MODE_TAB,
+        TheZenithMod.MOD_ID
     );
 
-    public static final DeferredHolder<CreativeModeTab,CreativeModeTab> ZENITH_TAB=CREATIVE_TAB.register(
-            "zenith",
-            registryName-> CreativeModeTab.builder().icon(ZenithItems.ZENITH::toStack)
-                    .title(Component.translatable("item.the_zenith_sword.zenith"))
-                    .displayItems((parameters, output)->{
-                        output.accept(ZenithItems.ZENITH.get());
-                    }).build()
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ZENITH_TAB = CREATIVE_TAB.register(
+        "zenith",
+        registryName -> CreativeModeTab.builder().icon(ZenithItems.ZENITH::toStack)
+            .title(Component.translatable("item.the_zenith_sword.zenith"))
+            .displayItems((parameters, output) -> {
+                output.accept(ZenithItems.ZENITH.get());
+            }).build()
     );
 }

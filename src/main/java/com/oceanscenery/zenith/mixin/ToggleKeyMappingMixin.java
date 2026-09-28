@@ -11,17 +11,17 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value=ToggleKeyMapping.class,priority = 114514)
+@Mixin(value = ToggleKeyMapping.class, priority = 114514)
 public abstract class ToggleKeyMappingMixin {
-    @Inject(method = "isDown",at=@At("HEAD"),cancellable = true)
-    public void onIsDown(CallbackInfoReturnable<Boolean> cir){
-        if(!ZenithConfigs.ZENITH_CLIENT_CONFIG.BLOCK_INTERACTION.get()){
+    @Inject(method = "isDown", at = @At("HEAD"), cancellable = true)
+    public void onIsDown(CallbackInfoReturnable<Boolean> cir) {
+        if (!ZenithConfigs.ZENITH_CLIENT_CONFIG.BLOCK_INTERACTION.get()) {
             return;
         }
-        KeyMapping self=(KeyMapping)(Object)this;
-        if(self==Minecraft.getInstance().options.keyUse){
-            if(Minecraft.getInstance().getCameraEntity() instanceof Player player){
-                if(player.getMainHandItem().is(ZenithItems.ZENITH) || player.getOffhandItem().is(ZenithItems.ZENITH)){
+        KeyMapping self = (KeyMapping) (Object) this;
+        if (self == Minecraft.getInstance().options.keyUse) {
+            if (Minecraft.getInstance().getCameraEntity() instanceof Player player) {
+                if (player.getMainHandItem().is(ZenithItems.ZENITH) || player.getOffhandItem().is(ZenithItems.ZENITH)) {
                     cir.setReturnValue(false);
                 }
             }

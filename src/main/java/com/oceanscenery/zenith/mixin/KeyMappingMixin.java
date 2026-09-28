@@ -10,16 +10,17 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value=KeyMapping.class,priority = 114514)
+@Mixin(value = KeyMapping.class, priority = 114514)
 public abstract class KeyMappingMixin {
     @Accessor(value = "clickCount")
     abstract void setClickCount(int value);
+
     @Inject(method = "consumeClick", at = @At("HEAD"), cancellable = true)
     public void onConsumeClick(CallbackInfoReturnable<Boolean> cir) {
-        if(!ZenithConfigs.ZENITH_CLIENT_CONFIG.BLOCK_INTERACTION.get()){
+        if (!ZenithConfigs.ZENITH_CLIENT_CONFIG.BLOCK_INTERACTION.get()) {
             return;
         }
-        KeyMapping self = (KeyMapping)(Object)this;
+        KeyMapping self = (KeyMapping) (Object) this;
         Minecraft minecraft = Minecraft.getInstance();
         if (self == minecraft.options.keyUse && minecraft.player != null) {
             if (minecraft.player.getMainHandItem().is(ZenithItems.ZENITH) || minecraft.player.getOffhandItem().is(ZenithItems.ZENITH)) {

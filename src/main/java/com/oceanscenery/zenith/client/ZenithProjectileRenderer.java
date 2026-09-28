@@ -33,59 +33,56 @@ import org.joml.Quaternionf;
 
 import java.util.List;
 
-public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,ZenithProjectileRenderState> {
-    protected ItemModelResolver resolver;
-
+public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, ZenithProjectileRenderState> {
     public static final Quaternionf Q1 = Quaternion.trans(new Vector3(1, 1, 0), new Vector3(0, 1, 0)).toQuaternionf();
     public static final Quaternionf Q2 = Quaternion.trans(new Vector3(0, 1, 0), new Vector3(0, 0, -1)).toQuaternionf();
-
     public static final int[][] COLOR = new int[][]{
-            {204, 255, 255},
-            {153, 255, 204},
-            {32, 32, 32},
-            {0, 204, 102},
-            {178, 0, 0},
-            {255, 153, 51},
-            {153, 153, 255},
-            {255, 255, 102},
-            {153, 204, 255},
-            {127, 0, 255},
-            {255, 178, 255},
-            {51, 51, 255},
-            {153, 51, 255},
-            {0, 153, 0},
-            {255, 0, 127},
-            {255, 51, 153},
-            {0, 255, 0},
-            {255, 128, 0},
-            {255, 255, 0},
-            {204, 153, 255},
-            {255, 64, 0}
+        {204, 255, 255},
+        {153, 255, 204},
+        {32, 32, 32},
+        {0, 204, 102},
+        {178, 0, 0},
+        {255, 153, 51},
+        {153, 153, 255},
+        {255, 255, 102},
+        {153, 204, 255},
+        {127, 0, 255},
+        {255, 178, 255},
+        {51, 51, 255},
+        {153, 51, 255},
+        {0, 153, 0},
+        {255, 0, 127},
+        {255, 51, 153},
+        {0, 255, 0},
+        {255, 128, 0},
+        {255, 255, 0},
+        {204, 153, 255},
+        {255, 64, 0}
     };
-
     public static final String[] SWORD_MODEL = new String[]{
-            "zenith",
-            "arkhalis",
-            "bee_keeper",
-            "blade_of_grass",
-            "blood_butcherer",
-            "copper_shortsword",
-            "enchanted_sword",
-            "excalibur",
-            "influx_waver",
-            "lights_bane",
-            "meowmere",
-            "muramasa",
-            "nights_edge",
-            "seedler",
-            "star_wrath",
-            "starfury",
-            "terra_blade",
-            "the_horsemans_blade",
-            "true_excalibur",
-            "true_nights_edge",
-            "volcano"
+        "zenith",
+        "arkhalis",
+        "bee_keeper",
+        "blade_of_grass",
+        "blood_butcherer",
+        "copper_shortsword",
+        "enchanted_sword",
+        "excalibur",
+        "influx_waver",
+        "lights_bane",
+        "meowmere",
+        "muramasa",
+        "nights_edge",
+        "seedler",
+        "star_wrath",
+        "starfury",
+        "terra_blade",
+        "the_horsemans_blade",
+        "true_excalibur",
+        "true_nights_edge",
+        "volcano"
     };
+    protected ItemModelResolver resolver;
 
     protected ZenithProjectileRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -94,16 +91,13 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
 
     @Override
     public boolean shouldRender(@NotNull ZenithProjectile entity, @NotNull Frustum camera, double camX, double camY, double camZ) {
-        if (entity.isRemoved() || !entity.isAlive()) {
-            return false;
-        }
-        return true;
+        return !entity.isRemoved() && entity.isAlive();
     }
 
     @Override
     public ZenithProjectileRenderState createRenderState() {
         ZenithProjectileRenderState state = new ZenithProjectileRenderState(
-                0, 0, 20, 0, -1
+            0, 0, 20, 0, -1
         );
         state.itemState = new ItemStackRenderState();
         return state;
@@ -121,13 +115,13 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
         state.ownerId = entity.getOwnerID();
         state.swordType = entity.getSwordType();
         CustomModelData data = new CustomModelData(
-                List.of((float) state.swordType),
-                List.of(), List.of(), List.of()
+            List.of((float) state.swordType),
+            List.of(), List.of(), List.of()
         );
         ItemStack stack = new ItemStack(ZenithItems.ZENITH, 1, DataComponentPatch.builder().set(DataComponents.CUSTOM_MODEL_DATA, data).build());
 
         resolver.updateForNonLiving(
-                state.itemState, stack, ItemDisplayContext.NONE, entity
+            state.itemState, stack, ItemDisplayContext.NONE, entity
         );
     }
 
@@ -170,8 +164,8 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
 
         if (firstPerson && Minecraft.getInstance().options.getCameraType().isFirstPerson() && ZenithConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()) {
             Vector3 cameraT = new Vector3(0, -1, 0).VecInNewRefer(
-                    relative_center,
-                    relative_world
+                relative_center,
+                relative_world
             );
             poseStack.translate(cameraT.getX(), cameraT.getY(), cameraT.getZ());
         }
@@ -181,22 +175,22 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
         };
 
         submitNodeCollector.submitCustomGeometry(
-                poseStack,
-                RenderTypes.entityTranslucentEmissive(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "textures/entity/trail.png")),
-                trailRenderer
+            poseStack,
+            RenderTypes.entityTranslucentEmissive(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "textures/entity/trail.png")),
+            trailRenderer
         );
 
         Vector3 near = PosUtil.calCenPos(distance, progress_angle, angle).VecInNewRefer(
-                relative_center,
-                relative_world
+            relative_center,
+            relative_world
         );
 
         Vector3 center = new Vector3(0, 0, distance / 2 - 1).VecInNewRefer(
-                relative_center, relative_world
+            relative_center, relative_world
         ).add(Vector3.transToVector3(state.getOwner().getEyePosition(state.partialTick)));
 
         Vector3 offset = new Vector3(0, 0, -1).VecInNewRefer(
-                relative_center, relative_world
+            relative_center, relative_world
         );
 
         Vector3 sword_pos = near.add(center).add(offset);
@@ -222,11 +216,11 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
         poseStack.mulPose(Q1);
 
         state.itemState.submit(
-                poseStack,
-                submitNodeCollector,
-                LightCoordsUtil.FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY,
-                0
+            poseStack,
+            submitNodeCollector,
+            LightCoordsUtil.FULL_BRIGHT,
+            OverlayTexture.NO_OVERLAY,
+            0
         );
     }
 
@@ -235,7 +229,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
         Vector3[] relative_center = state.reference;
         Vector3[] relative_world = Vector3.WORLD;
         double TOTAL_ANGLE = Math.toRadians(ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble());
-        int AMOUNT = ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get()?(int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble() / 80)/2:(int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble() / 80);
+        int AMOUNT = ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get() ? (int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble() / 80) / 2 : (int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble() / 80);
         double ONCE_ANGLE = TOTAL_ANGLE / AMOUNT;
         float partialTick = state.partialTick;
         int progress = state.actuallyProgress;
@@ -244,11 +238,11 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
         int[] color = COLOR[state.swordType];
 
         Vector3 center = new Vector3(0, 0, distance / 2 - 1).VecInNewRefer(
-                relative_center, relative_world
+            relative_center, relative_world
         ).add(Vector3.transToVector3(state.getOwner().getEyePosition(state.partialTick)));
 
         Vector3 offset = new Vector3(0, 0, -1).VecInNewRefer(
-                relative_center, relative_world
+            relative_center, relative_world
         );
         if (!ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get()) {
             Vector3 last_inner = null, last_outer = null;
@@ -258,11 +252,11 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
 
                 int factorI = i + AMOUNT - Math.min(AMOUNT, (int) (progress_angle / ONCE_ANGLE));
                 double current_angle = progress_angle - i * ONCE_ANGLE;
-                double next_angle = Math.max(progress_angle - (i + 1) * ONCE_ANGLE,0);
+                double next_angle = Math.max(progress_angle - (i + 1) * ONCE_ANGLE, 0);
                 if (last_inner == null) {
                     Vector3 near = PosUtil.calCenPos(distance, current_angle, angle).VecInNewRefer(
-                            relative_center,
-                            relative_world
+                        relative_center,
+                        relative_world
                     );
                     state.render_pos = near.add(center).add(offset);
                     near_inner = near.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(-0.1 + (0.08 / AMOUNT) * factorI)).add(center).add(offset);
@@ -273,8 +267,8 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
                     near_outer = last_outer;
                 }
                 Vector3 far = PosUtil.calCenPos(distance, next_angle, angle).VecInNewRefer(
-                        relative_center,
-                        relative_world
+                    relative_center,
+                    relative_world
                 );
 
                 far_inner = far.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(-0.1 + factorI * (0.08 / AMOUNT))).add(center).add(offset);
@@ -282,16 +276,16 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
                 last_inner = far_inner;
                 last_outer = far_outer;
 
-                Vector3 norm=far_inner.subtract(far_outer).cross(far_inner.subtract(near_inner)).normalize();
+                Vector3 norm = far_inner.subtract(far_outer).cross(far_inner.subtract(near_inner)).normalize();
 
                 vertex.addVertex(pose, far_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0, 0)
-                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
+                    .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
                 vertex.addVertex(pose, far_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0, 1)
-                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
+                    .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
                 vertex.addVertex(pose, near_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1, 1)
-                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
+                    .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
                 vertex.addVertex(pose, near_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1, 0)
-                        .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
+                    .setLight(LightCoordsUtil.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(pose, (float) norm.getX(), (float) norm.getY(), (float) norm.getZ());
             }
         } else {
             Vector3[] cp = new Vector3[4], np = new Vector3[4];
@@ -299,11 +293,11 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
             for (int i = 0; i < AMOUNT && i * ONCE_ANGLE < progress_angle; i++) {
                 int factorI = i + AMOUNT - Math.min(AMOUNT, (int) (progress_angle / ONCE_ANGLE));
                 double current_angle = progress_angle - i * ONCE_ANGLE;
-                double next_angle = Math.max(progress_angle - (i + 1) * ONCE_ANGLE,0);
+                double next_angle = Math.max(progress_angle - (i + 1) * ONCE_ANGLE, 0);
                 if (save == null) {
                     Vector3 near = PosUtil.calCenPos(distance, current_angle, angle).VecInNewRefer(
-                            relative_center,
-                            relative_world
+                        relative_center,
+                        relative_world
                     );
                     cp[0] = near.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
                     cp[1] = cp[0].subtract(normal.multiply(0.03));
@@ -314,8 +308,8 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile,Ze
                     System.arraycopy(save, 0, cp, 0, 4);
                 }
                 Vector3 far = PosUtil.calCenPos(distance, next_angle, angle).VecInNewRefer(
-                        relative_center,
-                        relative_world
+                    relative_center,
+                    relative_world
                 );
 
                 np[0] = far.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));

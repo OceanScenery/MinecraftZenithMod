@@ -14,35 +14,36 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record ZenithUpdatePickedEntityQuestPacket(int playerId,int entityId) implements CustomPacketPayload{
-    public static final Identifier ID=Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID,"zenith_select_entity_update");
-    public static final CustomPacketPayload.Type<ZenithUpdatePickedEntityQuestPacket> TYPE=new CustomPacketPayload.Type<>(ID);
+public record ZenithUpdatePickedEntityQuestPacket(int playerId,
+                                                  int entityId) implements CustomPacketPayload {
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_select_entity_update");
+    public static final CustomPacketPayload.Type<ZenithUpdatePickedEntityQuestPacket> TYPE = new CustomPacketPayload.Type<>(ID);
 
-    public static final StreamCodec<ByteBuf,ZenithUpdatePickedEntityQuestPacket> STREAM_CODEC=StreamCodec.composite(
-            ByteBufCodecs.INT,ZenithUpdatePickedEntityQuestPacket::playerId,
-            ByteBufCodecs.INT,ZenithUpdatePickedEntityQuestPacket::entityId,
-            ZenithUpdatePickedEntityQuestPacket::new
+    public static final StreamCodec<ByteBuf, ZenithUpdatePickedEntityQuestPacket> STREAM_CODEC = StreamCodec.composite(
+        ByteBufCodecs.INT, ZenithUpdatePickedEntityQuestPacket::playerId,
+        ByteBufCodecs.INT, ZenithUpdatePickedEntityQuestPacket::entityId,
+        ZenithUpdatePickedEntityQuestPacket::new
     );
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
-
-    public static void handle(final ZenithUpdatePickedEntityQuestPacket packet, final IPayloadContext context){
-        if(context.player() instanceof ServerPlayer serverPlayer){
+    public static void handle(final ZenithUpdatePickedEntityQuestPacket packet, final IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer serverPlayer) {
 
             Level level = serverPlayer.level();
 
             Entity query = level.getEntity(packet.entityId);
             boolean result = AttachmentUtil.checkCanAttack(serverPlayer, query);
 
-            if(query==null || serverPlayer.getId()!=packet.playerId){
+            if (query == null || serverPlayer.getId() != packet.playerId) {
                 return;
             }
 
             ZenithSendPickedEntityInfPacket replyPacket = new ZenithSendPickedEntityInfPacket(packet.entityId, !result);
-            ZenithNetworkHandler.sendToPlayer(serverPlayer,replyPacket);
+            ZenithNetworkHandler.sendToPlayer(serverPlayer, replyPacket);
         }
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

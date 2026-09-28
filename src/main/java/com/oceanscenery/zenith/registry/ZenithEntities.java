@@ -11,17 +11,17 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ZenithEntities {
-    public static final DeferredRegister<EntityType<?>> ENTITIES=DeferredRegister.create(
-            BuiltInRegistries.ENTITY_TYPE,
-            TheZenithMod.MOD_ID
+    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(
+        BuiltInRegistries.ENTITY_TYPE,
+        TheZenithMod.MOD_ID
     );
 
-    public static final DeferredHolder<EntityType<?>,EntityType<ZenithProjectile>> ZENITH_PROJECTILE=ENTITIES.register(
-            "zenith_projectile",
-            ()->EntityType.Builder.<ZenithProjectile>of(
-                    ZenithProjectile::new,
-                    MobCategory.MISC
-            ).setUpdateInterval(1).clientTrackingRange(60).sized(0f,0f).noSave()
-                    .fireImmune().build(ResourceKey.create(ENTITIES.getRegistryKey(), Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_projectile")))
+    public static final DeferredHolder<EntityType<?>, EntityType<ZenithProjectile>> ZENITH_PROJECTILE = ENTITIES.register(
+        "zenith_projectile",
+        () -> EntityType.Builder.<ZenithProjectile>of(
+                ZenithProjectile::new,
+                MobCategory.MISC
+            ).setUpdateInterval(1).clientTrackingRange(60).sized(0f, 0f).noSave()
+            .fireImmune().build(ResourceKey.create(ENTITIES.getRegistryKey(), Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_projectile")))
     );
 }
