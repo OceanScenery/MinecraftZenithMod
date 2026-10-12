@@ -13,6 +13,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.NonNull;
 
 public record CycleAttackPlayerPacket(int slot) implements CustomPacketPayload {
     public static final Identifier ID = Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "attack_player_mode");
@@ -46,7 +47,7 @@ public record CycleAttackPlayerPacket(int slot) implements CustomPacketPayload {
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

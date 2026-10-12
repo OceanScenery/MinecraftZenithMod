@@ -14,6 +14,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.NonNull;
 
 public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
     public static final Type<CycleAttackModePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_cycle_attack_mode"));
@@ -23,10 +24,6 @@ public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
         ByteBufCodecs.INT, CycleAttackModePacket::slot,
         CycleAttackModePacket::new
     );
-
-    public CycleAttackModePacket(FriendlyByteBuf buf) {
-        this(buf.readInt());
-    }
 
     public static void handle(final CycleAttackModePacket packet, final IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
@@ -53,12 +50,8 @@ public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
-    }
-
-    public void write(FriendlyByteBuf buf) {
-        buf.writeInt(slot);
     }
 
     public Identifier getId() {

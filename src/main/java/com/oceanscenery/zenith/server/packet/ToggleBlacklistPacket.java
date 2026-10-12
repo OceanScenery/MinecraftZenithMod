@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.NonNull;
 
 public record ToggleBlacklistPacket(int playerId, int entityId,
                                     boolean shifted) implements CustomPacketPayload {
@@ -51,7 +52,7 @@ public record ToggleBlacklistPacket(int playerId, int entityId,
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

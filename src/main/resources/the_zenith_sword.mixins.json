@@ -6,8 +6,7 @@
     "EntityAccessor",
     "EntityMixin",
     "ItemEntityMixin",
-    "LivingEntityAccessor",
-    "LivingEntityMixin"
+    "LivingEntityAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

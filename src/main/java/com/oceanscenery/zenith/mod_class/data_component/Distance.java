@@ -28,7 +28,9 @@ public record Distance(double dist) {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Distance(double dist1))) return false;
+        if (!(o instanceof Distance(double dist1))) {
+            return false;
+        }
         return Double.compare(dist, dist1) == 0;
     }
 

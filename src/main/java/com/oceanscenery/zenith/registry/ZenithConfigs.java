@@ -18,20 +18,4 @@ public class ZenithConfigs {
         ZENITH_CLIENT_CONFIG = clientSpecPair.getLeft();
         CLIENT_CONFIG = clientSpecPair.getRight();
     }
-
-    public static float getEnsuredDamageForPlayer() {
-        return ZENITH_CONFIG.ensured_damage_for_player.get().floatValue();
-    }
-
-    public static float getEnsuredDamageForNonPlayer() {
-        return ZENITH_CONFIG.ensured_damage_for_non_player.get().floatValue();
-    }
-
-    public static double getDefaultDamage() {
-        return ZENITH_CONFIG.default_damage.get();
-    }
-
-    public static double getRangedFactor() {
-        return ZENITH_CONFIG.ranged_damage_factor.get();
-    }
 }
