@@ -16,7 +16,7 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 public class DataGen {
     @SubscribeEvent
     public static void generate(GatherDataEvent.Client event) {
-        event.createWorldRegistryObjects(
+        event.getDefaultPackGenerator().createWorldRegistryObjects(
             new RegistrySetBuilder().add(
                 Registries.DAMAGE_TYPE,
                 bootstrapContext -> {
@@ -43,7 +43,7 @@ public class DataGen {
             )
         );
 
-        event.createReloadableRegistryObjects(
+        event.getDefaultPackGenerator().createReloadableRegistryObjects(
             new RegistrySetBuilder().add(
                 RecipeProvider.asBootstrap(ModRecipeProvider::new)
             )

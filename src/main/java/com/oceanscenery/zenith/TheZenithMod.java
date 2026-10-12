@@ -1,7 +1,13 @@
 package com.oceanscenery.zenith;
 
 import com.mojang.logging.LogUtils;
-import com.oceanscenery.zenith.registry.*;
+import com.oceanscenery.zenith.registry.ZenithAttachments;
+import com.oceanscenery.zenith.registry.ZenithConfigs;
+import com.oceanscenery.zenith.registry.ZenithCreativeTab;
+import com.oceanscenery.zenith.registry.ZenithDataComponents;
+import com.oceanscenery.zenith.registry.ZenithEntities;
+import com.oceanscenery.zenith.registry.ZenithEntityDataSerializer;
+import com.oceanscenery.zenith.registry.ZenithItems;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
@@ -19,7 +25,7 @@ public class TheZenithMod {
 
     public TheZenithMod(IEventBus modEventBus, ModContainer modContainer) {
         ZenithDataComponents.DATA_COMPONENTS.register(modEventBus);
-        modContainer.registerConfig(ModConfig.Type.SERVER, ZenithConfigs.CONFIG);
+        modContainer.registerConfig(ModConfig.Type.SYNCED, ZenithConfigs.CONFIG);
         ZenithItems.ITEMS.register(modEventBus);
         ZenithCreativeTab.CREATIVE_TAB.register(modEventBus);
         ZenithEntities.ENTITIES.register(modEventBus);

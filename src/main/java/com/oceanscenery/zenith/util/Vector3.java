@@ -222,10 +222,18 @@ public class Vector3 {
     }
 
     public Vector3 applyOffset(double offset) {
-        if (this.length() != 0) {
+        return applyOffset(offset, true);
+    }
+
+    public Vector3 applyOffset(double offset, boolean exceptionProtection) {
+        if (this.length() > 1e-12) {
             return this.add(this.normalize().multiply(offset));
         } else {
-            throw new IllegalArgumentException("试图给零向量添加长度偏移");
+            if (!exceptionProtection) {
+                throw new IllegalArgumentException("试图给零向量添加长度偏移");
+            } else {
+                return new Vector3(0, 0, 0);
+            }
         }
     }
 

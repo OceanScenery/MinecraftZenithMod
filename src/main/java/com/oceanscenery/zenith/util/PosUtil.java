@@ -1,17 +1,16 @@
 package com.oceanscenery.zenith.util;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
 
+import java.util.List;
+
 public class PosUtil {
-    public static final StreamCodec<ByteBuf, Rotation> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.DOUBLE, Rotation::getPitch,
-        ByteBufCodecs.DOUBLE, Rotation::getYaw,
-        Rotation::new
-    );
 
     public static Vector3 calPos(double distance, int progress, double angle) {
         double a = distance / 2;
@@ -46,6 +45,23 @@ public class PosUtil {
     }
 
     public static class Rotation {
+
+        public static final StreamCodec<ByteBuf, Rotation> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.DOUBLE, Rotation::getPitch,
+            ByteBufCodecs.DOUBLE, Rotation::getYaw,
+            Rotation::new
+        );
+
+        public static final Codec<Rotation> CODEC = Codec.DOUBLE.listOf().flatXmap(
+            doubles -> {
+                if (doubles.size() != 2) {
+                    return DataResult.error(() -> ("Error Roration Data Size:" + doubles.size()));
+                }
+                return DataResult.success(new Rotation(doubles.get(0), doubles.get(1)));
+            },
+            rotation -> DataResult.success(List.of(rotation.pitch, rotation.yaw))
+        );
+
         private double yaw;
         private double pitch;
 

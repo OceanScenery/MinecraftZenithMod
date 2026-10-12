@@ -1,9 +1,11 @@
 package com.oceanscenery.zenith.client;
 
 import com.oceanscenery.zenith.TheZenithMod;
+import com.oceanscenery.zenith.registry.ZenithItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -24,6 +26,15 @@ public class RenderEntityTip {
     public static void onSubmitGeometry(SubmitCustomGeometryEvent event) {
         Minecraft mc = Minecraft.getInstance();
         Entity selected = mc.crosshairPickEntity;
+        Entity camEntity = mc.getCameraEntity();
+
+        if (camEntity instanceof LivingEntity entity) {
+            if (!entity.getMainHandItem().is(ZenithItems.ZENITH)) {
+                return;
+            }
+        } else {
+            return;
+        }
 
         if (selected == null) {
             return;

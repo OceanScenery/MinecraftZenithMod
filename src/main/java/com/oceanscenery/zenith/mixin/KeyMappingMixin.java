@@ -17,7 +17,7 @@ public abstract class KeyMappingMixin {
 
     @Inject(method = "consumeClick", at = @At("HEAD"), cancellable = true)
     public void onConsumeClick(CallbackInfoReturnable<Boolean> cir) {
-        if (!ZenithConfigs.ZENITH_CLIENT_CONFIG.BLOCK_INTERACTION.get()) {
+        if (!ZenithConfigs.ZENITH_CLIENT_CONFIG.block_interaction.get()) {
             return;
         }
         KeyMapping self = (KeyMapping) (Object) this;

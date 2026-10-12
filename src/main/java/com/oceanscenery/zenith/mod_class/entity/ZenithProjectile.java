@@ -6,6 +6,7 @@ import com.oceanscenery.zenith.util.DamageHandler;
 import com.oceanscenery.zenith.util.PosUtil;
 import com.oceanscenery.zenith.util.Quaternion;
 import com.oceanscenery.zenith.util.Vector3;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -27,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class ZenithProjectile extends Entity implements TraceableEntity {
@@ -36,31 +38,29 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     public static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(ZenithProjectile.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> SWORD_TYPE = SynchedEntityData.defineId(ZenithProjectile.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<PosUtil.Rotation> INI_ROT = SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.ROTATION.get());
+    public static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData.defineId(ZenithProjectile.class, ZenithEntityDataSerializer.OPTIONAL_UUID.get());
     public static final int STAGE_COUNT = 20;
+    public static final int MAX_SWORD_TYPE_ID = 20;
     public ItemStack weapon = ZenithItems.ZENITH.toStack();
     //缓存数据,避免计算
     private Vector3[] relative = null;
     private Quaternion[] fixedPose = null;
     private float innerDamage = 0;
-    private LivingEntity owner;
-    private UUID owner_uuid;
-    private Vec3 center_pos = null;
+    private Entity cachedOwner;
     private Vec3 last_pos = null;
     private boolean to_remove;
     private int local_progress = 0;
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level) {
         super(entityType, level);
-        to_remove = true;
+        this.to_remove = true;
         this.noPhysics = true;
     }
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level, @NotNull LivingEntity owner, boolean toRemove) {
         this(entityType, level);
-        this.owner = owner;
-        this.owner_uuid = owner.getUUID();
+        this.setOwner(owner);
         this.to_remove = toRemove;
-        this.setOwnerID(this.getOwner() == null ? -1 : this.getOwner().getId());
         this.setIniRot(new PosUtil.Rotation(owner.getXRot(), owner.getYRot()));
     }
 
@@ -69,8 +69,11 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         this.setAngle(angle);
         this.setSwordType(type);
         this.setDistance(distance);
-        this.center_pos = owner.getEyePosition().relative(owner.getDirection(), (distance - 1) / 2);
         this.weapon = weapon;
+    }
+
+    public boolean shouldRemove() {
+        return this.to_remove;
     }
 
     @Override
@@ -93,14 +96,31 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     @Override
     public @Nullable Entity getOwner() {
-        if (this.owner != null && !this.owner.isRemoved()) {
-            return this.owner;
-        } else if (this.owner_uuid != null && this.level() instanceof ServerLevel serverlevel) {
-            this.owner = serverlevel.getPlayerByUUID(this.owner_uuid);
-            return this.owner;
+        if (this.cachedOwner != null && !this.cachedOwner.isRemoved()) {
+            return this.cachedOwner;
+        } else if (this.getOwnerUUID() != null) {
+            this.cachedOwner = this.level().getEntity(this.getOwnerUUID());
+            return this.cachedOwner;
         } else {
             return null;
         }
+    }
+
+    public void setOwner(Entity owner) {
+        if (owner == null) {
+            this.cachedOwner = null;
+            this.setOwnerID(-1);
+            this.setOwnerUUID(null);
+            return;
+        }
+        this.cachedOwner = owner;
+        this.setOwnerUUID(owner.getUUID());
+        this.setOwnerID(owner.getId());
+    }
+
+    public void setOwner(UUID uuid) {
+        Entity found = this.level().getEntity(uuid);
+        this.setOwner(found);
     }
 
     @Override
@@ -111,8 +131,12 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         super.remove(reason);
     }
 
-    public UUID getOwnerUuid() {
-        return this.owner_uuid;
+    public UUID getOwnerUUID() {
+        return this.getEntityData().get(OWNER_UUID).orElse(null);
+    }
+
+    public void setOwnerUUID(UUID other) {
+        this.getEntityData().set(OWNER_UUID, Optional.ofNullable(other));
     }
 
     public int getSwordType() {
@@ -167,10 +191,6 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         return this.local_progress;
     }
 
-    public void setLocalProgress(int value) {
-        this.local_progress = value;
-    }
-
     public float getDamage() {
         return this.innerDamage;
     }
@@ -192,6 +212,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         builder.define(OWNER_ID, -1);
         builder.define(SWORD_TYPE, 0);
         builder.define(INI_ROT, new PosUtil.Rotation(0, 0));
+        builder.define(OWNER_UUID, Optional.empty());
     }
 
     public boolean canHit(Entity entity) {
@@ -220,70 +241,63 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     @Override
     public void tick() {
-        if (!this.level().isClientSide()) {
-            super.tick();
-            if (this.owner_uuid == null) {
-                return;
-            }
-            if (this.getOwner() == null) {
+        super.tick();
+        if (this.getOwner() == null) {
+            this.discard();
+            return;
+        }
+        Entity owner = this.getOwner();
+        if (owner == null) {
+            if (!this.level().isClientSide()) {
                 this.discard();
-                return;
             }
-            if (this.getOwnerID() == -1) {
-                this.setOwnerID(this.getOwner().getId());
-            }
-            Vector3 pos = PosUtil.calPos(this.getDistance(), this.getProgress(), this.getAngle());
-            Vector3 markCenter = new Vector3(0, 0, this.getDistance() / 2);
-            Vector3[] reference = this.getReference();
-            Vector3[] world = Vector3.WORLD;
+            return;
+        }
+        int realId = owner.getId();
+        if (this.getOwnerID() != realId) {
+            this.setOwnerID(realId);
+        }
+        Vector3 pos = PosUtil.calPos(this.getDistance(), this.getProgress(), this.getAngle());
+        Vector3[] reference = this.getReference();
+        Vector3[] world = Vector3.WORLD;
 
-            Vec3 realPos = pos.setZ(pos.getZ() - 1).VecInNewRefer(
-                reference, world
-            ).toVec3().add(this.owner.getEyePosition());
+        Vec3 realPos = pos.setZ(pos.getZ() - 1).VecInNewRefer(
+            reference, world
+        ).toVec3().add(owner.getEyePosition());
 
-            Vec3 realCenter = markCenter.setZ((markCenter.getZ() - 1)).VecInNewRefer(
-                reference, world
-            ).toVec3().add(this.owner.getEyePosition());
+        Vec3 playerBack = new Vector3(0, 0, -1).VecInNewRefer(
+            reference,
+            world
+        ).toVec3().add(owner.getEyePosition());
 
-            Vec3 playerBack = new Vector3(0, 0, -1).VecInNewRefer(
-                reference,
-                world
-            ).toVec3().add(this.owner.getEyePosition());
+        this.setPos(playerBack);
 
-            this.setPos(playerBack);
+        if (last_pos == null) {
+            last_pos = realPos;
+        }
 
-            if (last_pos == null) {
-                last_pos = realPos;
-            }
-
+        if (!this.level().isClientSide()) {
             AABB box = new AABB(realPos, last_pos).inflate(2);
             List<Entity> list = this.level().getEntitiesOfClass(Entity.class, box, this::canHit);
             for (Entity entity : list) {
                 DamageHandler.applyDamage(this, entity, weapon);
             }
+        }
 
-            last_pos = realPos;
+        last_pos = realPos;
 
-            if (this.getProgress() > STAGE_COUNT && !this.to_remove) {
+        this.setProgress(this.getProgress() + 1);
+        if (this.getProgress() > STAGE_COUNT) {
+            if (!this.to_remove) {
                 this.to_remove = true;
             }
-
-            if (this.center_pos == null) {
-                this.discard();
-                return;
+            this.discard();
+        }
+        if (this.level().isClientSide()) {
+            if (this.local_progress == -1) {
+                this.local_progress = this.getProgress();
             }
-            this.center_pos = realCenter;
-            this.setProgress(this.getProgress() + 1);
-            if (this.getProgress() > STAGE_COUNT) {
-                this.discard();
-            }
-
-
-        } else {
-            if (local_progress == -1) {
-                local_progress = getProgress();
-            }
-            local_progress++;
+            this.local_progress++;
         }
     }
 
@@ -292,14 +306,42 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         return false;
     }
 
+    private void invalidateCache() {
+        this.fixedPose = null;
+        this.relative = null;
+        this.cachedOwner = null;
+    }
+
     @Override
     protected void readAdditionalSaveData(@NonNull ValueInput input) {
-
+        this.invalidateCache();
+        ValueInput child = input.childOrEmpty("Zenith");
+        this.setAngle(child.getDoubleOr("Angle", 0.0));
+        this.setProgress(Math.clamp(child.getIntOr("Age", 0), 0, 21));
+        this.setOwner(child.read("Owner", UUIDUtil.CODEC).orElse(null));
+        this.setSwordType(Math.clamp(child.getIntOr("SwordType", 0), 0, MAX_SWORD_TYPE_ID));
+        this.setIniRot(child.read("Rotation", PosUtil.Rotation.CODEC).orElse(new PosUtil.Rotation(0, 0)));
+        this.innerDamage = child.getFloatOr("StoredDamage", 10.0f);
+        this.setDistance(child.getDoubleOr("FlyDistance", 20.0f));
+        this.to_remove = child.getBooleanOr("ShouldBeRemoved", false);
+        if (this.weapon == null) {
+            this.weapon = ZenithItems.ZENITH.toStack();
+        }
     }
 
     @Override
     protected void addAdditionalSaveData(@NonNull ValueOutput output) {
-
+        ValueOutput child = output.child("Zenith");
+        child.putDouble("Angle", this.getAngle());
+        child.putInt("Age", this.getProgress());
+        if (this.getOwnerUUID() != null) {
+            child.store("Owner", UUIDUtil.CODEC, this.getOwnerUUID());
+        }
+        child.putInt("SwordType", this.getSwordType());
+        child.store("Rotation", PosUtil.Rotation.CODEC, this.getIniRot());
+        child.putFloat("StoredDamage", this.innerDamage);
+        child.putDouble("FlyDistance", this.getDistance());
+        child.putBoolean("ShouldBeRemoved", this.to_remove);
     }
 
     public Vector3[] getReference() {

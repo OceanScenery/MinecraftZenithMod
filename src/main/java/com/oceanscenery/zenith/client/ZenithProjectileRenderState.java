@@ -36,6 +36,9 @@ public class ZenithProjectileRenderState extends EntityRenderState {
     }
 
     public Entity getOwner() {
+        if (level == null) {
+            return null;
+        }
         return level.getEntity(ownerId);
     }
 }

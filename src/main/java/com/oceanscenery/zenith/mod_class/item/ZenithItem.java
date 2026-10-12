@@ -1,6 +1,5 @@
 package com.oceanscenery.zenith.mod_class.item;
 
-import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.event.ServerTickTask;
 import com.oceanscenery.zenith.event.ServerTicker;
 import com.oceanscenery.zenith.mod_class.data_component.Distance;
@@ -10,6 +9,7 @@ import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithDataComponents;
 import com.oceanscenery.zenith.registry.ZenithEntities;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.util.ConfigUtil;
 import com.oceanscenery.zenith.util.DamageHandler;
 import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.core.Holder;
@@ -19,9 +19,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemInstance;
@@ -35,7 +33,6 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -48,7 +45,6 @@ public class ZenithItem extends Item {
     public static final int TYPE_AMOUNT = 21;
     public static final int USE_INTERVAL = 4;
     public static final Random random = new Random();
-    public static final boolean isBetterCombatLoaded = ModList.get().isLoaded("bettercombat");
 
     public ZenithItem(Properties properties) {
         super(properties);
@@ -60,12 +56,7 @@ public class ZenithItem extends Item {
 
     @Override
     public @NotNull ItemAttributeModifiers getDefaultAttributeModifiers(@NotNull ItemStack stack) {
-        return ItemAttributeModifiers.builder()
-            .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(
-                BASE_ATTACK_DAMAGE_ID, ZenithConfigs.getDefaultDamage() * ((TheZenithMod.TERRA_LOADED && ZenithConfigs.ZENITH_CONFIG.enable_terra_damage_modifier.get()) ? 24 : 1
-            ), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-            .add(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_ID, isBetterCombatLoaded ? -2.4 : 30, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-            .build();
+        return ConfigUtil.defaultAttributeModifiersByConfig();
     }
 
     @Override

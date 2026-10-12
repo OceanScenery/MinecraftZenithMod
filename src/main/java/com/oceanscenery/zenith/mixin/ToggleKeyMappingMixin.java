@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class ToggleKeyMappingMixin {
     @Inject(method = "isDown", at = @At("HEAD"), cancellable = true)
     public void onIsDown(CallbackInfoReturnable<Boolean> cir) {
-        if (!ZenithConfigs.ZENITH_CLIENT_CONFIG.BLOCK_INTERACTION.get()) {
+        if (!ZenithConfigs.ZENITH_CLIENT_CONFIG.block_interaction.get()) {
             return;
         }
         KeyMapping self = (KeyMapping) (Object) this;

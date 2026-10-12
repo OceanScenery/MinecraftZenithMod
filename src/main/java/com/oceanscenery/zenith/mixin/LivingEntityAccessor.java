@@ -20,4 +20,7 @@ public interface LivingEntityAccessor {
 
     @Invoker(value = "checkTotemDeathProtection")
     boolean callCheckTotemDeathProtection(DamageSource source);
+
+    @Invoker(value = "handleKillingBlow")
+    void callHandleKillingBlow();
 }

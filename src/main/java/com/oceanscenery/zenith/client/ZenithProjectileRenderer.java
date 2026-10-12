@@ -159,7 +159,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, Z
         boolean firstPerson = Minecraft.getInstance().getCameraEntity() == state.getOwner();
         boolean isCamera = Minecraft.getInstance().getCameraEntity() == state.getOwner();
 
-        if (firstPerson && Minecraft.getInstance().options.getCameraType().isFirstPerson() && ZenithConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()) {
+        if (firstPerson && Minecraft.getInstance().options.getCameraType().isFirstPerson() && ZenithConfigs.ZENITH_CLIENT_CONFIG.render_offset.get()) {
             Vector3 cameraT = new Vector3(0, -1, 0).VecInNewRefer(
                 relativeCenter,
                 relativeWorld
@@ -199,7 +199,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, Z
         state.round = nearOuter.multiply(-1).add(nearInner);
 
         Vector3 toCenter = new Vector3(0, 0, 1).rot(r4.multiply(tmp));
-        if (state.round != null && firstPerson && !ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get()) {
+        if (state.round != null && firstPerson && !ZenithConfigs.ZENITH_CLIENT_CONFIG._3d_trail.get()) {
             poseStack.mulPose(Quaternion.trans(toCenter, state.round).toMatrix());
         }
 
@@ -224,9 +224,9 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, Z
         double distance = state.distance;
         Vector3[] relativeCenter = state.reference;
         Vector3[] relativeWorld = Vector3.WORLD;
-        double totalAngle = Math.toRadians(ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble());
-        int amount = ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get() ?
-            (int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble() / 80) / 2 : (int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble() / 80);
+        double totalAngle = Math.toRadians(ZenithConfigs.ZENITH_CLIENT_CONFIG.trail_angle.getAsDouble());
+        int amount = ZenithConfigs.ZENITH_CLIENT_CONFIG._3d_trail.get() ?
+            (int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.trail_angle.getAsDouble() / 80) / 2 : (int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.trail_angle.getAsDouble() / 80);
         double onceAngle = totalAngle / amount;
         float partialTick = state.partialTick;
         int progress = state.actuallyProgress;
@@ -241,7 +241,7 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, Z
         Vector3 offset = new Vector3(0, 0, -1).VecInNewRefer(
             relativeCenter, relativeWorld
         );
-        if (!ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get()) {
+        if (!ZenithConfigs.ZENITH_CLIENT_CONFIG._3d_trail.get()) {
             Vector3 lastInner = null;
             Vector3 lastOuter = null;
             Vector3 nearInner, nearOuter, farInner, farOuter;
