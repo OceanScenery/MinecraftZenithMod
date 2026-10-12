@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.NonNull;
 
 public record ZenithUpdatePickedEntityQuestPacket(int playerId,
                                                   int entityId) implements CustomPacketPayload {
@@ -43,7 +44,7 @@ public record ZenithUpdatePickedEntityQuestPacket(int playerId,
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

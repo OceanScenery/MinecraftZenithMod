@@ -92,7 +92,7 @@ public class Vector3 {
         return result;
     }
 
-    static void main(String[] args) {
+    static void main() {
         System.out.println(PosUtil.calCenPos(10, Math.PI / 4, 0).normalize());
         System.out.println(new Vector3(0, 0, -1).rot(Quaternion.rotate(new Vector3(0, 1, 0), 5)).normalize());
     }

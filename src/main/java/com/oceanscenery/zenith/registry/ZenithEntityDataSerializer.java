@@ -3,11 +3,15 @@ package com.oceanscenery.zenith.registry;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.util.PosUtil;
 import com.oceanscenery.zenith.util.Vector3;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
+
+import java.util.Optional;
+import java.util.UUID;
 
 public class ZenithEntityDataSerializer {
     public static final DeferredRegister<EntityDataSerializer<?>> MOD_ENTITY_DATA_SERIALIZER = DeferredRegister.create(
@@ -32,7 +36,14 @@ public class ZenithEntityDataSerializer {
     public static final DeferredHolder<EntityDataSerializer<?>, EntityDataSerializer<PosUtil.Rotation>> ROTATION = MOD_ENTITY_DATA_SERIALIZER.register(
         "rotation",
         () -> EntityDataSerializer.forValueType(
-            PosUtil.STREAM_CODEC
+            PosUtil.Rotation.STREAM_CODEC
+        )
+    );
+
+    public static final DeferredHolder<EntityDataSerializer<?>, EntityDataSerializer<Optional<UUID>>> OPTIONAL_UUID = MOD_ENTITY_DATA_SERIALIZER.register(
+        "uuid",
+        () -> EntityDataSerializer.forValueType(
+            ByteBufCodecs.optional(UUIDUtil.STREAM_CODEC)
         )
     );
 }

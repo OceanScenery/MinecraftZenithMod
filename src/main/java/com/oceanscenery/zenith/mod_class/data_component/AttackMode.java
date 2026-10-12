@@ -51,7 +51,9 @@ public record AttackMode(Mode mode, boolean attackPlayer) {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof AttackMode(Mode mode1, boolean attackPlayer1))) return false;
+        if (!(o instanceof AttackMode(Mode mode1, boolean attackPlayer1))) {
+            return false;
+        }
         return mode == mode1 && attackPlayer == attackPlayer1;
     }
 

@@ -13,6 +13,7 @@ public class ZenithConfig {
     public final ModConfigSpec.BooleanValue enable_attack_item;
     public final ModConfigSpec.BooleanValue enable_terra_damage_modifier;
     public final ModConfigSpec.DoubleValue percentage_damage_factor;
+    public final ModConfigSpec.EnumValue<InvalidDamageAction> invalid_damage_action;
 
     public ZenithConfig(ModConfigSpec.Builder builder) {
         builder.comment("combat").push("attack_damage");
@@ -26,6 +27,10 @@ public class ZenithConfig {
         enable_attack_item = builder.comment("whether to attack item or xp orb in \"all\" mode").define("enable_attack_item", false);
         enable_terra_damage_modifier = builder.comment("whether to enable the attack boost when mod \"confluence\" is loaded").define("enable_terra_damage_modifier", true);
         percentage_damage_factor = builder.comment("determines the percentage of the enemy’s max health dealt as bonus damage on attack").defineInRange("percentage_damage_factor", 0.01f, 0f, 1f);
+        invalid_damage_action = builder.comment("How to handle damage when the fallback setHealth attack is ineffective.",
+            "NONE: do nothing",
+            "REMOVE: remove the entity directly",
+            "DELAYED: store the missing damage and settle it later").defineEnum("invalid_damage_action", InvalidDamageAction.DELAYED);
         builder.pop();
     }
 }

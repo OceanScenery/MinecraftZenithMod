@@ -10,6 +10,7 @@ import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithDataComponents;
 import com.oceanscenery.zenith.registry.ZenithEntities;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.util.ConfigUtil;
 import com.oceanscenery.zenith.util.DamageHandler;
 import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.core.Holder;
@@ -36,18 +37,17 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-
 public class ZenithItem extends Item {
     public static final int TYPE_AMOUNT = 21;
     public static final int USE_INTERVAL = 4;
     public static final Random random = new Random();
-    public static final boolean isBetterCombatLoaded = ModList.get().isLoaded("bettercombat");
 
     public ZenithItem(Properties properties) {
         super(properties);
@@ -59,9 +59,7 @@ public class ZenithItem extends Item {
 
     @Override
     public @NotNull ItemAttributeModifiers getDefaultAttributeModifiers(@NotNull ItemStack stack) {
-        return ItemAttributeModifiers.builder().add(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_ID, ZenithConfigs.getDefaultDamage() * ((TheZenithMod.TERRA_LOADED && ZenithConfigs.ZENITH_CONFIG.enable_terra_damage_modifier.get()) ? 24 : 1), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-            .add(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_ID, isBetterCombatLoaded ? -2.4 : 30, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-            .build();
+        return ConfigUtil.defaultAttributeModifiersByConfig();
     }
 
     @Override
@@ -70,7 +68,7 @@ public class ZenithItem extends Item {
     }
 
     @Override
-    public ItemUseAnimation getUseAnimation(ItemStack itemStack) {
+    public @NonNull ItemUseAnimation getUseAnimation(@NonNull ItemStack itemStack) {
         return ItemUseAnimation.NONE;
     }
 
@@ -80,12 +78,12 @@ public class ZenithItem extends Item {
     }
 
     @Override
-    public int getEnchantmentLevel(ItemInstance stack, Holder<Enchantment> enchantment) {
+    public int getEnchantmentLevel(@NonNull ItemInstance stack, @NonNull Holder<Enchantment> enchantment) {
         return super.getEnchantmentLevel(stack, enchantment);
     }
 
     @Override
-    public void inventoryTick(ItemStack itemStack, ServerLevel level, Entity owner, @Nullable EquipmentSlot slot) {
+    public void inventoryTick(@NonNull ItemStack itemStack, @NonNull ServerLevel level, @NonNull Entity owner, @Nullable EquipmentSlot slot) {
         super.inventoryTick(itemStack, level, owner, slot);
     }
 
@@ -100,9 +98,9 @@ public class ZenithItem extends Item {
             if (lastUseTime == null) {
                 return true;
             }
-            long last_tick = lastUseTime.tickTime();
-            long this_tick = attacker.level().getGameTime();
-            return this_tick >= last_tick + USE_INTERVAL || this_tick < last_tick;
+            long lastTick = lastUseTime.tickTime();
+            long thisTick = attacker.level().getGameTime();
+            return thisTick >= lastTick + USE_INTERVAL || thisTick < lastTick;
         }
         return false;
     }
@@ -124,9 +122,9 @@ public class ZenithItem extends Item {
                 if (aabb.clip(attacker.getEyePosition(), attacker.getEyePosition().add(initial)).isPresent()) {
                     if (DamageHandler.canAttack(attacker, entity, usedItem)) {
                         victim.add(entity);
-                        Vec3 hit_pos = entity.getBoundingBox().getCenter();
-                        farest = Math.max(farest, hit_pos.distanceTo(attacker.getEyePosition()));
-                        nearest = Math.min(nearest, hit_pos.distanceTo(attacker.getEyePosition()));
+                        Vec3 hitPos = entity.getBoundingBox().getCenter();
+                        farest = Math.max(farest, hitPos.distanceTo(attacker.getEyePosition()));
+                        nearest = Math.min(nearest, hitPos.distanceTo(attacker.getEyePosition()));
                     }
                 }
             }

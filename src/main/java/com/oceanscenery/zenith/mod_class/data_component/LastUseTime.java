@@ -30,7 +30,9 @@ public record LastUseTime(long tickTime) {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof LastUseTime(long time))) return false;
+        if (!(o instanceof LastUseTime(long time))) {
+            return false;
+        }
         return tickTime == time;
     }
 

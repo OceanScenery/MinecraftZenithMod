@@ -14,7 +14,7 @@ tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-version = mod_version+"-"+minecraft_version
+version = mod_version + "-" + minecraft_version
 group = mod_group_id
 
 sourceSets.main.resources {
@@ -37,9 +37,29 @@ base {
 // Mojang ships Java 25 to end users in 26.1, so mods should target Java 25.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
+def transformerJar = tasks.register('transformerJar', Jar) {
+    archiveBaseName = "${mod_id}-transformer"
+    destinationDirectory = layout.buildDirectory.dir('jarjar-inputs')
+
+    from(sourceSets.main.output) {
+        include 'com/oceanscenery/zenith/class_bytecode/LivingEntityProcessor.class'
+        include 'com/oceanscenery/zenith/class_bytecode/common/HookNames.class'
+        include 'com/oceanscenery/zenith/class_bytecode/common/LivingEntityHealthPatcher*.class'
+        include 'com/oceanscenery/zenith/class_bytecode/common/LivingEntityHurtPatcher*.class'
+        include 'META-INF/services/net.neoforged.neoforgespi.transformation.ClassProcessor'
+    }
+
+    manifest {
+        attributes(
+                'Automatic-Module-Name': 'com.oceanscenery.zenith.transformer'
+        )
+    }
+}
+
 neoForge {
-    // Specify the version of NeoForge to use.
-    version = project.neo_version
+    enable {
+        version = project.neo_version
+    }
 
     // This line is optional. Access Transformers are automatically detected
     // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
@@ -113,6 +133,10 @@ configurations {
 }
 
 dependencies {
+    // The ClassProcessor must be available before the game layer is built.
+    // JarJar embeds it as a library JAR instead of a regular game-content mod.
+    jarJar(files(transformerJar.flatMap { it.archiveFile }))
+
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
@@ -160,6 +184,14 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
+
+tasks.named('jar', Jar) {
+    exclude 'com/oceanscenery/zenith/class_bytecode/LivingEntityProcessor.class'
+    exclude 'com/oceanscenery/zenith/class_bytecode/common/HookNames.class'
+    exclude 'com/oceanscenery/zenith/class_bytecode/common/LivingEntityHealthPatcher*.class'
+    exclude 'com/oceanscenery/zenith/class_bytecode/common/LivingEntityHurtPatcher*.class'
+    exclude 'META-INF/services/net.neoforged.neoforgespi.transformation.ClassProcessor'
+}
 
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
