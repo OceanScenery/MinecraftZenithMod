@@ -1,7 +1,13 @@
 package com.oceanscenery.zenith;
 
 import com.mojang.logging.LogUtils;
-import com.oceanscenery.zenith.registry.*;
+import com.oceanscenery.zenith.registry.ZenithAttachments;
+import com.oceanscenery.zenith.registry.ZenithConfigs;
+import com.oceanscenery.zenith.registry.ZenithCreativeTab;
+import com.oceanscenery.zenith.registry.ZenithDataComponents;
+import com.oceanscenery.zenith.registry.ZenithEntities;
+import com.oceanscenery.zenith.registry.ZenithEntityDataSerializer;
+import com.oceanscenery.zenith.registry.ZenithItems;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;

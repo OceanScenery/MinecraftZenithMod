@@ -17,41 +17,37 @@ public class ZenithNetworkHandler {
 
     @SubscribeEvent
     public static void registerPackets(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar REGISTER = event.registrar(resource);
+        final PayloadRegistrar register = event.registrar(resource);
 
-        REGISTER.playToServer(
+        register.playToServer(
             CycleZenithDefaultDistancePacket.TYPE,
             CycleZenithDefaultDistancePacket.STREAM_CODEC,
-            (payload, context) -> {
-                context.enqueueWork(() -> CycleZenithDefaultDistancePacket.handle(payload, context));
-            }
+            (payload, context)
+                -> context.enqueueWork(() -> CycleZenithDefaultDistancePacket.handle(payload, context))
         );
 
-        REGISTER.playToServer(
+        register.playToServer(
             CycleAttackModePacket.TYPE,
             CycleAttackModePacket.STREAM_CODEC,
-            (payload, context) -> {
-                context.enqueueWork(() -> CycleAttackModePacket.handle(payload, context));
-            }
+            (payload, context)
+                -> context.enqueueWork(() -> CycleAttackModePacket.handle(payload, context))
         );
 
-        REGISTER.playToServer(
+        register.playToServer(
             CycleAttackPlayerPacket.TYPE,
             CycleAttackPlayerPacket.STREAM_CODEC,
-            (payload, context) -> {
-                context.enqueueWork(() -> CycleAttackPlayerPacket.handle(payload, context));
-            }
+            (payload, context)
+                -> context.enqueueWork(() -> CycleAttackPlayerPacket.handle(payload, context))
         );
 
-        REGISTER.playToServer(
+        register.playToServer(
             ZenithAttackPacket.TYPE,
             ZenithAttackPacket.STREAM_CODEC,
-            (payload, context) -> {
-                context.enqueueWork(() -> ZenithAttackPacket.handle(payload, context));
-            }
+            (payload, context)
+                -> context.enqueueWork(() -> ZenithAttackPacket.handle(payload, context))
         );
 
-        REGISTER.playToServer(
+        register.playToServer(
             ToggleBlacklistPacket.TYPE,
             ToggleBlacklistPacket.STREAM_CODEC,
             (payload, context) -> context.enqueueWork(
@@ -59,7 +55,7 @@ public class ZenithNetworkHandler {
             )
         );
 
-        REGISTER.playToServer(
+        register.playToServer(
             ZenithUpdatePickedEntityQuestPacket.TYPE,
             ZenithUpdatePickedEntityQuestPacket.STREAM_CODEC,
             (payload, context) -> context.enqueueWork(
@@ -67,7 +63,7 @@ public class ZenithNetworkHandler {
             )
         );
 
-        REGISTER.playToClient(
+        register.playToClient(
             ZenithSendPickedEntityInfPacket.TYPE,
             ZenithSendPickedEntityInfPacket.STREAM_CODEC,
             (payload, context) -> context.enqueueWork(

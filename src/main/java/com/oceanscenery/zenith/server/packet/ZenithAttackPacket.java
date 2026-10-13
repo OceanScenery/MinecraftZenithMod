@@ -9,6 +9,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
@@ -26,14 +27,14 @@ public record ZenithAttackPacket(int id) implements CustomPacketPayload {
             if (player.getId() != packet.id) {
                 return;
             }
-            ItemStack m_item = player.getMainHandItem();
-            ItemStack o_item = player.getOffhandItem();
-            if (m_item.getItem() instanceof ZenithItem zenithItem) {
-                zenithItem.attack(m_item, player, player.level());
+            ItemStack mainHandItemItem = player.getMainHandItem();
+            ItemStack offhandItem = player.getOffhandItem();
+            if (mainHandItemItem.getItem() instanceof ZenithItem zenithItem) {
+                zenithItem.attack(mainHandItemItem, player, player.level(), InteractionHand.MAIN_HAND);
                 return;
             }
-            if (o_item.getItem() instanceof ZenithItem zenithItem) {
-                zenithItem.attack(o_item, player, player.level());
+            if (offhandItem.getItem() instanceof ZenithItem zenithItem) {
+                zenithItem.attack(offhandItem, player, player.level(), InteractionHand.OFF_HAND);
             }
         }
     }

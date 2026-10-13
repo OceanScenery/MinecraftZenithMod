@@ -4,9 +4,9 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "EntityAccessor",
+    "EntityMixin",
     "ItemEntityMixin",
-    "LivingEntityAccessor",
-    "LivingEntityMixin"
+    "LivingEntityAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -15,6 +15,7 @@
     "requireAnnotations": true
   },
   "client": [
+    "ClientLevelAccessor",
     "KeyMappingAccessor",
     "KeyMappingMixin"
   ]

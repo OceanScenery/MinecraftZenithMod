@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
 
 public record ToggleBlacklistPacket(int playerId, int entityId,
                                     boolean shifted) implements CustomPacketPayload {
@@ -31,7 +32,8 @@ public record ToggleBlacklistPacket(int playerId, int entityId,
                 return;
             }
             Entity selected = serverLevel.getEntity(packet.entityId);
-            if (selected == null || selected.distanceTo(player) > player.entityInteractionRange()) {
+
+            if (selected == null) {
                 return;
             }
             if (packet.shifted()) {
@@ -50,7 +52,7 @@ public record ToggleBlacklistPacket(int playerId, int entityId,
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

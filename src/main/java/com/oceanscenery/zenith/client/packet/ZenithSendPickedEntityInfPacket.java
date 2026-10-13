@@ -9,6 +9,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 public record ZenithSendPickedEntityInfPacket(int entityId,
                                               boolean inList) implements CustomPacketPayload {
@@ -29,7 +30,7 @@ public record ZenithSendPickedEntityInfPacket(int entityId,
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

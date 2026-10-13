@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
 
 public record ZenithUpdatePickedEntityQuestPacket(int playerId,
                                                   int entityId) implements CustomPacketPayload {
@@ -28,7 +29,7 @@ public record ZenithUpdatePickedEntityQuestPacket(int playerId,
     public static void handle(final ZenithUpdatePickedEntityQuestPacket packet, final IPayloadContext context) {
         if (context.player() instanceof ServerPlayer serverPlayer) {
 
-            Level level = serverPlayer.serverLevel();
+            Level level = serverPlayer.level();
 
             Entity query = level.getEntity(packet.entityId);
             boolean result = AttachmentUtil.checkCanAttack(serverPlayer, query);
@@ -43,7 +44,7 @@ public record ZenithUpdatePickedEntityQuestPacket(int playerId,
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

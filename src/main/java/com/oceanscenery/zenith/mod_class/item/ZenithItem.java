@@ -11,6 +11,7 @@ import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithDataComponents;
 import com.oceanscenery.zenith.registry.ZenithEntities;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.util.ConfigUtil;
 import com.oceanscenery.zenith.util.DamageHandler;
 import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.core.BlockPos;
@@ -42,12 +43,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-
 public class ZenithItem extends Item {
     public static final int TYPE_AMOUNT = 21;
     public static final int USE_INTERVAL = 4;
     public static final Random random = new Random();
-    public static final boolean isBetterCombatLoaded = ModList.get().isLoaded("bettercombat");
 
     public ZenithItem(Properties properties) {
         super(properties);
@@ -59,9 +58,7 @@ public class ZenithItem extends Item {
 
     @Override
     public @NotNull ItemAttributeModifiers getDefaultAttributeModifiers(@NotNull ItemStack stack) {
-        return ItemAttributeModifiers.builder().add(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_ID, ZenithConfigs.getDefaultDamage() * ((TheZenithMod.TERRA_LOADED && ZenithConfigs.ZENITH_CONFIG.enable_terra_damage_modifier.get()) ? 24 : 1), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-            .add(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_ID, isBetterCombatLoaded ? -2.4 : 30, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-            .build();
+        return ConfigUtil.defaultAttributeModifiersByConfig();
     }
 
     @Override
@@ -105,28 +102,21 @@ public class ZenithItem extends Item {
     }
 
     public boolean canAttack(@NotNull ItemStack usedItem, @NotNull LivingEntity attacker) {
-        if (!attacker.level().isClientSide) {
+        if (!attacker.level().isClientSide()) {
             LastUseTime lastUseTime = usedItem.get(ZenithDataComponents.LAST_USE_TIME);
             if (lastUseTime == null) {
                 return true;
             }
-            long last_tick = lastUseTime.tickTime();
-            long this_tick = attacker.level().getGameTime();
-            return this_tick >= last_tick + USE_INTERVAL || this_tick < last_tick;
+            long lastTick = lastUseTime.tickTime();
+            long thisTick = attacker.level().getGameTime();
+            return thisTick >= lastTick + USE_INTERVAL || thisTick < lastTick;
         }
         return false;
     }
 
-    public void attack(@NotNull ItemStack usedItem, LivingEntity attacker, Level level) {
+    public void attack(@NotNull ItemStack usedItem, LivingEntity attacker, Level level, InteractionHand hand) {
         if (this.canAttack(usedItem, attacker)) {
-            if (attacker instanceof ServerPlayer serverPlayer) {
-                if (attacker.getMainHandItem() == usedItem) {
-                    serverPlayer.swing(InteractionHand.MAIN_HAND, true);
-                } else {
-                    serverPlayer.swing(InteractionHand.OFF_HAND, true);
-                }
-            }
-
+            attacker.swing(hand, true);
             usedItem.set(ZenithDataComponents.LAST_USE_TIME, new LastUseTime(level.getGameTime()));
             Vector3[] relative = Vector3.getReferFromAngle(attacker.getXRot(), attacker.getYRot());
             Vec3 initial = new Vector3(0, 0, 100).VecInNewRefer(relative, Vector3.WORLD).toVec3();
@@ -141,9 +131,9 @@ public class ZenithItem extends Item {
                 if (aabb.clip(attacker.getEyePosition(), attacker.getEyePosition().add(initial)).isPresent()) {
                     if (DamageHandler.canAttack(attacker, entity, usedItem)) {
                         victim.add(entity);
-                        Vec3 vec = entity.getBoundingBox().getCenter();
-                        farest = Math.max(farest, vec.distanceTo(attacker.getEyePosition()));
-                        nearest = Math.min(nearest, vec.distanceTo(attacker.getEyePosition()));
+                        Vec3 hitPos = entity.getBoundingBox().getCenter();
+                        farest = Math.max(farest, hitPos.distanceTo(attacker.getEyePosition()));
+                        nearest = Math.min(nearest, hitPos.distanceTo(attacker.getEyePosition()));
                     }
                 }
             }
@@ -156,15 +146,13 @@ public class ZenithItem extends Item {
             }
 
             if (ZenithConfigs.ZENITH_CONFIG.sort_farest.get()) {
-                distance = farest == -1 ? dist : farest;
+                distance = farest < 0 ? dist : farest;
             } else {
-                distance = nearest == 200 ? dist : nearest;
+                distance = nearest > 150 ? dist : nearest;
             }
-
             if (distance < 8) {
                 distance = 8;
             }
-
             distance += 1;
 
             for (Entity entity : victim) {
@@ -200,7 +188,7 @@ public class ZenithItem extends Item {
     }
 
     public void addEntity(Level level, LivingEntity livingEntity, ItemStack stack, double distance, int type) {
-        if (!level.isClientSide && stack.is(ZenithItems.ZENITH)) {
+        if (!level.isClientSide() && stack.is(ZenithItems.ZENITH)) {
             ZenithProjectile zenith = new ZenithProjectile(
                 ZenithEntities.ZENITH_PROJECTILE.get(),
                 level,
