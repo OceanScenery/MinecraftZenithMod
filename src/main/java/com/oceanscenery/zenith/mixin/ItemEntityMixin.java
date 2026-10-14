@@ -51,12 +51,9 @@ public abstract class ItemEntityMixin {
             itemEntity.setPos(itemEntity.getX(), itemEntity.level().getMinBuildHeight() + 16, itemEntity.getZ());
             itemEntity.setNoGravity(true);
             itemEntity.setGlowingTag(true);
-            if (itemEntity.level() instanceof ServerLevel serverLevel) {
-                Entity thrower = serverLevel.getEntity(this.thrower);
-                if(thrower instanceof Player player){
-                    itemEntity.setNoPickUpDelay();
-                    itemEntity.playerTouch(player);
-                }
+            if (itemEntity.getOwner() instanceof Player player) {
+                itemEntity.setNoPickUpDelay();
+                itemEntity.playerTouch(player);
             }
         }
     }

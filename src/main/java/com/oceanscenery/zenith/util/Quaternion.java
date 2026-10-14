@@ -57,7 +57,7 @@ public class Quaternion implements Serializable {
     }
 
     public Quaternion(double s,Vector3 vec){
-        this(s, vec.getX(), vec.getY(),vec.getZ());
+        this(s, vec.x(), vec.y(),vec.z());
     }
 
     public double getS() {
@@ -184,15 +184,15 @@ public class Quaternion implements Serializable {
                 if (Math.abs(v1.normalize().dot(axis))==1) {
                     axis = new Vector3(0, 1, 0);
                 }
-                return new Quaternion(0, axis.getX(), axis.getY(), axis.getZ());
+                return new Quaternion(0, axis.x(), axis.y(), axis.z());
             }
         }
         V=V.normalize();
         return new Quaternion(
                 Math.cos(angle/2),
-                V.getX()*Math.sin(angle/2),
-                V.getY()*Math.sin(angle/2),
-                V.getZ()*Math.sin(angle/2)
+                V.x()*Math.sin(angle/2),
+                V.y()*Math.sin(angle/2),
+                V.z()*Math.sin(angle/2)
         ).normalize();
     }
 
@@ -203,9 +203,9 @@ public class Quaternion implements Serializable {
         normal=normal.normalize();
         return new Quaternion(
                 Math.cos(angle/2),
-                normal.getX()*Math.sin(angle/2),
-                normal.getY()*Math.sin(angle/2),
-                normal.getZ()*Math.sin(angle/2)
+                normal.x()*Math.sin(angle/2),
+                normal.y()*Math.sin(angle/2),
+                normal.z()*Math.sin(angle/2)
         );
     }
 }

@@ -1,11 +1,9 @@
 package com.oceanscenery.zenith.mixin;
 
 import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
@@ -18,4 +16,13 @@ public interface LivingEntityAccessor {
 
     @Invoker(value = "checkTotemDeathProtection")
     boolean callCheckTotemDeathProtection(DamageSource source);
+
+    @Invoker(value = "dropAllDeathLoot")
+    void callDropAllDeathLoot(DamageSource source);
+
+    @Accessor(value = "dead")
+    void setDead(boolean isDead);
+
+    @Accessor(value = "deathScore")
+    int getDeathScore();
 }

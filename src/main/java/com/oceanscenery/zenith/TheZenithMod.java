@@ -18,20 +18,20 @@ import org.spongepowered.asm.launch.MixinBootstrap;
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(TheZenithMod.MOD_ID)
 public class TheZenithMod {
+    public static boolean TERRA_LOADED = ModList.get().isLoaded("confluence");
     public static final String MOD_ID = "the_zenith_sword";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static boolean TERRA_LOADED= ModList.get().isLoaded("confluence");
 
-    public TheZenithMod(FMLJavaModLoadingContext context){
+    public TheZenithMod(FMLJavaModLoadingContext context) {
         MixinBootstrap.init();
-        context.registerConfig(ModConfig.Type.SERVER,ZenithConfigs.CONFIG);
-        if(FMLEnvironment.dist == Dist.CLIENT){
-            context.registerConfig(ModConfig.Type.CLIENT,ZenithConfigs.CLIENT_CONFIG);
+        context.registerConfig(ModConfig.Type.SERVER, ZenithConfigs.CONFIG);
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            context.registerConfig(ModConfig.Type.CLIENT, ZenithConfigs.CLIENT_CONFIG);
             context.registerExtensionPoint(
-                    ConfigScreenHandler.ConfigScreenFactory.class,
-                    () -> new ConfigScreenHandler.ConfigScreenFactory(
-                            (minecraft, parent) -> new ZenithConfigScreen(parent)
-                    )
+                ConfigScreenHandler.ConfigScreenFactory.class,
+                () -> new ConfigScreenHandler.ConfigScreenFactory(
+                    (minecraft, parent) -> new ZenithConfigScreen(parent)
+                )
             );
         }
         ZenithItems.ITEMS.register(context.getModEventBus());

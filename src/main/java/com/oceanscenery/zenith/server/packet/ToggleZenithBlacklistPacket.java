@@ -11,12 +11,13 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public record ToggleZenithBlacklistPacket(int playerId, int entityId, boolean shifted) implements IZenithPacket {
-    public ToggleZenithBlacklistPacket(FriendlyByteBuf buf){
-        this(buf.readInt(),buf.readInt(),buf.readBoolean());
+public record ToggleZenithBlacklistPacket(int playerId, int entityId,
+                                          boolean shifted) implements IZenithPacket {
+    public ToggleZenithBlacklistPacket(FriendlyByteBuf buf) {
+        this(buf.readInt(), buf.readInt(), buf.readBoolean());
     }
 
-    public void write(FriendlyByteBuf buf){
+    public void write(FriendlyByteBuf buf) {
         buf.writeInt(playerId);
         buf.writeInt(entityId);
         buf.writeBoolean(shifted);
@@ -24,28 +25,28 @@ public record ToggleZenithBlacklistPacket(int playerId, int entityId, boolean sh
 
     @Override
     public void handle(Supplier<NetworkEvent.Context> context) {
-        ServerPlayer player=context.get().getSender();
-        if(player.getId()!=playerId){
+        ServerPlayer player = context.get().getSender();
+        if (player.getId() != playerId) {
             context.get().setPacketHandled(true);
             return;
         }
-        Entity selected=player.serverLevel().getEntity(entityId);
-        if(selected==null || player.distanceTo(selected)>player.getAttributeValue(ForgeMod.ENTITY_REACH.get())){
+        Entity selected = player.serverLevel().getEntity(entityId);
+        if (selected == null || player.distanceTo(selected) > player.getAttributeValue(ForgeMod.ENTITY_REACH.get())) {
             context.get().setPacketHandled(true);
             return;
         }
-        if(shifted()){
-            CapabilitiesHandler.toggleIdCap(player,selected);
-        }else{
-            CapabilitiesHandler.toggleUuidCap(player,selected);
+        if (shifted()) {
+            CapabilitiesHandler.toggleIdCap(player, selected);
+        } else {
+            CapabilitiesHandler.toggleUuidCap(player, selected);
         }
 
         ZenithNetworkHandler.playToClient(
-                new ZenithSendPickedEntityInfPacket(
-                        selected.getId(),
-                        !CapabilitiesHandler.checkCanAttack(player,selected)
-                ),
-                player
+            new ZenithSendPickedEntityInfPacket(
+                selected.getId(),
+                !CapabilitiesHandler.checkCanAttack(player, selected)
+            ),
+            player
         );
     }
 }

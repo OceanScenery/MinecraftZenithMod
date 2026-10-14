@@ -11,35 +11,35 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class ZenithUuidMark implements IZenithUuidMark{
-    Set<UUID> uuidSet=new HashSet<>();
+public class ZenithUuidMark implements IZenithUuidMark {
+    Set<UUID> uuidSet = new HashSet<>();
 
     @Override
     public Set<UUID> getUuidSet() {
         return uuidSet;
     }
 
-    public CompoundTag serialize(){
-        CompoundTag result=new CompoundTag();
-        ListTag tags=new ListTag();
-        for(UUID id:new ArrayList<>(uuidSet)){
+    public CompoundTag serialize() {
+        CompoundTag result = new CompoundTag();
+        ListTag tags = new ListTag();
+        for (UUID id : new ArrayList<>(uuidSet)) {
             tags.add(StringTag.valueOf(id.toString()));
         }
-        result.put("ZenithUuidMark",tags);
+        result.put("ZenithUuidMark", tags);
         return result;
     }
 
-    public void deserialize(CompoundTag tag){
-        Tag aTag=tag.get("ZenithUuidMark");
+    public void deserialize(CompoundTag tag) {
+        Tag aTag = tag.get("ZenithUuidMark");
         uuidSet.clear();
-        if(aTag instanceof ListTag listTag){
-            try{
+        if (aTag instanceof ListTag listTag) {
+            try {
                 for (int i = 0; i < listTag.size(); i++) {
                     String str = listTag.getString(i);
                     uuidSet.add(UUID.fromString(str));
                 }
-            }catch (IllegalArgumentException e){
-                TheZenithMod.LOGGER.error("Error in loading uuid:",e);
+            } catch (IllegalArgumentException e) {
+                TheZenithMod.LOGGER.error("Error in loading uuid:", e);
                 uuidSet.clear();
             }
         }

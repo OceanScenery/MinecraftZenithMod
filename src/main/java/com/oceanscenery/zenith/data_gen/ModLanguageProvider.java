@@ -40,6 +40,11 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.sort_farest.tooltip","设置弹射物索敌是否优先为远处敌人");
             add("the_zenith_sword.configuration.percentage_damage_factor","百分比伤害");
             add("the_zenith_sword.configuration.percentage_damage_factor.tooltip","设置天顶剑造成伤害时附带敌方最大生命值伤害的比例");
+            add("the_zenith_sword.configuration.invalid_damage_action","无效伤害处理方式");
+            add("the_zenith_sword.configuration.invalid_damage_action.tooltip","NONE: 不处理；REMOVE: 直接移除实体并尝试生成掉落物；DELAYED: 在下次攻击时延迟补足伤害");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.NONE","不处理");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.REMOVE","移除实体");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.DELAYED","延迟补足");
             add("the_zenith_sword.configuration.disable_knockback.tooltip","是否禁用击退");
             add("the_zenith_sword.configuration.render_offset.tooltip","将剑的轨迹在第一人称下的渲染向下偏移一格,以凸显轨道的弧形");
             add("the_zenith_sword.configuration.trail_angle","剑轨角度");
@@ -73,6 +78,16 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.message.add_group_entities_to_list","已将此类生物添加进天顶剑攻击黑名单");
             add("the_zenith_sword.message.remove_single_entity_to_list","已将此生物移出天顶剑攻击黑名单");
             add("the_zenith_sword.message.add_single_entity_to_list","已将此生物添加进天顶剑攻击黑名单");
+            add("commands.the_zenith_sword.blacklist.unknown_type", "未知的实体类型：%s");
+            add("commands.the_zenith_sword.blacklist.selector.single_only", "实体选择器一次必须且只能选择一个实体");
+            add("commands.the_zenith_sword.blacklist.entity.added", "已将 %s 加入天顶剑攻击黑名单");
+            add("commands.the_zenith_sword.blacklist.entity.removed", "已将 %s 移出天顶剑攻击黑名单");
+            add("commands.the_zenith_sword.blacklist.entity.already_added", "%s 已在天顶剑攻击黑名单中");
+            add("commands.the_zenith_sword.blacklist.entity.already_removed", "%s 不在天顶剑攻击黑名单中");
+            add("commands.the_zenith_sword.blacklist.type.added", "已将实体类型 %s 加入天顶剑攻击黑名单");
+            add("commands.the_zenith_sword.blacklist.type.removed", "已将实体类型 %s 移出天顶剑攻击黑名单");
+            add("commands.the_zenith_sword.blacklist.type.already_added", "实体类型 %s 已在天顶剑攻击黑名单中");
+            add("commands.the_zenith_sword.blacklist.type.already_removed", "实体类型 %s 不在天顶剑攻击黑名单中");
         }
         if(locale.equals("en_us")){
             add(ZenithItems.ZENITH.get(),"Zenith Sword");
@@ -87,6 +102,11 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.enable_bypass_invulnerable","use damage type that bypasses most damage reduction");
             add("the_zenith_sword.configuration.percentage_damage_factor","zenith percentage damage");
             add("the_zenith_sword.configuration.percentage_damage_factor.tooltip","this value determines the percentage of the enemy’s maximum health dealt as bonus damage on attacks.");
+            add("the_zenith_sword.configuration.invalid_damage_action","Invalid damage handling");
+            add("the_zenith_sword.configuration.invalid_damage_action.tooltip","NONE: do nothing; REMOVE: remove directly and drop loot; DELAYED: settle missing damage later");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.NONE","Do nothing");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.REMOVE","Remove entity");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.DELAYED","Settle later");
             add("the_zenith_sword.configuration.render","render settings");
             add("the_zenith_sword.configuration.render_offset","trail offset(1 block down)");
             add("the_zenith_sword.configuration.trail_angle","trail_angle");
@@ -132,6 +152,16 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.native.tab.client","Client");
             add("the_zenith_sword.configuration.native.tab.combat","Combat");
             add("the_zenith_sword.configuration.native.tab.behavior","Behavior");
+            add("commands.the_zenith_sword.blacklist.unknown_type", "Unknown entity type: %s");
+            add("commands.the_zenith_sword.blacklist.selector.single_only", "The entity selector must select exactly one entity");
+            add("commands.the_zenith_sword.blacklist.entity.added", "Added %s to the Zenith Sword attack blacklist");
+            add("commands.the_zenith_sword.blacklist.entity.removed", "Removed %s from the Zenith Sword attack blacklist");
+            add("commands.the_zenith_sword.blacklist.entity.already_added", "%s is already in the Zenith Sword attack blacklist");
+            add("commands.the_zenith_sword.blacklist.entity.already_removed", "%s is not in the Zenith Sword attack blacklist");
+            add("commands.the_zenith_sword.blacklist.type.added", "Added entity type %s to the Zenith Sword attack blacklist");
+            add("commands.the_zenith_sword.blacklist.type.removed", "Removed entity type %s from the Zenith Sword attack blacklist");
+            add("commands.the_zenith_sword.blacklist.type.already_added", "Entity type %s is already in the Zenith Sword attack blacklist");
+            add("commands.the_zenith_sword.blacklist.type.already_removed", "Entity type %s is not in the Zenith Sword attack blacklist");
         }
     }
 }

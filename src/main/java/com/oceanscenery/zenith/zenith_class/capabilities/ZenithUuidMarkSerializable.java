@@ -10,12 +10,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ZenithUuidMarkSerializable implements ICapabilitySerializable<CompoundTag> {
-    private final ZenithUuidMark uuidMark=new ZenithUuidMark();
-    public final LazyOptional<ZenithUuidMark> optional=LazyOptional.of(()->uuidMark);
+    private final ZenithUuidMark uuidMark = new ZenithUuidMark();
+    public final LazyOptional<ZenithUuidMark> optional = LazyOptional.of(() -> uuidMark);
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if(cap== ZenithCapabilities.ZENITH_UUID_MARK){
+        if (cap == ZenithCapabilities.ZENITH_UUID_MARK) {
             return optional.cast();
         }
         return LazyOptional.empty();
