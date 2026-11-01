@@ -119,15 +119,10 @@ sourceSets {
         }
     }
 
-    bootstrap {
-        java.setSrcDirs(['src/bootstrap/java'])
-        resources.setSrcDirs(['src/bootstrap/resources'])
-        compileClasspath += sourceSets.main.compileClasspath
+    // 自注册 agent 的宿主，编译成一个独立的小 jar，再内嵌进 mod jar
+    agent {
+        java.setSrcDirs(['src/agent/java'])
     }
-}
-
-configurations {
-    bootstrapImplementation.extendsFrom implementation
 }
 
 repositories {
@@ -191,14 +186,40 @@ tasks.named('processResources', ProcessResources).configure {
     ]
     inputs.properties replaceProperties
 
+    //把 zenith_agent.jar 放到资源根目录
+    dependsOn tasks.named('agentJar')
+    from(tasks.named('agentJar')) {
+        into '/'
+    }
+
     filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
         expand replaceProperties + [project: project]
     }
 }
 
+// 自注册 agent 本体
+tasks.register('agentJar', Jar) {
+    archiveBaseName = 'zenith_agent'
+    archiveVersion = ''
+    archiveClassifier = ''
+    destinationDirectory = layout.buildDirectory.dir('agent')
+    from sourceSets.agent.output
+    manifest {
+        attributes(
+                'Launcher-Agent-Class'   : 'com.oceanscenery.zenith.coreagent.ZenithAgent',
+                'Agent-Class'            : 'com.oceanscenery.zenith.coreagent.ZenithAgent',
+                'Premain-Class'          : 'com.oceanscenery.zenith.coreagent.ZenithAgent',
+                'Can-Redefine-Classes'   : 'true',
+                'Can-Retransform-Classes': 'true'
+        )
+    }
+}
+
 // Example for how to get properties into the manifest for reading at runtime.
 tasks.named('jar', Jar).configure {
-    archiveClassifier = 'payload'
+    //中间产物
+    archiveClassifier = 'thin'
+    destinationDirectory = layout.buildDirectory.dir('thin')
 
     manifest {
         attributes([
@@ -212,34 +233,18 @@ tasks.named('jar', Jar).configure {
                 'MixinConfigs'            : "${mod_id}.mixins.json"
         ])
     }
-
-    // This is the preferred method to reobfuscate your jar file
-    finalizedBy 'reobfJar'
 }
 
-tasks.register('bootstrapJar', Jar) {
+// 最终
+tasks.register('modJar', Copy) {
     dependsOn 'reobfJarJar'
-
-    archiveClassifier = ''
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    from sourceSets.bootstrap.output
-
-    from(layout.buildDirectory.file('reobfJarJar/output.jar')) {
-        into 'META-INF/the_zenith_sword'
-        rename { 'payload.jar' }
-    }
-
-    manifest {
-        attributes(
-                'Automatic-Module-Name': 'the.zenith.sword.bootstrap',
-                'FMLModType': 'LIBRARY'
-        )
-    }
+    from(layout.buildDirectory.file('reobfJarJar/output.jar'))
+    into(layout.buildDirectory.dir('libs'))
+    rename { "${mod_id}-${project.version}.jar" }
 }
 
 tasks.named('assemble').configure {
-    dependsOn tasks.named('bootstrapJar')
+    dependsOn tasks.named('modJar')
 }
 
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing:
@@ -247,20 +252,14 @@ tasks.named('assemble').configure {
 //     dependsOn 'reobfJar'
 // }
 
-// Example configuration to allow publishing using the maven-publish plugin
-publishing {
-    publications {
-        register('mavenJava', MavenPublication) {
-            artifact bootstrapJar
-        }
-    }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
-    }
-}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+tasks.register('transformerSelfTest', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass.set('com.oceanscenery.zenith.agent.ZenithTransformerSelfTest')
+    workingDir = projectDir
 }

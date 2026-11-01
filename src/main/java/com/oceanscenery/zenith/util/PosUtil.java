@@ -2,6 +2,7 @@ package com.oceanscenery.zenith.util;
 
 import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class PosUtil {
     public static Vector3 calPos(double distance,int progress,double angle){
@@ -45,10 +46,14 @@ public class PosUtil {
         return past.multiply(1-partial).add(curr.multiply(partial));
     }
 
-    public static void main(String[] args) {
-        for(int i=0;i<=20;i++){
-            System.out.println(calPos(20,i,0));
+    public static Rotation rotationFromDirection(Vec3 direction) {
+        double horizontal = Math.sqrt(direction.x * direction.x + direction.z * direction.z);
+        if (horizontal < 1.0E-7 && Math.abs(direction.y) < 1.0E-7) {
+            return new Rotation(0, 0);
         }
+        double pitch = -Math.toDegrees(Math.atan2(direction.y, horizontal));
+        double yaw = Math.toDegrees(Math.atan2(-direction.x, direction.z));
+        return new Rotation(pitch, yaw);
     }
 
     public static class Rotation{

@@ -1,11 +1,12 @@
-package com.oceanscenery.zenith.bootstrap;
+package com.oceanscenery.agent.patcher;
 
+import com.oceanscenery.agent.ZenithTransformer;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 import java.util.Set;
 
-public final class LivingEntityHealthPatcher {
+public final class LivingHealthPatcher {
     private static final String LIVING_ENTITY = "net/minecraft/world/entity/LivingEntity";
     private static final String OBJECT = "java/lang/Object";
     private static final String GET_HEALTH_NAME = "getHealth";
@@ -23,7 +24,7 @@ public final class LivingEntityHealthPatcher {
 
     private final Set<String> targetNames;
 
-    public LivingEntityHealthPatcher(Set<String> targets) {
+    public LivingHealthPatcher(Set<String> targets) {
         this.targetNames = Set.copyOf(targets);
     }
 
@@ -31,31 +32,24 @@ public final class LivingEntityHealthPatcher {
         if (!this.targetNames.contains(targetName)) {
             return false;
         }
+        if (ZenithTransformer.ENTITY.equals(targetName)) {
+            return false;
+        }
 
         boolean changed = false;
         for (MethodNode method : classNode.methods) {
-            if (processGetHealth(method)) {
-                changed = true;
-            }
-            if (processIsAlive(method)) {
-                changed = true;
-            }
-            if (processSetHealth(method)) {
-                changed = true;
-            }
-            if (processIsDeadOrDying(method)) {
-                changed = true;
-            }
+            changed |= processGetHealth(method);
+            changed |= processIsAlive(method);
+            changed |= processSetHealth(method);
+            changed |= processIsDeadOrDying(method);
         }
-
         return changed;
     }
 
     private boolean processGetHealth(MethodNode method) {
-        if (!matches(method, GET_HEALTH_NAME, GET_HEALTH_SRG_NAME, GET_HEALTH_DESCRIPTOR)) {
+        if (!match(method, GET_HEALTH_NAME, GET_HEALTH_SRG_NAME, GET_HEALTH_DESCRIPTOR)) {
             return false;
         }
-
         if ((method.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE | Opcodes.ACC_STATIC)) != 0) {
             return false;
         }
@@ -72,7 +66,7 @@ public final class LivingEntityHealthPatcher {
             patch.add(new VarInsnNode(Opcodes.ALOAD, 0));
             patch.add(new MethodInsnNode(
                 Opcodes.INVOKESTATIC,
-                ZenithTransformer.CLASS_NAME,
+                ZenithTransformer.HOOKS,
                 ZenithTransformer.GET_HEALTH_RETURN,
                 ZenithTransformer.GET_HEALTH_RETURN_DES,
                 false
@@ -81,11 +75,14 @@ public final class LivingEntityHealthPatcher {
             method.instructions.insertBefore(instruction, patch);
             flag = true;
         }
+        if (flag) {
+            method.maxStack += 1;
+        }
         return flag;
     }
 
     private boolean processSetHealth(MethodNode method) {
-        if (!matches(method, SET_HEALTH_NAME, SET_HEALTH_SRG_NAME, SET_HEALTH_DESCRIPTOR)) {
+        if (!match(method, SET_HEALTH_NAME, SET_HEALTH_SRG_NAME, SET_HEALTH_DESCRIPTOR)) {
             return false;
         }
 
@@ -103,18 +100,19 @@ public final class LivingEntityHealthPatcher {
         list.add(new VarInsnNode(Opcodes.ALOAD, 0));
         list.add(new MethodInsnNode(
             Opcodes.INVOKESTATIC,
-            ZenithTransformer.CLASS_NAME,
+            ZenithTransformer.HOOKS,
             ZenithTransformer.SET_HEALTH_HEAD,
             ZenithTransformer.SET_HEALTH_HEAD_DES,
             false
         ));
 
         method.instructions.insertBefore(ins, list);
+        method.maxStack += 2;
         return true;
     }
 
     private boolean processIsDeadOrDying(MethodNode method) {
-        if (!matches(method, IS_DEAD_OR_DYING_NAME, IS_DEAD_OR_DYING_SRG_NAME, IS_DEAD_OR_DYING_DESCRIPTOR)) {
+        if (!match(method, IS_DEAD_OR_DYING_NAME, IS_DEAD_OR_DYING_SRG_NAME, IS_DEAD_OR_DYING_DESCRIPTOR)) {
             return false;
         }
 
@@ -134,7 +132,7 @@ public final class LivingEntityHealthPatcher {
             patch.add(new VarInsnNode(Opcodes.ALOAD, 0));
             patch.add(new MethodInsnNode(
                 Opcodes.INVOKESTATIC,
-                ZenithTransformer.CLASS_NAME,
+                ZenithTransformer.HOOKS,
                 ZenithTransformer.IS_DEAD_OR_DYING_RETURN,
                 ZenithTransformer.IS_DEAD_OR_DYING_RETURN_DES,
                 false
@@ -143,11 +141,14 @@ public final class LivingEntityHealthPatcher {
             method.instructions.insertBefore(instruction, patch);
             flag = true;
         }
+        if (flag) {
+            method.maxStack += 1;
+        }
         return flag;
     }
 
     private boolean processIsAlive(MethodNode method) {
-        if (!matches(method, IS_ALIVE_NAME, IS_ALIVE_SRG_NAME, IS_ALIVE_DESCRIPTOR)) {
+        if (!match(method, IS_ALIVE_NAME, IS_ALIVE_SRG_NAME, IS_ALIVE_DESCRIPTOR)) {
             return false;
         }
 
@@ -167,7 +168,7 @@ public final class LivingEntityHealthPatcher {
             patch.add(new VarInsnNode(Opcodes.ALOAD, 0));
             patch.add(new MethodInsnNode(
                 Opcodes.INVOKESTATIC,
-                ZenithTransformer.CLASS_NAME,
+                ZenithTransformer.HOOKS,
                 ZenithTransformer.IS_ALIVE_RETURN,
                 ZenithTransformer.IS_ALIVE_RETURN_DES,
                 false
@@ -176,15 +177,13 @@ public final class LivingEntityHealthPatcher {
             method.instructions.insertBefore(instruction, patch);
             flag = true;
         }
+        if (flag) {
+            method.maxStack += 1;
+        }
         return flag;
     }
 
-    private static boolean matches(
-        MethodNode method,
-        String officialName,
-        String mappedName,
-        String descriptor
-    ) {
+    private static boolean match(MethodNode method, String officialName, String mappedName, String descriptor) {
         return descriptor.equals(method.desc)
             && (officialName.equals(method.name) || mappedName.equals(method.name));
     }

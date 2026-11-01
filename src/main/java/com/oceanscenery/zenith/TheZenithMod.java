@@ -1,39 +1,38 @@
 package com.oceanscenery.zenith;
 
 import com.mojang.logging.LogUtils;
-import com.oceanscenery.zenith.client.ZenithConfigScreen;
+import com.oceanscenery.agent.ZenithAgentCallback;
 import com.oceanscenery.zenith.registry.*;
 import com.oceanscenery.zenith.server.ZenithNetworkHandler;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.ConfigScreenHandler;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 import org.spongepowered.asm.launch.MixinBootstrap;
+import sun.misc.Unsafe;
 
-// The value here should match an entry in the META-INF/mods.toml file
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Field;
+
 @Mod(TheZenithMod.MOD_ID)
 public class TheZenithMod {
-    public static boolean TERRA_LOADED = ModList.get().isLoaded("confluence");
+    public static boolean TERRA_LOADED = false;
     public static final String MOD_ID = "the_zenith_sword";
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public TheZenithMod(FMLJavaModLoadingContext context) {
+        TERRA_LOADED = ModList.get().isLoaded("confluence");
         MixinBootstrap.init();
+        ZenithAgentCallback.preload();
         context.registerConfig(ModConfig.Type.SERVER, ZenithConfigs.CONFIG);
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            context.registerConfig(ModConfig.Type.CLIENT, ZenithConfigs.CLIENT_CONFIG);
-            context.registerExtensionPoint(
-                ConfigScreenHandler.ConfigScreenFactory.class,
-                () -> new ConfigScreenHandler.ConfigScreenFactory(
-                    (minecraft, parent) -> new ZenithConfigScreen(parent)
-                )
-            );
-        }
+        context.registerConfig(ModConfig.Type.CLIENT, ZenithConfigs.CLIENT_CONFIG);
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> TheZenithModClient.register(context));
         ZenithItems.ITEMS.register(context.getModEventBus());
         ZenithEntityDataSerializers.ENTITY_DATA_SERIALIZERS.register(context.getModEventBus());
         ZenithEntities.ENTITIES.register(context.getModEventBus());

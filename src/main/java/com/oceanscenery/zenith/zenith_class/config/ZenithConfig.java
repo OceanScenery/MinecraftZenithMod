@@ -31,7 +31,7 @@ public class ZenithConfig {
         invalid_damage_action = builder.comment("How to handle damage when the fallback setHealth attack is ineffective.",
             "NONE: do nothing",
             "REMOVE: remove the entity directly",
-            "DELAYED: store the missing damage and settle it later").defineEnum("invalid_damage_action", InvalidDamageAction.REMOVE);
+            "DELAYED: store the missing damage and settle it later").defineEnum("invalid_damage_action", InvalidDamageAction.DELAYED);
         builder.pop();
     }
 }

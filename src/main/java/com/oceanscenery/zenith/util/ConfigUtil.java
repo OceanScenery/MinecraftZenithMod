@@ -5,7 +5,6 @@ import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.zenith_class.config.InvalidDamageAction;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.fml.ModList;
 
 public class ConfigUtil {
     public static float healthPercentage() {

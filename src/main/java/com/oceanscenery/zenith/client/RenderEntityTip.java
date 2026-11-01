@@ -14,37 +14,37 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = TheZenithMod.MOD_ID,value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = TheZenithMod.MOD_ID, value = Dist.CLIENT)
 public class RenderEntityTip {
-    public static int currId=-1;
-    public static int serverBackId=-1;
-    public static boolean canAttack=false;
+    public static int currId = -1;
+    public static int serverBackId = -1;
+    public static boolean canAttack = false;
 
     @SubscribeEvent
-    public static void onRender(RenderLevelStageEvent event){
-        if(event.getStage()!=RenderLevelStageEvent.Stage.AFTER_ENTITIES){
+    public static void onRender(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
             return;
         }
 
-        Minecraft mc=Minecraft.getInstance();
-        Entity selected=mc.crosshairPickEntity;
+        Minecraft mc = Minecraft.getInstance();
+        Entity selected = mc.crosshairPickEntity;
 
-        Player player=mc.player;
-        if(player==null){
+        Player player = mc.player;
+        if (player == null) {
             return;
         }
-        if(!player.getMainHandItem().is(ZenithItems.ZENITH.get()) && !player.getOffhandItem().is(ZenithItems.ZENITH.get())){
-            return;
-        }
-
-        if(selected==null || selected.getId()!=RenderEntityTip.serverBackId || selected.getId()!=RenderEntityTip.currId || RenderEntityTip.canAttack){
+        if (!player.getMainHandItem().is(ZenithItems.ZENITH.get()) && !player.getOffhandItem().is(ZenithItems.ZENITH.get())) {
             return;
         }
 
-        VertexConsumer vertexConsumer=mc.renderBuffers().bufferSource().getBuffer(RenderType.LINES);
+        if (selected == null || selected.getId() != RenderEntityTip.serverBackId || selected.getId() != RenderEntityTip.currId || RenderEntityTip.canAttack) {
+            return;
+        }
 
-        Vec3 cam=mc.gameRenderer.getMainCamera().getPosition();
-        LevelRenderer.renderLineBox(event.getPoseStack(),vertexConsumer,selected.getBoundingBox().inflate(0.1).move(cam.scale(-1)),1f,0.2f,0.2f,0.9f);
+        VertexConsumer vertexConsumer = mc.renderBuffers().bufferSource().getBuffer(RenderType.LINES);
+
+        Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
+        LevelRenderer.renderLineBox(event.getPoseStack(), vertexConsumer, selected.getBoundingBox().inflate(0.1).move(cam.scale(-1)), 1f, 0.2f, 0.2f, 0.9f);
 
         mc.renderBuffers().bufferSource().endBatch();
     }

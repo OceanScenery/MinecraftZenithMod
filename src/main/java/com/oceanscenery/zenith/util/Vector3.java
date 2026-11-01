@@ -144,7 +144,7 @@ public class Vector3 {
         return new Vector3f((float) this.x, (float) this.y, (float) this.z);
     }
 
-    public static Vector3 transToVector3(Vec3 vec) {
+    public static Vector3 of(Vec3 vec) {
         return new Vector3(vec.x, vec.y, vec.z);
     }
 
@@ -215,8 +215,4 @@ public class Vector3 {
         return Math.acos(this.dot(vec) / this.length() / vec.length());
     }
 
-    public static void main(String[] args) {
-        System.out.println(PosUtil.calCenPos(10, Math.PI / 4, 0).normalize());
-        System.out.println(new Vector3(0, 0, -1).rot(Quaternion.rotate(new Vector3(0, 1, 0), 5)).normalize());
-    }
 }

@@ -46,6 +46,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     private Vec3 last_pos = null;
     private boolean to_remove;
     private int local_progress = 0;
+    private DamageHandler.AttackFilter filter = null;
 
     public ZenithProjectile(EntityType<? extends ZenithProjectile> entityType, Level level) {
         super(entityType, level);
@@ -117,6 +118,17 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     public void setOwner(UUID uuid) {
         Entity found = LevelUtil.getEntity(this.level(), uuid);
         this.setOwner(found);
+    }
+
+    public void setFilter(DamageHandler.AttackFilter filter) {
+        this.filter = filter;
+    }
+
+    public DamageHandler.AttackFilter getFilter() {
+        if (this.filter == null) {
+            this.filter = DamageHandler.DEFAULT_FILTER;
+        }
+        return this.filter;
     }
 
     @Override
@@ -271,7 +283,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             AABB box = new AABB(realPos, last_pos).inflate(2);
             List<Entity> list = this.level().getEntitiesOfClass(Entity.class, box, this::canHit);
             for (Entity entity : list) {
-                DamageHandler.applyDamage(this, entity, weapon);
+                DamageHandler.applyDamage(this, entity, weapon, 1,this.getFilter());
             }
         }
 

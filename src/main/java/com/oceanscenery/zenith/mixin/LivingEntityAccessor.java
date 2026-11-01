@@ -23,6 +23,9 @@ public interface LivingEntityAccessor {
     @Accessor(value = "dead")
     void setDead(boolean isDead);
 
+    @Accessor(value = "dead")
+    boolean isDead();
+
     @Accessor(value = "deathScore")
     int getDeathScore();
 }
