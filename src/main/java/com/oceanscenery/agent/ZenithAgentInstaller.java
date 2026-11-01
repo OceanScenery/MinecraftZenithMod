@@ -3,15 +3,19 @@ package com.oceanscenery.agent;
 import com.oceanscenery.zenith.TheZenithMod;
 import sun.misc.Unsafe;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public final class ZenithAgentInstaller {
     private static final String AGENT_RESOURCE = "/zenith_agent.jar";
@@ -54,7 +58,11 @@ public final class ZenithAgentInstaller {
                 loadAgentWithoutAttach(agentFile);
             } catch (Throwable t2) {
                 TheZenithMod.LOGGER.error("[ZenithAgent] in-process loadAgent failed", t2);
-                TheZenithMod.LOGGER.error("[ZenithAgent] failed to load agent by all means.");
+                try {
+                    loadAgentViaJmx(agentFile);
+                } catch (Throwable t3) {
+                    TheZenithMod.LOGGER.error("[ZenithAgent] failed to load agent by all means.");
+                }
             }
         }
     }
@@ -138,5 +146,33 @@ public final class ZenithAgentInstaller {
             MethodType.methodType(void.class, String.class)
         );
         loadAgent.invoke(path);
+    }
+
+    private static void loadAgentViaJmx(Path agentJar) throws Throwable {
+        if (ModuleLayer.boot().findModule("jdk.management").isEmpty()) {
+            throw new IllegalStateException("jdk.management未加载");
+        }
+        Path tmp = Files.createTempDirectory("zenith-instrument");
+        String libName = System.getProperty("os.name").toLowerCase().contains("win") ? "instrument.dll" : "libinstrument.so";
+        Path instrument = tmp.resolve(libName);
+
+        Files.copy(
+            Path.of(System.getProperty("java.home"), "bin", libName),
+            instrument,
+            StandardCopyOption.REPLACE_EXISTING
+        );
+
+        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+        ObjectName name = new ObjectName("com.sun.management:type=DiagnosticCommand");
+
+        Object result = server.invoke(
+            name, "jvmtiAgentLoad", new Object[]{new String[]{instrument.toString(), agentJar.toString()}},
+            new String[]{"[Ljava.lang.String;"}
+        );
+
+        TheZenithMod.LOGGER.info("[ZenithAgent] jvmtiAgentLoad => {}", result);
+        if (!String.valueOf(result).contains("0")) {
+            throw new RuntimeException("jmx加载agent失败");
+        }
     }
 }
