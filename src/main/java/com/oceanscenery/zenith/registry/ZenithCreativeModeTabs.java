@@ -19,6 +19,7 @@ public class ZenithCreativeModeTabs {
             .title(Component.translatable("item.the_zenith_sword.zenith"))
             .displayItems((parameters, output) -> {
                 output.accept(ZenithItems.ZENITH.get());
+                output.accept(ZenithItems.ZENITH_UPGRADE.get());
             }).build()
     );
 }

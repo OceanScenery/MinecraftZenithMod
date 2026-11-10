@@ -7,9 +7,9 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public record ZenithSendPickedEntityInfPacket(int entityId,boolean inList) implements IZenithPacket {
-    public ZenithSendPickedEntityInfPacket(FriendlyByteBuf buf){
-        this(buf.readInt(),buf.readBoolean());
+public record ZenithSendPickedEntityInfPacket(int entityId, boolean inList) implements IZenithPacket {
+    public ZenithSendPickedEntityInfPacket(FriendlyByteBuf buf) {
+        this(buf.readInt(), buf.readBoolean());
     }
 
     @Override
@@ -19,6 +19,6 @@ public record ZenithSendPickedEntityInfPacket(int entityId,boolean inList) imple
 
     @Override
     public void handle(Supplier<NetworkEvent.Context> context) {
-        ZenithClientPacketHandler.handleEntityInfPacket(entityId,inList);
+        ZenithClientPacketHandler.handleEntityInfPacket(entityId, inList);
     }
 }

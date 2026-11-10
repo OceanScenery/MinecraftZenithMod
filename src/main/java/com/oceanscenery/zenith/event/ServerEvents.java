@@ -1,7 +1,9 @@
 package com.oceanscenery.zenith.event;
 
 import com.oceanscenery.zenith.TheZenithMod;
+import com.oceanscenery.zenith.mixin_extension.IZenithLivingEntityExtension;
 import com.oceanscenery.zenith.util.StaticCollections;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -32,13 +34,12 @@ public class ServerEvents {
     public static void onServerStop(ServerStoppedEvent event) {
         StaticCollections.checkedVictims.clear();
         StaticCollections.taskList.clear();
-        StaticCollections.tickDeathList.clear();
-        StaticCollections.removed.clear();
     }
 
     @SubscribeEvent
     public static void onEntityRemoved(EntityLeaveLevelEvent event) {
-        StaticCollections.tickDeathList.remove(event.getEntity());
-        StaticCollections.removed.remove(event.getEntity());
+        if (event.getEntity() instanceof LivingEntity living) {
+            IZenithLivingEntityExtension.of(living).zenith$setDead(false);
+        }
     }
 }

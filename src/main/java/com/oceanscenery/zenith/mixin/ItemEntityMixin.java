@@ -1,9 +1,7 @@
 package com.oceanscenery.zenith.mixin;
 
 import com.oceanscenery.zenith.registry.ZenithItems;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -21,6 +19,7 @@ import java.util.UUID;
 public abstract class ItemEntityMixin {
     @Shadow
     public abstract ItemStack getItem();
+
     @Shadow
     private int pickupDelay;
     @Final
@@ -30,6 +29,9 @@ public abstract class ItemEntityMixin {
     private UUID thrower;
     @Shadow
     private int age;
+
+    @Shadow
+    public abstract void setItem(ItemStack stack);
 
     @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
     public void onHurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {

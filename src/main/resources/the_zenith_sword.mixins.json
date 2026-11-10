@@ -3,11 +3,21 @@
   "package": "com.oceanscenery.zenith.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "EntityAccessor",
     "EntityMixin",
     "ItemEntityMixin",
-    "LivingEntityAccessor",
-    "LivingEntityMixin"
+    "LivingEntityMixin",
+    "accessor.ChunkMapAccessor",
+    "accessor.EntityAccessor",
+    "accessor.EntityLookupAccessor",
+    "accessor.EntitySectionAccessor",
+    "accessor.EntitySectionStorageAccessor",
+    "accessor.EntityTickListAccessor",
+    "accessor.LivingEntityAccessor",
+    "accessor.PersistentEntitySectionManagerAccessor",
+    "accessor.PlayerAccessor",
+    "accessor.ServerChunkCacheAccessor",
+    "accessor.ServerLevelAccessor",
+    "accessor.ServerPlayerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -16,9 +26,11 @@
     "requireAnnotations": true
   },
   "client": [
-    "ClientLevelAccessor",
-    "KeyMappingAccessor",
-    "KeyMappingMixin"
+    "accessor.ClientLevelAccessor",
+    "accessor.KeyMappingAccessor",
+    "client.ItemInHandLayerMixin",
+    "client.ItemInHandRendererMixin",
+    "client.KeyMappingMixin"
   ],
   "refmap": "the_zenith_sword.refmap.json"
 }

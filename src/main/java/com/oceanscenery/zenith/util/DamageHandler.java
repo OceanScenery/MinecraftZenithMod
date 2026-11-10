@@ -2,18 +2,21 @@ package com.oceanscenery.zenith.util;
 
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.event.CapabilitiesHandler;
-import com.oceanscenery.zenith.event.ServerTickTask;
-import com.oceanscenery.zenith.event.WeaponHandler;
-import com.oceanscenery.zenith.mixin.EntityAccessor;
-import com.oceanscenery.zenith.mixin.LivingEntityAccessor;
+import com.oceanscenery.zenith.mixin.accessor.EntityAccessor;
+import com.oceanscenery.zenith.mixin.accessor.LivingEntityAccessor;
+import com.oceanscenery.zenith.mixin.accessor.PlayerAccessor;
+import com.oceanscenery.zenith.mixin.accessor.ServerPlayerAccessor;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.zenith_class.ZenithDamageSource;
-import com.oceanscenery.zenith.zenith_class.capabilities.IZenithHealthMark;
+import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithHealthMark;
 import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
@@ -23,15 +26,16 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.scores.Score;
+import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = TheZenithMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class DamageHandler {
     private static final ThreadLocal<Boolean> inMethod = ThreadLocal.withInitial(() -> false);
 
@@ -40,14 +44,13 @@ public class DamageHandler {
             return false;
         }
         if (weapon.is(ZenithItems.ZENITH.get())) {
+            if (victim instanceof ZenithProjectile) {
+                return false;
+            }
             if ((victim instanceof ItemEntity || victim instanceof ExperienceOrb) && !ZenithConfigs.ZENITH_CONFIG.enable_attack_item.get()) {
                 return false;
             }
-            int atk = WeaponHandler.getAttackMode(weapon);
-            boolean attackPlayer = WeaponHandler.attackPlayer(weapon);
-            if (victim instanceof Player && !attackPlayer) {
-                return false;
-            }
+            int atk = ItemUtil.getAttackMode(weapon);
             if (!victim.isAttackable() && atk != 2) {
                 return false;
             }
@@ -92,13 +95,8 @@ public class DamageHandler {
             rec.extraDamage += extraDamage;
 
         } else {
-            StaticCollections.checkedVictims.put(livingVictim, new VictimRecord(getTrueHealth(livingVictim), currDamage, extraDamage));
+            StaticCollections.checkedVictims.put(livingVictim, new VictimRecord(livingVictim.getHealth(), currDamage, extraDamage));
         }
-    }
-
-    public static float getTrueHealth(LivingEntity livingVictim) {
-        SynchedEntityData data = ((EntityAccessor) livingVictim).getRealEntityData();
-        return data.get(LivingEntityAccessor.getHealthId());
     }
 
     private static boolean applyDamageAmount(Entity victim, ZenithDamageSource source, float damage, ItemStack weapon, float scale) {
@@ -124,9 +122,9 @@ public class DamageHandler {
 
             StaticCollections.checkedVictims.clear();
 
-            IZenithHealthMark mark = CapabilitiesHandler.getHealthMark(victim);
+            IZenithHealthMark mark = CapabilitiesHandler.getHealth(victim);
             if (victim instanceof LivingEntity living) {
-                if (mark != null && !mark.valid(living.level())) {
+                if (mark != null && !mark.valid(living)) {
                     float value = living.getHealth();
                     if (Float.isNaN(value) || Float.isInfinite(value)) {
                         value = -1f;
@@ -159,7 +157,7 @@ public class DamageHandler {
 
                 LivingEntity currVictim = current.getKey();
                 VictimRecord currRecord = current.getValue();
-                float realDamage = currRecord.initialHealth - getTrueHealth(currVictim);
+                float realDamage = currRecord.initialHealth - currVictim.getHealth();
                 float expectedDamage = currRecord.expectedDamage * factor + currRecord.extraDamage;
 
                 if (realDamage < expectedDamage) {
@@ -225,7 +223,7 @@ public class DamageHandler {
         } else if (attacker instanceof LivingEntity livingAttacker) {
             livingVictim.setLastHurtByMob(livingAttacker);
         }
-        float damage = getTrueHealth(livingVictim) - health;
+        float damage = livingVictim.getHealth() - health;
         livingVictim.getCombatTracker().recordDamage(source, damage);
         attacker.level().broadcastDamageEvent(livingVictim, source);
 
@@ -251,49 +249,78 @@ public class DamageHandler {
     }
 
     public static void decideDeath(LivingEntity livingVictim, float prevCheckedHealth, float postCheckedHealth, float damage, DamageSource source) {
-        if (postCheckedHealth >= prevCheckedHealth) {
+        if (postCheckedHealth >= prevCheckedHealth && !livingVictim.isDeadOrDying()) {
             deathProcess(livingVictim, source);
         } else if (livingVictim.isDeadOrDying() || livingVictim.getHealth() <= 0f) {
-            StaticCollections.taskList.add(
-                new ServerTickTask(
-                    30,
-                    () -> {
-                        if (!livingVictim.isRemoved()) {
-                            deathProcess(livingVictim, source);
-                        }
-                    }
-                )
-            );
+            deathProcess(livingVictim, source);
         }
     }
 
     public static void deathProcess(LivingEntity livingVictim, DamageSource source) {
         if (livingVictim.level() instanceof ServerLevel serverLevel) {
-            ((LivingEntityAccessor) livingVictim).callDropAllDeathLoot(source);
-        }
-        livingVictim.setRemoved(Entity.RemovalReason.KILLED);
-        LivingEntity killer = livingVictim.getKillCredit();
-        if (killer != null) {
-            killer.awardKillScore(livingVictim, ((LivingEntityAccessor) livingVictim).getDeathScore(), source);
-        }
-        if (livingVictim.isSleeping()) {
-            livingVictim.stopSleeping();
-        }
-        livingVictim.stopUsingItem();
-        ((LivingEntityAccessor) livingVictim).setDead(true);
-        if (livingVictim.level() instanceof ServerLevel serverLevel) {
-            if (source.getEntity() == null || source.getEntity().killedEntity(serverLevel, livingVictim)) {
-                livingVictim.gameEvent(GameEvent.ENTITY_DIE);
+            if (!(livingVictim instanceof ServerPlayer sp) || !sp.isSpectator()) {
+                ((LivingEntityAccessor) livingVictim).callDropAllDeathLoot(source);
             }
-            serverLevel.broadcastEntityEvent(livingVictim, (byte) 3);
         }
+
+        if (!(livingVictim instanceof ServerPlayer)) {
+            LivingEntity killer = livingVictim.getKillCredit();
+            if (killer != null) {
+                killer.awardKillScore(livingVictim, ((LivingEntityAccessor) livingVictim).zenith$getDeathScore(), source);
+            }
+            if (livingVictim.isSleeping()) {
+                livingVictim.stopSleeping();
+            }
+            livingVictim.stopUsingItem();
+            ((LivingEntityAccessor) livingVictim).setDead(true);
+            if (livingVictim.level() instanceof ServerLevel serverLevel) {
+                if (source.getEntity() == null || source.getEntity().killedEntity(serverLevel, livingVictim)) {
+                    livingVictim.gameEvent(GameEvent.ENTITY_DIE);
+                }
+                serverLevel.broadcastEntityEvent(livingVictim, (byte) 3);
+            }
+        }
+
+        if (livingVictim instanceof ServerPlayer serverPlayer) {
+            serverPlayer.gameEvent(GameEvent.ENTITY_DIE);
+
+            ((PlayerAccessor) serverPlayer).zenith$removeEntitiesOnShoulder();
+            if (serverPlayer.level().getGameRules().getBoolean(GameRules.RULE_FORGIVE_DEAD_PLAYERS)) {
+                ((ServerPlayerAccessor) serverPlayer).zenith$tellNeutralMobsThatIDied();
+            }
+
+            serverPlayer.getScoreboard().forAllObjectives(
+                ObjectiveCriteria.DEATH_COUNT, serverPlayer.getScoreboardName(), Score::increment
+            );
+            LivingEntity livingentity = serverPlayer.getKillCredit();
+            if (livingentity != null) {
+                serverPlayer.awardStat(Stats.ENTITY_KILLED_BY.get(livingentity.getType()));
+                livingentity.awardKillScore(
+                    serverPlayer, ((LivingEntityAccessor) serverPlayer).zenith$getDeathScore(), source
+                );
+            }
+
+            serverPlayer.level().broadcastEntityEvent(serverPlayer, (byte) 3);
+            serverPlayer.awardStat(Stats.DEATHS);
+            serverPlayer.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_DEATH));
+            serverPlayer.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_REST));
+            serverPlayer.clearFire();
+            serverPlayer.setTicksFrozen(0);
+            serverPlayer.setSharedFlagOnFire(false);
+            serverPlayer.getCombatTracker().recheckStatus();
+            serverPlayer.setLastDeathLocation(
+                Optional.of(GlobalPos.of(serverPlayer.level().dimension(), serverPlayer.blockPosition()))
+            );
+        }
+
+        EntityUtil.remove(livingVictim);
     }
 
     public static void checkDeath(LivingEntity livingEntity, ServerLevel serverLevel, DamageSource source) {
         SynchedEntityData data = ((EntityAccessor) livingEntity).getRealEntityData();
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
-        if (data.get(healthId) <= 0f || livingEntity.getHealth() <= 0f) {
+        if ((data.get(healthId) <= 0f || livingEntity.getHealth() <= 0f) && !livingEntity.isRemoved()) {
             if (!((LivingEntityAccessor) livingEntity).callCheckTotemDeathProtection(source)) {
                 livingEntity.die(source);
                 ((LivingEntityAccessor) livingEntity).setDead(true);

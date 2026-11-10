@@ -11,8 +11,9 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public record ToggleZenithBlacklistPacket(int playerId, int entityId,
-                                          boolean shifted) implements IZenithPacket {
+public record ToggleZenithBlacklistPacket(int playerId, int entityId, boolean shifted) implements IZenithPacket {
+    public static final double MAX_HANDLE_DISTANCE = 10d;
+
     public ToggleZenithBlacklistPacket(FriendlyByteBuf buf) {
         this(buf.readInt(), buf.readInt(), buf.readBoolean());
     }
@@ -31,7 +32,7 @@ public record ToggleZenithBlacklistPacket(int playerId, int entityId,
             return;
         }
         Entity selected = player.serverLevel().getEntity(entityId);
-        if (selected == null || player.distanceTo(selected) > player.getAttributeValue(ForgeMod.ENTITY_REACH.get())) {
+        if (selected == null || player.distanceTo(selected) > MAX_HANDLE_DISTANCE) {
             context.get().setPacketHandled(true);
             return;
         }

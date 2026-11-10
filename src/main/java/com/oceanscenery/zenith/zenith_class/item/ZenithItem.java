@@ -4,15 +4,11 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.event.ServerTickTask;
-import com.oceanscenery.zenith.event.WeaponHandler;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithEntities;
 import com.oceanscenery.zenith.registry.ZenithItems;
-import com.oceanscenery.zenith.util.DamageHandler;
+import com.oceanscenery.zenith.util.*;
 import com.oceanscenery.zenith.util.DamageHandler.AttackFilter;
-import com.oceanscenery.zenith.util.PosUtil;
-import com.oceanscenery.zenith.util.StaticCollections;
-import com.oceanscenery.zenith.util.Vector3;
 import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -48,17 +44,12 @@ public class ZenithItem extends Item {
     public ZenithItem(Properties properties) {
         super(properties);
     }
-
-    private static boolean isBetterCombatLoaded() {
-        return ModList.get().isLoaded("bettercombat");
-    }
-
     @Override
     public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
         if (slot == EquipmentSlot.MAINHAND) {
             return ImmutableMultimap.of(
-                Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "zenith", ZenithConfigs.getDefaultDamage() * ((TheZenithMod.TERRA_LOADED && ZenithConfigs.ZENITH_CONFIG.enable_terra_damage_modifier.get()) ? 24 : 1), AttributeModifier.Operation.ADDITION),
-                Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID, "zenith", isBetterCombatLoaded() ? -2.4 : 30, AttributeModifier.Operation.ADDITION)
+                Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "zenith", ConfigUtil.defaultDamage() * ((TheZenithMod.TERRA_LOADED && ZenithConfigs.ZENITH_CONFIG.enable_terra_damage_modifier.get()) ? 24 : 1), AttributeModifier.Operation.ADDITION),
+                Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID, "zenith", ConfigUtil.attackSpeed(false), AttributeModifier.Operation.ADDITION)
             );
         }
         return ImmutableMultimap.of();
@@ -78,17 +69,14 @@ public class ZenithItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltipComponents, flag);
 
-        double dist = WeaponHandler.getDistance(stack);
-        int mode = WeaponHandler.getAttackMode(stack);
+        double dist = ItemUtil.getDistance(stack);
+        int mode = ItemUtil.getAttackMode(stack);
         String atk = mode == 0 ? "living_entity" : mode == 1 ? "attackable_entity" : "all";
-        boolean atkP = WeaponHandler.attackPlayer(stack);
 
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.distance.tooltip_pre").append(":" + dist));
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.distance.tooltip_post"));
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_mode.tooltip_pre").append(":" + atk));
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_mode.tooltip_post"));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.pre").append(":" + atkP));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.post"));
     }
 
     @Override
@@ -104,7 +92,24 @@ public class ZenithItem extends Item {
         z_tag.putLong("use_tick", 0);
         z_tag.putDouble("distance", 20);
         z_tag.putInt("attack_mode", 0);
-        z_tag.putBoolean("attack_player", true);
+        tag.put("Zenith", z_tag);
+        stack.setTag(tag);
+        return stack;
+    }
+
+    public @NotNull ItemStack instanceOf(int distance, int attackMode) {
+        ItemStack stack = super.getDefaultInstance();
+        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag z_tag = new CompoundTag();
+        z_tag.putLong("use_tick", 0);
+        if (distance % 20 != 0 || distance <= 0 || distance > 100) {
+            distance = 20;
+        }
+        if (attackMode < 0 || attackMode >= 3) {
+            attackMode = 0;
+        }
+        z_tag.putDouble("distance", distance);
+        z_tag.putInt("attack_mode", attackMode);
         tag.put("Zenith", z_tag);
         stack.setTag(tag);
         return stack;
@@ -112,7 +117,7 @@ public class ZenithItem extends Item {
 
     public boolean canAttack(@NotNull ItemStack usedItem, @NotNull LivingEntity attacker) {
         if (!attacker.level().isClientSide()) {
-            long last_tick = WeaponHandler.getLastUseTick(usedItem);
+            long last_tick = ItemUtil.getLastUseTick(usedItem);
             long this_tick = attacker.level().getGameTime();
             if (this_tick >= last_tick + USE_INTERVAL || this_tick < last_tick) {
                 return true;
@@ -130,9 +135,9 @@ public class ZenithItem extends Item {
         if (this.canAttack(usedItem, attacker)) {
             attacker.swing(hand, true);
             CompoundTag tag = usedItem.getOrCreateTag();
-            WeaponHandler.checkExist(tag);
+            ItemUtil.checkExist(tag);
             tag.getCompound("Zenith").putLong("use_tick", level.getGameTime());
-            Vector3[] relative = Vector3.getReferFromAngle(attacker .getXRot(), attacker.getYRot());
+            Vector3[] relative = Vector3.getReferFromAngle(attacker.getXRot(), attacker.getYRot());
             Vec3 initial = new Vector3(0, 0, 100).VecInNewRefer(relative, Vector3.WORLD).toVec3();
             double distance;
             AABB box = new AABB(attacker.getEyePosition().add(initial.normalize().multiply(-1, -1, -1)), attacker.getEyePosition().add(initial)).inflate(1);
@@ -151,7 +156,7 @@ public class ZenithItem extends Item {
                     }
                 }
             }
-            double dist = WeaponHandler.getDistance(usedItem);
+            double dist = ItemUtil.getDistance(usedItem);
 
             if (ZenithConfigs.ZENITH_CONFIG.sort_farest.get()) {
                 distance = farest == -1 ? dist : farest;
@@ -172,15 +177,15 @@ public class ZenithItem extends Item {
             int type1 = random.nextInt(1, TYPE_AMOUNT);
             int type2 = random.nextInt(1, TYPE_AMOUNT);
 
-            this.addEntity(level, attacker, usedItem, distance, 0,filter);
+            this.addEntity(level, attacker, usedItem, distance, 0, filter);
             double finalDistance = distance;
             StaticCollections.taskList.add(new ServerTickTask(
                 2,
-                () -> this.addEntity(level, attacker, usedItem, finalDistance, type1,filter)
+                () -> this.addEntity(level, attacker, usedItem, finalDistance, type1, filter)
             ));
             StaticCollections.taskList.add(new ServerTickTask(
                 4,
-                () -> this.addEntity(level, attacker, usedItem, finalDistance, type2,filter)
+                () -> this.addEntity(level, attacker, usedItem, finalDistance, type2, filter)
             ));
         }
     }
@@ -194,7 +199,7 @@ public class ZenithItem extends Item {
 
             attacker.swing(hand, true);
             CompoundTag tag = usedItem.getOrCreateTag();
-            WeaponHandler.checkExist(tag);
+            ItemUtil.checkExist(tag);
             tag.getCompound("Zenith").putLong("use_tick", level.getGameTime());
             Vector3[] relative = Vector3.getReferFromVec(
                 Vector3.of(target.getBoundingBox().getCenter().subtract(attacker.getEyePosition()))
@@ -226,20 +231,20 @@ public class ZenithItem extends Item {
             int type1 = random.nextInt(1, TYPE_AMOUNT);
             int type2 = random.nextInt(1, TYPE_AMOUNT);
 
-            this.addEntity(level, attacker, target, usedItem, distance, 0,filter);
+            this.addEntity(level, attacker, target, usedItem, distance, 0, filter);
             double finalDistance = distance;
             StaticCollections.taskList.add(new ServerTickTask(
                 2,
-                () -> this.addEntity(level, attacker, target, usedItem, finalDistance, type1,filter)
+                () -> this.addEntity(level, attacker, target, usedItem, finalDistance, type1, filter)
             ));
             StaticCollections.taskList.add(new ServerTickTask(
                 4,
-                () -> this.addEntity(level, attacker, target, usedItem, finalDistance, type2,filter)
+                () -> this.addEntity(level, attacker, target, usedItem, finalDistance, type2, filter)
             ));
         }
     }
 
-    public void addEntity(Level level, LivingEntity livingEntity, ItemStack stack, double distance, int type,AttackFilter filter) {
+    public void addEntity(Level level, LivingEntity livingEntity, ItemStack stack, double distance, int type, AttackFilter filter) {
         if (!level.isClientSide && stack.is(ZenithItems.ZENITH.get())) {
             ZenithProjectile zenith = new ZenithProjectile(
                 ZenithEntities.ZENITH_PROJECTILE.get(),
@@ -264,7 +269,7 @@ public class ZenithItem extends Item {
         }
     }
 
-    public void addEntity(Level level, LivingEntity attacker, Entity target, ItemStack stack, double distance, int type,AttackFilter filter) {
+    public void addEntity(Level level, LivingEntity attacker, Entity target, ItemStack stack, double distance, int type, AttackFilter filter) {
         if (level.isClientSide || !stack.is(ZenithItems.ZENITH.get())) {
             return;
         }

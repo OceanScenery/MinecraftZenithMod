@@ -1,7 +1,9 @@
 package com.oceanscenery.zenith.server.packet;
 
-import com.oceanscenery.zenith.event.WeaponHandler;
+import com.oceanscenery.zenith.event.CapabilitiesHandler;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.util.ItemUtil;
+import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithSlot;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -32,6 +34,14 @@ public record ZenithPacket(int id, int operation, int slot) implements IZenithPa
             return;
         }
         if (operation == 0) {
+            IZenithSlot shadow = CapabilitiesHandler.getSlot(player);
+            if (shadow != null && shadow.open()) {
+                ZenithItems.ZENITH.get().attack(
+                    shadow.get(), player, player.level(), InteractionHand.MAIN_HAND
+                );
+                context.get().setPacketHandled(true);
+                return;
+            }
             if (player.getMainHandItem().is(ZenithItems.ZENITH.get())) {
                 ZenithItems.ZENITH.get().attack(player.getMainHandItem(), player, player.level(), InteractionHand.MAIN_HAND);
                 context.get().setPacketHandled(true);
@@ -46,7 +56,7 @@ public record ZenithPacket(int id, int operation, int slot) implements IZenithPa
         if (operation == 1) {
             ItemStack stack = player.getInventory().getItem(slot);
             if (stack.is(ZenithItems.ZENITH.get())) {
-                double dist = WeaponHandler.getDistance(stack);
+                double dist = ItemUtil.getDistance(stack);
                 if (stack.getTag() != null) {
                     stack.getTag().getCompound("Zenith").putDouble("distance", (int) dist % 100 + 20);
                 }
@@ -57,7 +67,7 @@ public record ZenithPacket(int id, int operation, int slot) implements IZenithPa
         if (operation == 2) {
             ItemStack stack = player.getInventory().getItem(slot);
             if (stack.is(ZenithItems.ZENITH.get())) {
-                int mode = WeaponHandler.getAttackMode(stack);
+                int mode = ItemUtil.getAttackMode(stack);
                 if (stack.getTag() != null) {
                     stack.getTag().getCompound("Zenith").putInt("attack_mode", (mode + 1) % 3);
                 }
@@ -65,17 +75,5 @@ public record ZenithPacket(int id, int operation, int slot) implements IZenithPa
             context.get().setPacketHandled(true);
             return;
         }
-        if (operation == 3) {
-            ItemStack stack = player.getInventory().getItem(slot);
-            if (stack.is(ZenithItems.ZENITH.get())) {
-                boolean flag = WeaponHandler.attackPlayer(stack);
-                if (stack.getTag() != null) {
-                    stack.getTag().getCompound("Zenith").putBoolean("attack_player", !flag);
-                }
-            }
-            context.get().setPacketHandled(true);
-            return;
-        }
-        context.get().setPacketHandled(true);
     }
 }

@@ -1,0 +1,35 @@
+package com.oceanscenery.zenith.mixin.accessor;
+
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+import org.spongepowered.asm.mixin.gen.Invoker;
+
+@Mixin(value = LivingEntity.class)
+public interface LivingEntityAccessor {
+    @Accessor(value = "DATA_HEALTH_ID")
+    static EntityDataAccessor<Float> getHealthId() {
+        return null;
+    }
+
+    @Invoker(value = "checkTotemDeathProtection")
+    boolean callCheckTotemDeathProtection(DamageSource source);
+
+    @Invoker(value = "dropAllDeathLoot")
+    void callDropAllDeathLoot(DamageSource source);
+
+    @Accessor(value = "dead")
+    void setDead(boolean isDead);
+
+    @Accessor(value = "dead")
+    boolean isDead();
+
+    @Accessor(value = "deathScore")
+    int zenith$getDeathScore();
+
+    @Accessor(value = "lastHurtByPlayer")
+    Player zenith$lastHurtByPlayer();
+}

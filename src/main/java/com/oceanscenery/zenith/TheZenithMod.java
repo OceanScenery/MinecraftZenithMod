@@ -2,8 +2,13 @@ package com.oceanscenery.zenith;
 
 import com.mojang.logging.LogUtils;
 import com.oceanscenery.agent.ZenithAgentCallback;
-import com.oceanscenery.zenith.registry.*;
+import com.oceanscenery.zenith.registry.ZenithConfigs;
+import com.oceanscenery.zenith.registry.ZenithCreativeModeTabs;
+import com.oceanscenery.zenith.registry.ZenithEntities;
+import com.oceanscenery.zenith.registry.ZenithEntityDataSerializers;
+import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.server.ZenithNetworkHandler;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
@@ -13,18 +18,16 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 import org.spongepowered.asm.launch.MixinBootstrap;
-import sun.misc.Unsafe;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Field;
 
 @Mod(TheZenithMod.MOD_ID)
 public class TheZenithMod {
     public static boolean TERRA_LOADED = false;
     public static final String MOD_ID = "the_zenith_sword";
     public static final Logger LOGGER = LogUtils.getLogger();
+
+    public static ResourceLocation loc(String path) {
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    }
 
     public TheZenithMod(FMLJavaModLoadingContext context) {
         TERRA_LOADED = ModList.get().isLoaded("confluence");

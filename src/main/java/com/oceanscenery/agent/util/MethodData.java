@@ -27,6 +27,11 @@ public record MethodData(String owner, String name, String srgName, String desc)
             && this.desc.equals(node.desc);
     }
 
+    public boolean compareWith(StackWalker.StackFrame frame) {
+        return (this.name.equals(frame.getMethodName()) || this.srgName.equals(frame.getMethodName()))
+            && this.desc.equals(frame.getDescriptor());
+    }
+
     public boolean compareWith(MethodInsnNode node) {
         return (this.name.equals(node.name) || this.srgName.equals(node.name))
             && this.desc.equals(node.desc);

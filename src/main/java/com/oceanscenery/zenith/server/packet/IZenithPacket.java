@@ -7,5 +7,6 @@ import java.util.function.Supplier;
 
 public interface IZenithPacket {
     void write(FriendlyByteBuf buf);
+
     void handle(Supplier<NetworkEvent.Context> context);
 }

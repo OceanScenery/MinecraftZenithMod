@@ -3,12 +3,7 @@ package com.oceanscenery.agent.patcher;
 import com.oceanscenery.agent.util.MethodData;
 import com.oceanscenery.agent.util.MethodData.ParamType;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.VarInsnNode;
+import org.objectweb.asm.tree.*;
 
 import java.util.Set;
 
@@ -16,12 +11,12 @@ public class LivingRemovePatcher {
     public static final String LIVING_ENTITY = "net/minecraft/world/entity/LivingEntity";
     public static final String ENTITY = "net/minecraft/world/entity/Entity";
     public static final String OBJECT = "java/lang/Object";
-    public static final String REMOVAL_REASON = "net/minecraft/world/entity/Entity/RemovalReason";
+    public static final String REMOVAL_REASON = "net/minecraft/world/entity/Entity$RemovalReason";
     public static final String HOOKS = "com/oceanscenery/zenith/hooks/Hooks";
 
     public static final MethodData ON_REMOVE = MethodData.of(
-        HOOKS, "onRemoveStart", "onRemoveStart",
-        ParamType.of(ParamType.ofClass(OBJECT), ParamType.VOID)
+        HOOKS, "onRemoveEnd", "onRemoveEnd",
+        ParamType.of(ParamType.ofClass(OBJECT), ParamType.ofClass(OBJECT), ParamType.VOID)
     );
     public static final MethodData ON_IS_REMOVED = MethodData.of(
         HOOKS, "modifyIsRemoved", "modifyIsRemoved",
@@ -75,27 +70,73 @@ public class LivingRemovePatcher {
             return false;
         }
 
-        if (REMOVE.compareWith(method) || SET_REMOVED.compareWith(method)
-            || DISCARD.compareWith(method) || KILL.compareWith(method)) {
-            if (method.instructions.size() == 0) {
-                return false;
+        Boolean flag = false;
+
+        if (REMOVE.compareWith(method) || SET_REMOVED.compareWith(method)) {
+            for (var ret : method.instructions) {
+                if (ret.getOpcode() != Opcodes.RETURN) {
+                    continue;
+                }
+
+                InsnList insl = new InsnList();
+                insl.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                insl.add(new VarInsnNode(Opcodes.ALOAD, 1));
+                insl.add(new MethodInsnNode(
+                    Opcodes.INVOKESTATIC,
+                    ON_REMOVE.owner(),
+                    ON_REMOVE.name(),
+                    ON_REMOVE.desc()
+                ));
+                method.instructions.insertBefore(ret, insl);
+                method.maxStack += 2;
+                flag = true;
             }
-            AbstractInsnNode first = method.instructions.getFirst();
-            InsnList ins = new InsnList();
-            ins.add(new VarInsnNode(Opcodes.ALOAD, 0));
-            ins.add(new MethodInsnNode(
-                Opcodes.INVOKESTATIC,
-                ON_REMOVE.owner(),
-                ON_REMOVE.name(),
-                ON_REMOVE.desc()
-            ));
-            method.instructions.insertBefore(first, ins);
-            method.maxStack += 1;
-            return true;
+        }
+
+        if (DISCARD.compareWith(method)) {
+            for (var ret : method.instructions) {
+                if (ret.getOpcode() != Opcodes.RETURN) {
+                    continue;
+                }
+
+                InsnList insl = new InsnList();
+                insl.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                insl.add(new LdcInsnNode("discarded"));
+                insl.add(new MethodInsnNode(
+                    Opcodes.INVOKESTATIC,
+                    ON_REMOVE.owner(),
+                    ON_REMOVE.name(),
+                    ON_REMOVE.desc()
+                ));
+                method.instructions.insertBefore(ret, insl);
+                method.maxStack += 2;
+                flag = true;
+            }
+        }
+
+        if (KILL.compareWith(method)) {
+            for (var ret : method.instructions) {
+                if (ret.getOpcode() != Opcodes.RETURN) {
+                    continue;
+                }
+
+                InsnList insl = new InsnList();
+                insl.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                insl.add(new LdcInsnNode("killed"));
+                insl.add(new MethodInsnNode(
+                    Opcodes.INVOKESTATIC,
+                    ON_REMOVE.owner(),
+                    ON_REMOVE.name(),
+                    ON_REMOVE.desc()
+                ));
+                method.instructions.insertBefore(ret, insl);
+                method.maxStack += 2;
+                flag = true;
+            }
         }
 
         if (IS_REMOVED.compareWith(method)) {
-            boolean flag = false;
+            boolean flag2 = false;
             for (AbstractInsnNode insn : method.instructions) {
                 if (insn.getOpcode() == Opcodes.IRETURN) {
                     InsnList list = new InsnList();
@@ -108,13 +149,13 @@ public class LivingRemovePatcher {
                     ));
                     method.instructions.insertBefore(insn, list);
                     flag = true;
+                    flag2 = true;
                 }
             }
-            if (flag) {
-                method.maxStack += 1;
+            if (flag2) {
+                method.maxStack += 2;
             }
-            return flag;
         }
-        return false;
+        return flag;
     }
 }

@@ -5,6 +5,7 @@ import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.zenith_class.config.InvalidDamageAction;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraftforge.fml.ModList;
 
 public class ConfigUtil {
     public static float healthPercentage() {
@@ -23,6 +24,14 @@ public class ConfigUtil {
 
     public static double defaultDamage() {
         return ZenithConfigs.ZENITH_CONFIG.default_damage.get();
+    }
+
+    public static double attackSpeed(boolean shadow) {
+        if (!shadow) {
+            return ModList.get().isLoaded("bettercombat") ? -2.4 : 30;
+        } else {
+            return ModList.get().isLoaded("bettercombat") ? 6 : 30;
+        }
     }
 
     public static double rangedFactor() {

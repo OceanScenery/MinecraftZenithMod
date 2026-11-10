@@ -3,8 +3,8 @@ package com.oceanscenery.agent.util;
 import com.oceanscenery.agent.util.MethodData.ParamType;
 
 public interface MethodConst {
-    String LIVING_ENTITY = "net/minecraft/entity/LivingEntity";
-    String ENTITY = "net/minecraft/entity/Entity";
+    String LIVING_ENTITY = "net/minecraft/world/entity/LivingEntity";
+    String ENTITY = "net/minecraft/world/entity/Entity";
     String REMOVAL_REASON = "net/minecraft/world/entity/Entity$RemovalReason";
     String DAMAGE_SOURCE = "net/minecraft/world/damagesource/DamageSource";
     MethodData TICK_DEATH = MethodData.of(

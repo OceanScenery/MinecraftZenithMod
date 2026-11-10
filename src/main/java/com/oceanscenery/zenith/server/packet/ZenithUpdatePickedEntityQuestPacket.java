@@ -11,8 +11,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public record ZenithUpdatePickedEntityQuestPacket(int playerId,
-                                                  int entityId) implements IZenithPacket {
+public record ZenithUpdatePickedEntityQuestPacket(int playerId, int entityId) implements IZenithPacket {
     public ZenithUpdatePickedEntityQuestPacket(FriendlyByteBuf buf) {
         this(buf.readInt(), buf.readInt());
     }

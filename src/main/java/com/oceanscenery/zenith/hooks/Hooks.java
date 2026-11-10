@@ -1,15 +1,19 @@
 package com.oceanscenery.zenith.hooks;
 
+import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.event.CapabilitiesHandler;
-import com.oceanscenery.zenith.mixin.EntityAccessor;
-import com.oceanscenery.zenith.mixin.LivingEntityAccessor;
+import com.oceanscenery.zenith.mixin.accessor.EntityAccessor;
+import com.oceanscenery.zenith.mixin.accessor.LivingEntityAccessor;
+import com.oceanscenery.zenith.mixin_extension.IZenithEntityExtension;
+import com.oceanscenery.zenith.mixin_extension.IZenithLivingEntityExtension;
 import com.oceanscenery.zenith.registry.ZenithDamageTypes;
 import com.oceanscenery.zenith.util.ConfigUtil;
 import com.oceanscenery.zenith.util.DamageHandler;
-import com.oceanscenery.zenith.util.StaticCollections;
 import com.oceanscenery.zenith.zenith_class.ZenithDamageSource;
-import com.oceanscenery.zenith.zenith_class.capabilities.IZenithDamageMark;
-import com.oceanscenery.zenith.zenith_class.capabilities.IZenithHealthMark;
+import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithDamageMark;
+import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithHealthMark;
+import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithHitMark;
+import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -17,13 +21,61 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public final class Hooks {
     private static final ThreadLocal<Boolean> ACTIVE1 = ThreadLocal.withInitial(() -> false);
     private static final ThreadLocal<Boolean> ACTIVE2 = ThreadLocal.withInitial(() -> false);
     private static final ThreadLocal<Boolean> ACTIVE3 = ThreadLocal.withInitial(() -> false);
+
+    private static final Pattern DRAGON_PATTERN = Pattern.compile("^iceandfire[^:]*:[^_]*_dragon$");
+
+    private static boolean flag = true;
+
+    private static final Function<Entity, Optional<Integer>> SPECIAL_TIME = entity -> {
+        String id = Optional.ofNullable(ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()))
+            .map(ResourceLocation::toString).orElse("");
+        if (id.equals("minecraft:ender_dragon")) {
+            return Optional.of(200);
+        }
+        if (id.contains("apollyon") && id.contains("goety")) {
+            return Optional.of(560);
+        }
+        if (id.equals("goety:apostle")) {
+            if (!flag) {
+                return Optional.of(200);
+            }
+            try {
+                Class<?> apostleClass = Class.forName("com.Polarice3.Goety.common.entities.boss.Apostle");
+
+                Method isInNether = apostleClass.getMethod("isInNether");
+                boolean inNether = (Boolean) isInNether.invoke(entity);
+
+                Method isApollyon = apostleClass.getMethod("allTitlesApostle_1_20_1$isApollyon");
+                boolean apollyon = Optional.of(isApollyon.invoke(entity))
+                    .filter(Boolean.TRUE::equals).isPresent();
+
+                if (apollyon && inNether) {
+                    return Optional.of(560);
+                }
+                return Optional.of(200);
+            } catch (Throwable t) {
+                TheZenithMod.LOGGER.warn("未识别到亚波伦");
+                flag = false;
+                return Optional.of(200);
+            }
+        }
+        if (DRAGON_PATTERN.matcher(id).matches()) {
+            return Optional.of(12000);
+        }
+        if (id.contains("ender_dragon")) {
+            return Optional.of(200);
+        }
+        return Optional.empty();
+    };
 
     private Hooks() {
     }
@@ -36,10 +88,9 @@ public final class Hooks {
         try {
             if (CapabilitiesHandler.hitByZenith(entity)) {
                 IZenithHealthMark mark = CapabilitiesHandler.getHealth(entity);
-                if (mark == null || !mark.valid(entity.level())) {
+                if (mark == null || !mark.valid(entity)) {
                     return ((EntityAccessor) entity).getRealEntityData().get(LivingEntityAccessor.getHealthId());
                 } else {
-                    ((EntityAccessor) entity).getRealEntityData().set(LivingEntityAccessor.getHealthId(), mark.value());
                     return mark.value();
                 }
             }
@@ -68,7 +119,7 @@ public final class Hooks {
             float finalDamage = Math.max(damage, zenithSource.getIntendedDamage()) + ConfigUtil.healthPercentage() * self.getMaxHealth();
             DamageHandler.addLivingVictim(self, finalDamage, extraDamage);
             var health = CapabilitiesHandler.getHealth(self);
-            if (health != null && !health.valid(self.level())) {
+            if (health != null && !health.valid(self)) {
                 CapabilitiesHandler.setHealth(self, self.getHealth());
             }
             return finalDamage + extraDamage;
@@ -143,9 +194,10 @@ public final class Hooks {
         if (living.level().isClientSide()) {
             return false;
         }
-        if (CapabilitiesHandler.getHealth(living) != null
-            && CapabilitiesHandler.getHealth(living).valid(living.level())
-            && CapabilitiesHandler.getHealth(living).value() <= 0f
+        IZenithHealthMark mark = CapabilitiesHandler.getHealth(living);
+        if (mark != null
+            && mark.valid(living)
+            && mark.value() <= 0f
             && CapabilitiesHandler.hitByZenith(living)) {
             return true;
         }
@@ -156,7 +208,22 @@ public final class Hooks {
         if (!(self instanceof LivingEntity living)) {
             return false;
         }
-        if (!shouldDoDeathAct(self) || living.deathTime < minDeathTime) {
+        if (!shouldDoDeathAct(self)) {
+            return false;
+        }
+        if (minDeathTime <= 0) {
+            return true;
+        }
+        int finalMinDeathTime = SPECIAL_TIME.apply(living).orElse(minDeathTime);
+        IZenithHitMark mark = CapabilitiesHandler.getHitMark(living);
+        if (mark == null) {
+            return true;
+        }
+
+        if (mark.endTime() <= living.level().getGameTime() + finalMinDeathTime) {
+            CapabilitiesHandler.setHitByZenith(living, ignoredBool -> true, 2L * finalMinDeathTime);
+        }
+        if (living.deathTime < finalMinDeathTime) {
             return false;
         }
         return true;
@@ -169,19 +236,20 @@ public final class Hooks {
             }
             if (CapabilitiesHandler.hitByZenith(living)) {
                 int currDeathTicks = 0;
-                if (!StaticCollections.tickDeathList.containsKey(living)) {
+                if (!IZenithLivingEntityExtension.of(living).zenith$deadMark()) {
                     //防止deathTime修改到很小的值
                     currDeathTicks = Math.max(0, living.deathTime);
-                    StaticCollections.tickDeathList.put(living, currDeathTicks);
+                    IZenithLivingEntityExtension.of(living).zenith$setDeathTime(currDeathTicks);
+                    IZenithLivingEntityExtension.of(living).zenith$setDead(true);
                 } else {
                     //把deathTime和自增前的值比较，这样如果方法内部正常自增的话就不会错误升高deathTime
-                    currDeathTicks = StaticCollections.tickDeathList.get(living);
+                    currDeathTicks = IZenithLivingEntityExtension.of(living).zenith$deathTime();
                     living.deathTime = Math.max(living.deathTime, currDeathTicks);
                     ++currDeathTicks;
-                    StaticCollections.tickDeathList.replace(living, currDeathTicks);
+                    IZenithLivingEntityExtension.of(living).zenith$setDeathTime(currDeathTicks);
                 }
             } else {
-                StaticCollections.tickDeathList.remove(living);
+                IZenithLivingEntityExtension.of(living).zenith$setDead(false);
             }
         }
     }
@@ -216,18 +284,61 @@ public final class Hooks {
         return Math.max(origin, living.deathTime);
     }
 
-    public static void onRemoveStart(Object mustEntity) {
-        if (mustEntity instanceof LivingEntity entity && CapabilitiesHandler.hitByZenith(entity)) {
-            if (entity instanceof Player) {
-                return;
+    public static void onRemoveEnd(Object mustEntity, Object reason) {
+        try {
+            if (mustEntity instanceof Entity entity && CapabilitiesHandler.hitByZenith(entity)) {
+                if (entity instanceof Player || entity.level().isClientSide()) {
+                    return;
+                }
+                if (entity instanceof ZenithProjectile) {
+                    return;
+                }
+                if (((EntityAccessor) entity).zenith$getRemovalReason() != null || IZenithEntityExtension.of(entity).zenith$removed()) {
+                    return;
+                }
+                if (!entity.level().isClientSide()) {
+                    Entity.RemovalReason real = null;
+                    if (reason instanceof Entity.RemovalReason reason1) {
+                        real = reason1;
+                    }
+                    if (reason instanceof String name) {
+                        if (name.equals("killed")) {
+                            if (!(entity instanceof LivingEntity livingEntity) || livingEntity.isDeadOrDying()) {
+                                real = Entity.RemovalReason.KILLED;
+                            }
+                        }
+                        if (name.equals("discarded")) {
+                            real = Entity.RemovalReason.DISCARDED;
+                        }
+                    }
+                    if (((EntityAccessor) entity).zenith$getRemovalReason() == null && real != null) {
+                        IZenithEntityExtension.of(entity).zenith$remove();
+                        ((EntityAccessor) entity).zenith$setRemovalReason(real);
+                        if (real.shouldDestroy()) {
+                            entity.stopRiding();
+                        }
+                        entity.getPassengers().forEach(Entity::stopRiding);
+                        ((EntityAccessor) entity).zenith$getLevelCallback().onRemove(real);
+                    }
+                }
             }
-            StaticCollections.removed.add(entity);
+        } catch (Throwable t) {
+            TheZenithMod.LOGGER.error("Found an Throwable when removing an entity", t);
         }
     }
 
     public static boolean modifyIsRemoved(boolean origin, Object mustEntity) {
-        if (mustEntity instanceof LivingEntity entity) {
-            if (StaticCollections.removed.contains(entity)) {
+        if (mustEntity instanceof Entity entity) {
+            if (entity.level().isClientSide()) {
+                return origin;
+            }
+            if (entity instanceof ZenithProjectile) {
+                return origin;
+            }
+            if (IZenithEntityExtension.of(entity).zenith$removed()) {
+                if (((EntityAccessor) entity).zenith$getRemovalReason() == null) {
+                    ((EntityAccessor) entity).zenith$setRemovalReason(Entity.RemovalReason.KILLED);
+                }
                 return true;
             }
         }

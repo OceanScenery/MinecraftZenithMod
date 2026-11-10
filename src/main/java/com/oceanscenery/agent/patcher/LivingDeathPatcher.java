@@ -26,7 +26,7 @@ public final class LivingDeathPatcher {
     private static final String DEATH_TIME_NAME = "deathTime";
     private static final String DEATH_TIME_SRG_NAME = "f_20919_";
 
-    //顺序为tickDeath父类,remove,setRemoved,kill,discard,五个tickDeath的可达分析目标
+    //顺序为tickDeath父类,remove,setRemoved,kill,zenith$discard,五个tickDeath的可达分析目标
     private static final MethodData[] TICK_DEATH_GOALS = {
         MethodConst.TICK_DEATH,
         MethodConst.REMOVE,

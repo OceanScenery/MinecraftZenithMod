@@ -1,6 +1,6 @@
 package com.oceanscenery.zenith;
 
-import com.oceanscenery.zenith.client.ZenithConfigScreen;
+import com.oceanscenery.zenith.client.gui.ZenithConfigScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ConfigScreenHandler;

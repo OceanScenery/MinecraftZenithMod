@@ -1,14 +1,19 @@
 package com.oceanscenery.zenith.mixin;
 
+import com.oceanscenery.zenith.mixin_extension.IZenithEntityExtension;
 import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = Entity.class, priority = Integer.MAX_VALUE)
-public class EntityMixin {
+public class EntityMixin implements IZenithEntityExtension {
+    @Unique
+    private boolean zenith$remove = false;
+
     @Inject(method = "setRemoved", at = @At("HEAD"), cancellable = true)
     private void onSetRemoved(Entity.RemovalReason reason, CallbackInfo ci) {
         Entity entity = (Entity) (Object) this;
@@ -27,5 +32,20 @@ public class EntityMixin {
                 ci.cancel();
             }
         }
+    }
+
+    @Override
+    public void zenith$remove() {
+        this.zenith$remove = true;
+    }
+
+    @Override
+    public void zenith$unremove() {
+        this.zenith$remove = false;
+    }
+
+    @Override
+    public boolean zenith$removed() {
+        return this.zenith$remove;
     }
 }
