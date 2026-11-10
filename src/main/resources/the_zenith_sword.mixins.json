@@ -30,6 +30,7 @@
     "accessor.KeyMappingAccessor",
     "client.ArmedEntityRenderStateMixin",
     "client.ItemInHandRendererMixin",
-    "client.KeyMappingMixin"
+    "client.KeyMappingMixin",
+    "client.ToggleKeyMappingMixin"
   ]
 }
