@@ -26,6 +26,13 @@ sourceSets.main.resources {
     exclude("src/generated/**/.cache") // datagen cache files
 }
 
+sourceSets {
+    // The bootstrap agent is compiled separately and embedded into the mod jar.
+    agent {
+        java.setSrcDirs(['src/agent/java'])
+    }
+}
+
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
 }
@@ -36,25 +43,6 @@ base {
 
 // Mojang ships Java 25 to end users in 26.1, so mods should target Java 25.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-
-def transformerJar = tasks.register('transformerJar', Jar) {
-    archiveBaseName = "${mod_id}-transformer"
-    destinationDirectory = layout.buildDirectory.dir('jarjar-inputs')
-
-    from(sourceSets.main.output) {
-        include 'com/oceanscenery/zenith/class_bytecode/LivingEntityProcessor.class'
-        include 'com/oceanscenery/zenith/class_bytecode/common/HookNames.class'
-        include 'com/oceanscenery/zenith/class_bytecode/common/LivingEntityHealthPatcher*.class'
-        include 'com/oceanscenery/zenith/class_bytecode/common/LivingEntityHurtPatcher*.class'
-        include 'META-INF/services/net.neoforged.neoforgespi.transformation.ClassProcessor'
-    }
-
-    manifest {
-        attributes(
-                'Automatic-Module-Name': 'com.oceanscenery.zenith.transformer'
-        )
-    }
-}
 
 neoForge {
     enable {
@@ -136,7 +124,7 @@ configurations {
 dependencies {
     // The ClassProcessor must be available before the game layer is built.
     // JarJar embeds it as a library JAR instead of a regular game-content mod.
-    jarJar(files(transformerJar.flatMap { it.archiveFile }))
+    // The agent is embedded as a resource by processResources (zenith_agent.jar).
 
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
@@ -210,6 +198,32 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+// Bootstrap agent: only the launcher/agent entrypoint lives in src/agent/java.
+tasks.register('agentJar', Jar) {
+    archiveBaseName = 'zenith_agent'
+    archiveVersion = ''
+    archiveClassifier = ''
+    destinationDirectory = layout.buildDirectory.dir('agent')
+    from sourceSets.agent.output
+    manifest {
+        attributes(
+                'Launcher-Agent-Class'   : 'com.oceanscenery.zenith.coreagent.ZenithAgent',
+                'Agent-Class'            : 'com.oceanscenery.zenith.coreagent.ZenithAgent',
+                'Premain-Class'          : 'com.oceanscenery.zenith.coreagent.ZenithAgent',
+                'Can-Redefine-Classes'   : 'true',
+                'Can-Retransform-Classes': 'true'
+        )
+    }
+}
+
+// Make /zenith_agent.jar available to ZenithAgentInstaller at runtime.
+tasks.named('processResources', ProcessResources).configure {
+    dependsOn tasks.named('agentJar')
+    from(tasks.named('agentJar')) {
+        into '/'
+    }
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

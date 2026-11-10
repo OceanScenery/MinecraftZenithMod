@@ -87,6 +87,27 @@ public class ModLanguageProvider extends LanguageProvider {
                 "the_zenith_sword.configuration.invalid_damage_action.tooltip",
                 "NONE: 不处理；REMOVE: 直接移除实体并尝试生成掉落物；DELAYED: 在下次攻击时延迟补足伤害"
             );
+            add(ZenithItems.ZENITH_UPGRADE.get(), "天顶剑升级物品");
+            add("the_zenith_sword.item.zenith_upgrade.tooltip", "使用物品以获得召唤出虚幻天顶剑的能力，按下 %s 键以拿出和收起虚幻天顶剑，按下 %s 键以配置虚幻天顶剑");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.NONE", "不处理");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.REMOVE", "移除实体");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.DELAYED", "延迟补足");
+            add("key.the_zenith_sword.toggle_slot_openstate", "开启/关闭幻影天顶剑");
+            add("key.the_zenith_sword.ghost_config", "幻影物品设置");
+            add("screen.the_zenith_sword.ghost_config.title", "幻影天顶剑设置");
+            add("screen.the_zenith_sword.ghost_config.distance", "索敌距离：%s");
+            add("screen.the_zenith_sword.ghost_config.mode", "攻击模式：%s");
+            add("screen.the_zenith_sword.ghost_config.mode.0", "仅生物");
+            add("screen.the_zenith_sword.ghost_config.mode.1", "可攻击的实体");
+            add("screen.the_zenith_sword.ghost_config.mode.2", "全部实体");
+            add("screen.the_zenith_sword.ghost_config.hint", "点击按钮切换数值，Esc 关闭");
+            add("message.the_zenith_sword.login.header", "§6===== 天顶剑使用提示 =====");
+            add("message.the_zenith_sword.login.key.toggle_slot", "§e%s §7— 拿出 / 收起幻影天顶剑（默认按键，可在「选项 → 控制」中修改）");
+            add("message.the_zenith_sword.login.key.ghost_config", "§e%s §7— 打开幻影天顶剑设置（索敌距离 / 攻击模式）");
+            add("message.the_zenith_sword.login.key.blacklist", "§e%s §7— 将准星指向的实体加入 / 移出攻击黑名单（按住 Shift 改为实体类型黑名单）");
+            add("message.the_zenith_sword.login.command.entity", "§7/zenithblacklist entity add | remove <选择器> §8— 实体黑名单");
+            add("message.the_zenith_sword.login.command.type", "§7/zenithblacklist type add | remove <实体类型> §8— 类型黑名单");
+            add("message.the_zenith_sword.login.command.addfrom", "§7/zenithblacklist type addfrom | removefrom <选择器> §8— 从选中的实体反推类型");
         }
         if (locale.equals("en_us")) {
             add(ZenithItems.ZENITH.get(), "Zenith Sword");
@@ -159,6 +180,27 @@ public class ModLanguageProvider extends LanguageProvider {
                 "the_zenith_sword.configuration.invalid_damage_action.tooltip",
                 "NONE: do nothing; REMOVE: remove directly and drop loots; DELAYED: settle missing damage later"
             );
+            add(ZenithItems.ZENITH_UPGRADE.get(), "Zenith Sword Upgrade");
+            add("the_zenith_sword.item.zenith_upgrade.tooltip", "Use this item to gain the ability to summon the Ghost Zenith Sword. Press %s to draw or sheathe it, and press %s to configure it.");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.NONE", "Do nothing");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.REMOVE", "Remove entity");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.DELAYED", "Settle later");
+            add("key.the_zenith_sword.toggle_slot_openstate", "Toggle Ghost Zenith Sword");
+            add("key.the_zenith_sword.ghost_config", "Ghost Sword Settings");
+            add("screen.the_zenith_sword.ghost_config.title", "Ghost Zenith Sword Settings");
+            add("screen.the_zenith_sword.ghost_config.distance", "Targeting Range: %s");
+            add("screen.the_zenith_sword.ghost_config.mode", "Attack Mode: %s");
+            add("screen.the_zenith_sword.ghost_config.mode.0", "Mobs Only");
+            add("screen.the_zenith_sword.ghost_config.mode.1", "Attackable Entities");
+            add("screen.the_zenith_sword.ghost_config.mode.2", "All Entities");
+            add("screen.the_zenith_sword.ghost_config.hint", "Click a button to change the value, Esc to close");
+            add("message.the_zenith_sword.login.header", "§6===== Zenith Sword Guide =====");
+            add("message.the_zenith_sword.login.key.toggle_slot", "§e%s §7— Draw / sheathe the Ghost Zenith Sword (default key, rebindable in Options > Controls)");
+            add("message.the_zenith_sword.login.key.ghost_config", "§e%s §7— Open the Ghost Zenith Sword settings (targeting range / attack mode)");
+            add("message.the_zenith_sword.login.key.blacklist", "§e%s §7— Add / remove the entity under your crosshair from the attack blacklist (hold Shift for the entity-type blacklist)");
+            add("message.the_zenith_sword.login.command.entity", "§7/zenithblacklist entity add | remove <selector> §8— entity blacklist");
+            add("message.the_zenith_sword.login.command.type", "§7/zenithblacklist type add | remove <entity type> §8— type blacklist");
+            add("message.the_zenith_sword.login.command.addfrom", "§7/zenithblacklist type addfrom | removefrom <selector> §8— derive the type from the selected entity");
         }
     }
 }

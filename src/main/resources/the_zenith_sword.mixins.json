@@ -3,10 +3,21 @@
   "package": "com.oceanscenery.zenith.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "EntityAccessor",
     "EntityMixin",
     "ItemEntityMixin",
-    "LivingEntityAccessor"
+    "LivingEntityMixin",
+    "accessor.ChunkMapAccessor",
+    "accessor.EntityAccessor",
+    "accessor.EntityLookupAccessor",
+    "accessor.EntitySectionAccessor",
+    "accessor.EntitySectionStorageAccessor",
+    "accessor.EntityTickListAccessor",
+    "accessor.LivingEntityAccessor",
+    "accessor.PersistentEntitySectionManagerAccessor",
+    "accessor.PlayerAccessor",
+    "accessor.ServerChunkCacheAccessor",
+    "accessor.ServerLevelAccessor",
+    "accessor.ServerPlayerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -15,8 +26,12 @@
     "requireAnnotations": true
   },
   "client": [
-    "KeyMappingAccessor",
-    "KeyMappingMixin",
-    "ToggleKeyMappingMixin"
+    "accessor.ClientLevelAccessor",
+    "accessor.KeyMappingAccessor",
+    "client.ArmedEntityRenderStateMixin",
+    "client.ClassicCloudDepthMixin",
+    "client.FirstPersonHandsAndItemsMixin",
+    "client.KeyMappingMixin",
+    "client.ToggleKeyMappingMixin"
   ]
 }

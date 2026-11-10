@@ -13,9 +13,9 @@ import java.util.Scanner;
 public class Vector3 {
     public static final Vector3[] WORLD = new Vector3[]{new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1)};
     public static final StreamCodec<ByteBuf, Vector3> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.DOUBLE, Vector3::getX,
-        ByteBufCodecs.DOUBLE, Vector3::getY,
-        ByteBufCodecs.DOUBLE, Vector3::getZ,
+        ByteBufCodecs.DOUBLE, Vector3::x,
+        ByteBufCodecs.DOUBLE, Vector3::y,
+        ByteBufCodecs.DOUBLE, Vector3::z,
         Vector3::new
     );
     private double x, y, z;
@@ -30,7 +30,7 @@ public class Vector3 {
     }
 
     public Vector3(Vec3 vec) {
-        x = vec.x();
+        x = vec.x;
         y = vec.y;
         z = vec.z;
     }
@@ -62,7 +62,7 @@ public class Vector3 {
         }
     }
 
-    public static Vector3 transToVector3(Vec3 vec) {
+    public static Vector3 of(Vec3 vec) {
         return new Vector3(vec.x, vec.y, vec.z);
     }
 
@@ -97,7 +97,7 @@ public class Vector3 {
         System.out.println(new Vector3(0, 0, -1).rot(Quaternion.rotate(new Vector3(0, 1, 0), 5)).normalize());
     }
 
-    public double getX() {
+    public double x() {
         return x;
     }
 
@@ -106,7 +106,7 @@ public class Vector3 {
         return this;
     }
 
-    public double getY() {
+    public double y() {
         return y;
     }
 
@@ -115,7 +115,7 @@ public class Vector3 {
         return this;
     }
 
-    public double getZ() {
+    public double z() {
         return z;
     }
 
@@ -222,18 +222,10 @@ public class Vector3 {
     }
 
     public Vector3 applyOffset(double offset) {
-        return applyOffset(offset, true);
-    }
-
-    public Vector3 applyOffset(double offset, boolean exceptionProtection) {
-        if (this.length() > 1e-12) {
+        if (this.length() != 0) {
             return this.add(this.normalize().multiply(offset));
         } else {
-            if (!exceptionProtection) {
-                throw new IllegalArgumentException("试图给零向量添加长度偏移");
-            } else {
-                return new Vector3(0, 0, 0);
-            }
+            throw new IllegalArgumentException("试图给零向量添加长度偏移");
         }
     }
 

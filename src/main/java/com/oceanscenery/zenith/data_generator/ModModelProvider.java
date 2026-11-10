@@ -21,7 +21,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.client.model.generators.template.ExtendedModelTemplateBuilder;
-import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.stream.Stream;
@@ -32,13 +31,22 @@ public class ModModelProvider extends ModelProvider {
     }
 
     @Override
-    protected void registerModels(@NonNull BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
+    protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
         ArrayList<ItemModel.Unbaked> unbakeds = new ArrayList<>();
         ArrayList<RangeSelectItemModel.Entry> entry = new ArrayList<>();
 
-        Identifier zenithModel = itemModels.createFlatItemModel(
+        Identifier zenith_model = itemModels.createFlatItemModel(
             ZenithItems.ZENITH.get(),
             ModelTemplates.FLAT_HANDHELD_ITEM
+        );
+
+        Identifier zenithUpgrade = itemModels.createFlatItemModel(
+            ZenithItems.ZENITH_UPGRADE.get(),
+            ModelTemplates.FLAT_HANDHELD_ITEM
+        );
+        itemModels.itemModelOutput.accept(
+            ZenithItems.ZENITH_UPGRADE.get(),
+            ItemModelUtils.plainModel(zenithUpgrade)
         );
 
         ModelTemplate template = ExtendedModelTemplateBuilder.of(ModelTemplates.FLAT_HANDHELD_ITEM)
@@ -76,7 +84,7 @@ public class ModModelProvider extends ModelProvider {
 
         ItemModel.Unbaked fm = ItemModelUtils.rangeSelect(
             new CustomModelDataProperty(0),
-            ItemModelUtils.plainModel(zenithModel),
+            ItemModelUtils.plainModel(zenith_model),
             entry
         );
 
@@ -87,12 +95,12 @@ public class ModModelProvider extends ModelProvider {
     }
 
     @Override
-    protected @NonNull Stream<? extends Holder<Item>> getKnownItems() {
+    protected Stream<? extends Holder<Item>> getKnownItems() {
         return ZenithItems.ITEMS.getEntries().stream();
     }
 
     @Override
-    protected @NonNull Stream<? extends Holder<Block>> getKnownBlocks() {
+    protected Stream<? extends Holder<Block>> getKnownBlocks() {
         return Stream.empty();
     }
 }

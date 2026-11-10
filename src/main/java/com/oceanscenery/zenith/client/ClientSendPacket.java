@@ -2,11 +2,13 @@ package com.oceanscenery.zenith.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.mixin.KeyMappingAccessor;
+import com.oceanscenery.zenith.client.gui.GhostConfigScreen;
+import com.oceanscenery.zenith.mixin.accessor.KeyMappingAccessor;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.registry.ZenithKeyMappings;
 import com.oceanscenery.zenith.server.ZenithNetworkHandler;
 import com.oceanscenery.zenith.server.packet.*;
+import com.oceanscenery.zenith.util.AttachmentUtil;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -26,7 +28,6 @@ import static com.oceanscenery.zenith.client.RenderEntityTip.currId;
 
 @EventBusSubscriber(modid = TheZenithMod.MOD_ID, value = Dist.CLIENT)
 public class ClientSendPacket {
-
     @SubscribeEvent
     public static void onRightClickItem(ScreenEvent.MouseButtonPressed.Pre event) {
         if (event.getButton() != InputConstants.MOUSE_BUTTON_RIGHT) {
@@ -36,6 +37,7 @@ public class ClientSendPacket {
         if (!(screen instanceof AbstractContainerScreen<?>)) {
             return;
         }
+        Minecraft mc = Minecraft.getInstance();
 
         Slot slot = ((AbstractContainerScreen<?>) screen).getHoveredSlot();
         if (slot == null || !(slot.container instanceof Inventory)) {
@@ -44,18 +46,15 @@ public class ClientSendPacket {
 
         if (slot.hasItem() && slot.getItem().is(ZenithItems.ZENITH.get())) {
             event.setCanceled(true);
-            int slotIndex = slot.getSlotIndex();
-            if (slotIndex < 0 || slotIndex >= slot.container.getContainerSize()) {
+            int slot_index = slot.getSlotIndex();
+            if (slot_index < 0 || slot_index >= slot.container.getContainerSize()) {
                 return;
             }
             boolean ctrlDown = InputConstants.isKeyDown(InputConstants.KEY_LCONTROL);
-            boolean shiftDown = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT);
             if (ctrlDown) {
-                ZenithNetworkHandler.sendToServer(new CycleAttackModePacket(slotIndex));
-            } else if (shiftDown) {
-                ZenithNetworkHandler.sendToServer(new CycleAttackPlayerPacket(slotIndex));
+                ZenithNetworkHandler.sendToServer(new CycleAttackModePacket(slot_index));
             } else {
-                ZenithNetworkHandler.sendToServer(new CycleZenithDefaultDistancePacket(slotIndex));
+                ZenithNetworkHandler.sendToServer(new CycleZenithDefaultDistancePacket(slot_index));
             }
         }
     }
@@ -65,7 +64,8 @@ public class ClientSendPacket {
         LocalPlayer player = Minecraft.getInstance().player;
         KeyMapping right = Minecraft.getInstance().options.keyUse;
         if (((KeyMappingAccessor) right).getIsDown()) {
-            if (player != null && (player.getMainHandItem().is(ZenithItems.ZENITH) || player.getOffhandItem().is(ZenithItems.ZENITH))) {
+            if (player != null && (AttachmentUtil.getSlot(player).open()
+                || player.getMainHandItem().is(ZenithItems.ZENITH) || player.getOffhandItem().is(ZenithItems.ZENITH))) {
                 ZenithNetworkHandler.sendToServer(new ZenithAttackPacket(player.getId()));
             }
         }
@@ -84,6 +84,29 @@ public class ClientSendPacket {
         if (player != null) {
             ToggleBlacklistPacket packet = new ToggleBlacklistPacket(player.getId(), selected.getId(), shiftDown);
             ZenithNetworkHandler.sendToServer(packet);
+        }
+    }
+
+    @SubscribeEvent
+    public static void toggleSlotOpenState(ClientTickEvent.Pre event) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (ZenithKeyMappings.TOGGLE_SLOT.consumeClick() && player != null) {
+            ZenithNetworkHandler.sendToServer(
+                new ToggleZenithSlotOpenStatePacket(
+                    !AttachmentUtil.getSlot(player).open(),
+                    player.getId()
+                )
+            );
+        }
+    }
+
+    @SubscribeEvent
+    public static void openGhostConfigScreen(ClientTickEvent.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (ZenithKeyMappings.OPEN_GHOST_CONFIG.consumeClick() && minecraft.player != null) {
+            minecraft.setScreenAndShow(
+                new GhostConfigScreen(AttachmentUtil.getSlot(minecraft.player))
+            );
         }
     }
 

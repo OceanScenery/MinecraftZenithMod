@@ -1,12 +1,10 @@
 package com.oceanscenery.zenith.registry;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.mod_class.attachment.DamageMark;
-import com.oceanscenery.zenith.mod_class.attachment.HitByZenithMark;
-import com.oceanscenery.zenith.mod_class.attachment.ZenithHealthMark;
-import net.minecraft.core.UUIDUtil;
+import com.oceanscenery.zenith.mod_class.attachment.*;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -21,57 +19,60 @@ public class ZenithAttachments {
         NeoForgeRegistries.ATTACHMENT_TYPES,
         TheZenithMod.MOD_ID
     );
-    public static final DeferredHolder<AttachmentType<?>, AttachmentType<Set<String>>> ZENITH_ID_MARK = ATTACHMENTS.register(
+
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<ZenithIdMark>> ZENITH_ID_MARK = ATTACHMENTS.register(
         "zenith_id_mark",
-        resourceLocation -> AttachmentType.<Set<String>>builder(
-            iAttachmentHolder -> HashSet.newHashSet(4)
+        resourceLocation -> AttachmentType.builder(
+            iAttachmentHolder -> new ZenithIdMark(new HashSet<>())
         ).serialize(
-            MapCodec.assumeMapUnsafe(
-                Codec.STRING.listOf().xmap(
-                    HashSet::new,
-                    set -> set.stream().toList()
-                )
-            ),
-            set -> !set.isEmpty()
+            ZenithIdMark.MAP_CODEC,
+            zenithIdMark -> !zenithIdMark.ids().isEmpty()
         ).copyOnDeath().build()
     );
-    public static final DeferredHolder<AttachmentType<?>, AttachmentType<Set<UUID>>> ZENITH_PLAYER_MARK = ATTACHMENTS.register(
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<ZenithUuidMark>> ZENITH_PLAYER_MARK = ATTACHMENTS.register(
         "zenith_player_mark",
-        resourceLocation -> AttachmentType.<Set<UUID>>builder(
-            iAttachmentHolder -> HashSet.newHashSet(4)
+        resourceLocation -> AttachmentType.builder(
+            iAttachmentHolder -> new ZenithUuidMark(new HashSet<>())
         ).serialize(
-            MapCodec.assumeMapUnsafe(
-                UUIDUtil.STRING_CODEC.listOf().xmap(
-                    HashSet::new,
-                    set -> set.stream().toList()
-                )
-            ),
-            set -> !set.isEmpty()
+            ZenithUuidMark.MAP_CODEC,
+            zenithUuidMark -> !zenithUuidMark.uuids().isEmpty()
         ).copyOnDeath().build()
     );
 
-    public static final DeferredHolder<AttachmentType<?>, AttachmentType<DamageMark>> DAMAGE_MARK = ATTACHMENTS.register(
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<ZenithDamageMark>> DAMAGE_MARK = ATTACHMENTS.register(
         "zenith_damage_mark",
-        identifier -> AttachmentType.<DamageMark>builder(
-            iAttachmentHolder -> new DamageMark()
+        identifier -> AttachmentType.<ZenithDamageMark>builder(
+            iAttachmentHolder -> new ZenithDamageMark()
         ).serialize(
-            MapCodec.assumeMapUnsafe(DamageMark.CODEC)
+            ZenithDamageMark.MAP_CODEC
         ).build()
     );
 
-    public static final DeferredHolder<AttachmentType<?>, AttachmentType<HitByZenithMark>> HIT_BY_ZENITH_MARK = ATTACHMENTS.register(
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<ZenithHitMark>> HIT_BY_ZENITH_MARK = ATTACHMENTS.register(
         "hit_by_zenith_mark",
-        identifier -> AttachmentType.<HitByZenithMark>builder(
-            iAttachmentHolder -> new HitByZenithMark(false, 0)
-        ).sync(HitByZenithMark.STREAM_CODEC).build()
+        identifier -> AttachmentType.<ZenithHitMark>builder(
+                iAttachmentHolder -> new ZenithHitMark(false, 0, 0)
+            ).serialize(ZenithHitMark.MAP_CODEC)
+            .sync(ZenithHitMark.STREAM_CODEC)
+            .build()
     );
 
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<ZenithHealthMark>> ZENITH_HEALTH_MARK = ATTACHMENTS.register(
         "zenith_health",
         identifier -> AttachmentType.<ZenithHealthMark>builder(
-                iAttachmentHolder -> new ZenithHealthMark(0f, 0,false)
-            ).serialize(MapCodec.assumeMapUnsafe(ZenithHealthMark.CODEC))
+                iAttachmentHolder -> new ZenithHealthMark(0f, false)
+            ).serialize(ZenithHealthMark.MAP_CODEC)
             .sync(ZenithHealthMark.STREAM_CODEC)
+            .build()
+    );
+
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<ZenithSlot>> ZENITH_SLOT = ATTACHMENTS.register(
+        "zenith_slot",
+        iden -> AttachmentType.builder(
+                iAttachmentHolder -> ZenithSlot.Builder.of().build()
+            ).serialize(ZenithSlot.MAP_CODEC)
+            .sync(ZenithSlot.STREAM_CODEC)
+            .copyOnDeath()
             .build()
     );
 }

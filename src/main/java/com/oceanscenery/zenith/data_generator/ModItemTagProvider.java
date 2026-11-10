@@ -6,7 +6,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.ItemTags;
 import net.neoforged.neoforge.common.data.ItemTagsProvider;
-import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -16,7 +15,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
     }
 
     @Override
-    protected void addTags(HolderLookup.@NonNull Provider registries) {
-        tag(ItemTags.SWORDS).add(ZenithItems.ZENITH.getKey());
+    protected void addTags(HolderLookup.Provider registries) {
+        tag(ItemTags.SWORDS).add(ZenithItems.ZENITH.key());
     }
 }
