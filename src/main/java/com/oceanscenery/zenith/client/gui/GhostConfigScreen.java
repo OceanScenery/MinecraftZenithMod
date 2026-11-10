@@ -90,10 +90,6 @@ public class GhostConfigScreen extends Screen {
         if (this.modeButton != null) {
             this.modeButton.setMessage(this.modeLabel());
         }
-
-        // Screen#render already draws the blurred background and the widgets.
-        // Drawing the title/hint/item afterwards keeps them sharp instead of
-        // blurring them with a second renderBackground call.
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         int centerX = this.width / 2;
