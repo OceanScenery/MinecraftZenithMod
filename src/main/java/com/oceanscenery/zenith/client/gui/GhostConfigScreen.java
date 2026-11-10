@@ -84,7 +84,17 @@ public class GhostConfigScreen extends Screen {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        if (this.distanceButton != null) {
+            this.distanceButton.setMessage(this.distanceLabel());
+        }
+        if (this.modeButton != null) {
+            this.modeButton.setMessage(this.modeLabel());
+        }
+
+        // Screen#render already draws the blurred background and the widgets.
+        // Drawing the title/hint/item afterwards keeps them sharp instead of
+        // blurring them with a second renderBackground call.
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         int centerX = this.width / 2;
         int titleY = this.height / 2 - 70;
@@ -98,15 +108,6 @@ public class GhostConfigScreen extends Screen {
             this.height / 2 + 50,
             HINT_COLOR
         );
-
-        if (this.distanceButton != null) {
-            this.distanceButton.setMessage(this.distanceLabel());
-        }
-        if (this.modeButton != null) {
-            this.modeButton.setMessage(this.modeLabel());
-        }
-
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
