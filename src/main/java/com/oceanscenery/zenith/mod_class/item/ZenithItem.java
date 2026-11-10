@@ -1,8 +1,6 @@
 package com.oceanscenery.zenith.mod_class.item;
 
-import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.event.ServerTickTask;
-import com.oceanscenery.zenith.event.ServerTicker;
 import com.oceanscenery.zenith.mod_class.data_component.AttackMode;
 import com.oceanscenery.zenith.mod_class.data_component.Distance;
 import com.oceanscenery.zenith.mod_class.data_component.LastUseTime;
@@ -13,16 +11,14 @@ import com.oceanscenery.zenith.registry.ZenithEntities;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.util.ConfigUtil;
 import com.oceanscenery.zenith.util.DamageHandler;
+import com.oceanscenery.zenith.util.StaticCollections;
 import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -36,11 +32,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 public class ZenithItem extends Item {
@@ -83,17 +79,16 @@ public class ZenithItem extends Item {
             stack.set(ZenithDataComponents.DISTANCE, new Distance(20));
         }
         if (stack.get(ZenithDataComponents.ATTACK_MODE) == null) {
-            stack.set(ZenithDataComponents.ATTACK_MODE, new AttackMode(AttackMode.Mode.LIVING_ENTITY, true));
+            stack.set(ZenithDataComponents.ATTACK_MODE, AttackMode.LIVING_ENTITY);
         }
-        double dist = stack.get(ZenithDataComponents.DISTANCE).dist();
-        String atk = stack.get(ZenithDataComponents.ATTACK_MODE).getStrMode();
-        boolean atkP = stack.get(ZenithDataComponents.ATTACK_MODE).attackPlayer();
+        double dist = Optional.ofNullable(stack.get(ZenithDataComponents.DISTANCE))
+            .map(Distance::dist).orElse(20d);
+        String atk = Optional.ofNullable(stack.get(ZenithDataComponents.ATTACK_MODE))
+            .map(AttackMode::entityMode).orElse("living_entity");
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.distance.tooltip_pre").append(":" + dist));
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.distance.tooltip_post"));
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_mode.tooltip_pre").append(":" + atk));
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_mode.tooltip_post"));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.pre").append(":" + atkP));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.post"));
     }
 
     @Override
@@ -129,7 +124,7 @@ public class ZenithItem extends Item {
             for (Entity entity : list) {
                 AABB aabb = entity.getBoundingBox().inflate(2);
                 if (aabb.clip(attacker.getEyePosition(), attacker.getEyePosition().add(initial)).isPresent()) {
-                    if (DamageHandler.canAttack(attacker, entity, usedItem)) {
+                    if (DamageHandler.DEFAULT_FILTER.canAttack(attacker, entity, usedItem)) {
                         victim.add(entity);
                         Vec3 hitPos = entity.getBoundingBox().getCenter();
                         farest = Math.max(farest, hitPos.distanceTo(attacker.getEyePosition()));
@@ -166,11 +161,11 @@ public class ZenithItem extends Item {
             this.addEntity(level, attacker, usedItem, distance, 0);
 
             double finalDistance = distance;
-            ServerTicker.taskList.add(new ServerTickTask(
+            StaticCollections.taskList.add(new ServerTickTask(
                 2,
                 () -> this.addEntity(level, attacker, usedItem, finalDistance, type1)
             ));
-            ServerTicker.taskList.add(new ServerTickTask(
+            StaticCollections.taskList.add(new ServerTickTask(
                 4,
                 () -> this.addEntity(level, attacker, usedItem, finalDistance, type2)
             ));
@@ -209,5 +204,25 @@ public class ZenithItem extends Item {
 
             level.addFreshEntity(zenith);
         }
+    }
+
+    @Override
+    public ItemStack getDefaultInstance() {
+        ItemStack stack = super.getDefaultInstance();
+        stack.set(ZenithDataComponents.ATTACK_MODE, AttackMode.LIVING_ENTITY);
+        stack.set(ZenithDataComponents.DISTANCE, new Distance(20));
+        stack.set(ZenithDataComponents.LAST_USE_TIME, new LastUseTime(0));
+        return stack;
+    }
+
+    public @NotNull ItemStack instanceOf(int distance, AttackMode attackMode) {
+        ItemStack stack = new ItemStack(this);
+        if (distance % 20 != 0 || distance <= 0 || distance > 100) {
+            distance = 20;
+        }
+        stack.set(ZenithDataComponents.LAST_USE_TIME, new LastUseTime(0));
+        stack.set(ZenithDataComponents.DISTANCE, new Distance(distance));
+        stack.set(ZenithDataComponents.ATTACK_MODE, attackMode);
+        return stack;
     }
 }

@@ -17,6 +17,24 @@ public class ModLanguageProvider extends LanguageProvider {
     @Override
     protected void addTranslations() {
         if (locale.equals("zh_cn")) {
+            add("item.the_zenith_sword.zenith_upgrade", "天顶剑升级物品");
+            add("key.the_zenith_sword.ghost_config", "幻影物品设置");
+            add("key.the_zenith_sword.toggle_slot_openstate", "开启/关闭幻影天顶剑");
+            add("message.the_zenith_sword.login.command.addfrom", "§7/zenithblacklist type addfrom | removefrom <选择器> §8— 从选中的实体反推类型");
+            add("message.the_zenith_sword.login.command.entity", "§7/zenithblacklist entity add | remove <选择器> §8— 实体黑名单");
+            add("message.the_zenith_sword.login.command.type", "§7/zenithblacklist type add | remove <实体类型> §8— 类型黑名单");
+            add("message.the_zenith_sword.login.header", "§6===== 天顶剑使用提示 =====");
+            add("message.the_zenith_sword.login.key.blacklist", "§e%s §7— 将准星指向的实体加入 / 移出攻击黑名单（按住 Shift 改为实体类型黑名单）");
+            add("message.the_zenith_sword.login.key.ghost_config", "§e%s §7— 打开幻影天顶剑设置（索敌距离 / 攻击模式）");
+            add("message.the_zenith_sword.login.key.toggle_slot", "§e%s §7— 拿出 / 收起幻影天顶剑（默认按键，可在「选项 → 控制」中修改）");
+            add("screen.the_zenith_sword.ghost_config.distance", "索敌距离：%s");
+            add("screen.the_zenith_sword.ghost_config.hint", "点击按钮切换数值，Esc 关闭");
+            add("screen.the_zenith_sword.ghost_config.mode", "攻击模式：%s");
+            add("screen.the_zenith_sword.ghost_config.mode.0", "仅生物");
+            add("screen.the_zenith_sword.ghost_config.mode.1", "可攻击的实体");
+            add("screen.the_zenith_sword.ghost_config.mode.2", "全部实体");
+            add("screen.the_zenith_sword.ghost_config.title", "幻影天顶剑设置");
+            add("the_zenith_sword.item.zenith_upgrade.tooltip", "使用物品以获得召唤出虚幻天顶剑的能力，按下 %s 键以拿出和收起虚幻天顶剑，按下 %s 键以配置虚幻天顶剑");
             add(ZenithItems.ZENITH.get(), "天顶剑");
             add(ZenithEntities.ZENITH_PROJECTILE.get(), "天顶剑射弹");
             add("the_zenith_sword.configuration.attack_damage", "伤害设置");
@@ -30,6 +48,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.render", "渲染设置");
             add("the_zenith_sword.configuration.render_offset", "剑轨渲染偏移(向下一格)");
             add("the_zenith_sword.configuration.section.the.zenith.sword.client.toml", "客户端设置");
+            add("the_zenith_sword.configuration.section.the.zenith.sword.client.toml.title", "客户端设置");
             add("the_zenith_sword.configuration.enable_bypass_invulnerable.tooltip", "是否使用无视减伤的伤害(缺乏伤害效果,不稳定,不推荐)");
             add("the_zenith_sword.configuration.section.the.zenith.sword.server.toml", "服务端设置");
             add("the_zenith_sword.configuration.ensured_damage_for_player.tooltip", "设置对玩家的保底伤害");
@@ -51,9 +70,6 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.packet.attack_mode", "攻击模式(实体类型)");
             add("the_zenith_sword.item.attack_mode.tooltip_pre", "攻击模式");
             add("the_zenith_sword.item.attack_mode.tooltip_post", "在背包中Ctrl+右键物品以改变默认攻击模式");
-            add("the_zenith_sword.packet.attack_player_mode", "伤害玩家");
-            add("the_zenith_sword.item.attack_player_mode.tooltip.pre", "伤害玩家");
-            add("the_zenith_sword.item.attack_player_mode.tooltip.post", "在背包中Shift+右键以切换是否攻击玩家");
             add("the_zenith_sword.configuration.enable_attack_item.tooltip", "是否在剑的\"all\"模式下攻击掉落物或经验球");
             add("the_zenith_sword.configuration.enable_attack_item", "攻击掉落物与经验球");
             add("the_zenith_sword.configuration.interaction", "交互设置");
@@ -69,8 +85,6 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.message.add_group_entities_to_list", "已将此类生物添加进天顶剑攻击黑名单");
             add("the_zenith_sword.message.remove_single_entity_to_list", "已将此生物移出天顶剑攻击黑名单");
             add("the_zenith_sword.message.add_single_entity_to_list", "已将此生物添加进天顶剑攻击黑名单");
-            add("commands.the_zenith_sword.blacklist.unknown_type", "未知的实体类型：%s");
-            add("commands.the_zenith_sword.blacklist.selector.single_only", "实体选择器一次必须且只能选择一个实体");
             add("commands.the_zenith_sword.blacklist.entity.added", "已将 %s 加入天顶剑攻击黑名单");
             add("commands.the_zenith_sword.blacklist.entity.removed", "已将 %s 移出天顶剑攻击黑名单");
             add("commands.the_zenith_sword.blacklist.entity.already_added", "%s 已在天顶剑攻击黑名单中");
@@ -87,8 +101,29 @@ public class ModLanguageProvider extends LanguageProvider {
                 "the_zenith_sword.configuration.invalid_damage_action.tooltip",
                 "NONE: 不处理；REMOVE: 直接移除实体并尝试生成掉落物；DELAYED: 在下次攻击时延迟补足伤害"
             );
+            add("the_zenith_sword.configuration.invalid_damage_action.value.NONE", "不处理");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.REMOVE", "移除实体");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.DELAYED", "延迟补足");
         }
         if (locale.equals("en_us")) {
+            add("item.the_zenith_sword.zenith_upgrade", "Zenith Sword Upgrade");
+            add("key.the_zenith_sword.ghost_config", "Ghost Sword Settings");
+            add("key.the_zenith_sword.toggle_slot_openstate", "Toggle Ghost Zenith Sword");
+            add("message.the_zenith_sword.login.command.addfrom", "§7/zenithblacklist type addfrom | removefrom <selector> §8— derive the type from the selected entity");
+            add("message.the_zenith_sword.login.command.entity", "§7/zenithblacklist entity add | remove <selector> §8— entity blacklist");
+            add("message.the_zenith_sword.login.command.type", "§7/zenithblacklist type add | remove <entity type> §8— type blacklist");
+            add("message.the_zenith_sword.login.header", "§6===== Zenith Sword Guide =====");
+            add("message.the_zenith_sword.login.key.blacklist", "§e%s §7— Add / remove the entity under your crosshair from the attack blacklist (hold Shift for the entity-type blacklist)");
+            add("message.the_zenith_sword.login.key.ghost_config", "§e%s §7— Open the Ghost Zenith Sword settings (targeting range / attack mode)");
+            add("message.the_zenith_sword.login.key.toggle_slot", "§e%s §7— Draw / sheathe the Ghost Zenith Sword (default key, rebindable in Options > Controls)");
+            add("screen.the_zenith_sword.ghost_config.distance", "Targeting Range: %s");
+            add("screen.the_zenith_sword.ghost_config.hint", "Click a button to change the value, Esc to close");
+            add("screen.the_zenith_sword.ghost_config.mode", "Attack Mode: %s");
+            add("screen.the_zenith_sword.ghost_config.mode.0", "Mobs Only");
+            add("screen.the_zenith_sword.ghost_config.mode.1", "Attackable Entities");
+            add("screen.the_zenith_sword.ghost_config.mode.2", "All Entities");
+            add("screen.the_zenith_sword.ghost_config.title", "Ghost Zenith Sword Settings");
+            add("the_zenith_sword.item.zenith_upgrade.tooltip", "Use this item to gain the ability to summon the Ghost Zenith Sword. Press %s to draw or sheathe it, and press %s to configure it.");
             add(ZenithItems.ZENITH.get(), "Zenith Sword");
             add(ZenithEntities.ZENITH_PROJECTILE.get(), "ZenithProjectile");
             add("the_zenith_sword.configuration.attack_damage", "damage settings");
@@ -110,9 +145,6 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.packet.attack_mode", "attack mode");
             add("the_zenith_sword.item.attack_mode.tooltip_pre", "attack mode");
             add("the_zenith_sword.item.attack_mode.tooltip_post", "right click(with Ctrl) the item in the inventory to change the attack mode.");
-            add("the_zenith_sword.packet.attack_player_mode", "hurt player");
-            add("the_zenith_sword.item.attack_player_mode.tooltip.pre", "hurt player");
-            add("the_zenith_sword.item.attack_player_mode.tooltip.post", "right click(with Shift) the item in the inventory to change whether to hurt player");
             add("the_zenith_sword.configuration.enable_attack_item.tooltip", "whether to attack item or xp orb in \"all\" mode");
             add("the_zenith_sword.configuration.enable_attack_item", "attack item/xp orb");
             add("the_zenith_sword.configuration.interaction", "Interaction");
@@ -128,8 +160,6 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.message.remove_group_entities_to_list", "Removed this entity type from the Zenith Sword attack blacklist");
             add("the_zenith_sword.message.add_single_entity_to_list", "Added this entity to the Zenith Sword attack blacklist");
             add("the_zenith_sword.message.remove_single_entity_to_list", "Removed this entity from the Zenith Sword attack blacklist");
-            add("commands.the_zenith_sword.blacklist.unknown_type", "Unknown entity type: %s");
-            add("commands.the_zenith_sword.blacklist.selector.single_only", "The entity selector must select exactly one entity");
             add("commands.the_zenith_sword.blacklist.entity.added", "Added %s to the Zenith Sword attack blacklist");
             add("commands.the_zenith_sword.blacklist.entity.removed", "Removed %s from the Zenith Sword attack blacklist");
             add("commands.the_zenith_sword.blacklist.entity.already_added", "%s is already in the Zenith Sword attack blacklist");
@@ -146,6 +176,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.ranged_damage_factor.tooltip", "set the ratio of ranged damage to melee damage");
             add("the_zenith_sword.configuration.render_offset.tooltip", "lower the sword's trail by one block in first person, to emphasize the curve of the trajectory");
             add("the_zenith_sword.configuration.section.the.zenith.sword.client.toml", "Client Settings");
+            add("the_zenith_sword.configuration.section.the.zenith.sword.client.toml.title", "Client Settings");
             add("the_zenith_sword.configuration.section.the.zenith.sword.server.toml", "Server Settings");
             add("the_zenith_sword.configuration.section.the.zenith.sword.server.toml.title", "Server Settings");
             add("the_zenith_sword.configuration.sort_farest.tooltip", "whether projectiles should target the farthest enemy first");
@@ -159,6 +190,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 "the_zenith_sword.configuration.invalid_damage_action.tooltip",
                 "NONE: do nothing; REMOVE: remove directly and drop loots; DELAYED: settle missing damage later"
             );
+            add("the_zenith_sword.configuration.invalid_damage_action.value.NONE", "Do nothing");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.REMOVE", "Remove entity");
+            add("the_zenith_sword.configuration.invalid_damage_action.value.DELAYED", "Settle later");
         }
     }
 }

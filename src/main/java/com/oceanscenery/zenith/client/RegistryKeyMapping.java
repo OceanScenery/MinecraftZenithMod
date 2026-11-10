@@ -12,5 +12,7 @@ public class RegistryKeyMapping {
     @SubscribeEvent
     public static void addKeyMapping(RegisterKeyMappingsEvent event) {
         event.register(ZenithKeyMappings.TOGGLE_ATTACK_BLACKLIST);
+        event.register(ZenithKeyMappings.TOGGLE_SLOT);
+        event.register(ZenithKeyMappings.OPEN_GHOST_CONFIG);
     }
 }

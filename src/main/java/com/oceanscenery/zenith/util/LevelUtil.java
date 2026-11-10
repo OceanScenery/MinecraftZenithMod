@@ -1,6 +1,6 @@
 package com.oceanscenery.zenith.util;
 
-import com.oceanscenery.zenith.mixin.ClientLevelAccessor;
+import com.oceanscenery.zenith.mixin.accessor.ClientLevelAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;

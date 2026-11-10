@@ -156,6 +156,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             )
         );
         applyTransforms(volcano);
+        basicItem(TheZenithMod.loc("zenith_upgrade"));
 
 
         handheldItem(

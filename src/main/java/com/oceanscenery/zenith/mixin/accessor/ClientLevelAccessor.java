@@ -1,4 +1,4 @@
-package com.oceanscenery.zenith.mixin;
+package com.oceanscenery.zenith.mixin.accessor;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.Entity;

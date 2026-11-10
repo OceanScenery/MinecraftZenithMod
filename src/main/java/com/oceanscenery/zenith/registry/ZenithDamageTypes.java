@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageType;
 
-public class ZenithDamageType {
+public class ZenithDamageTypes {
     public static final ResourceKey<DamageType> ZENITH = ResourceKey.create(
         Registries.DAMAGE_TYPE,
         ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith")

@@ -10,22 +10,22 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-public class DamageMark {
+public class ZenithDamageMark {
     private final HashMap<UUID, Float> marks;
 
-    public static final Codec<DamageMark> CODEC = Codec.unboundedMap(
+    public static final Codec<ZenithDamageMark> CODEC = Codec.unboundedMap(
         UUIDUtil.STRING_CODEC,
         Codec.FLOAT
     ).xmap(
-        DamageMark::new,
-        DamageMark::getMap
+        ZenithDamageMark::new,
+        ZenithDamageMark::getMap
     );
 
-    public DamageMark() {
+    public ZenithDamageMark() {
         this.marks = new HashMap<>();
     }
 
-    public DamageMark(Map<UUID, Float> map) {
+    public ZenithDamageMark(Map<UUID, Float> map) {
         this.marks = new HashMap<>(map);
     }
 
@@ -42,7 +42,7 @@ public class DamageMark {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof DamageMark that)) {
+        if (!(o instanceof ZenithDamageMark that)) {
             return false;
         }
         return Objects.equals(marks, that.marks);

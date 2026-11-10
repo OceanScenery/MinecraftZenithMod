@@ -1,4 +1,4 @@
-package com.oceanscenery.zenith.mixin;
+package com.oceanscenery.zenith.mixin.accessor;
 
 import net.minecraft.client.KeyMapping;
 import org.spongepowered.asm.mixin.Mixin;

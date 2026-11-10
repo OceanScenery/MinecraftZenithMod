@@ -28,5 +28,18 @@ public class ModRecipeProvider extends RecipeProvider {
             .define('i', Items.ENCHANTED_GOLDEN_APPLE).unlockedBy("get_netherite_sword_for_zenith", has(Items.NETHERITE_SWORD))
             .showNotification(true)
             .save(recipeOutput, ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith"));
+
+        ShapedRecipeBuilder.shaped(
+                RecipeCategory.COMBAT,ZenithItems.ZENITH_UPGRADE.get()
+            ).pattern("aba").pattern("cde").pattern("afa")
+            .define('a', Items.GOLD_BLOCK)
+            .define('b',Items.NETHER_STAR)
+            .define('c',Items.NETHERITE_INGOT)
+            .define('d',ZenithItems.ZENITH.get())
+            .define('e',Items.DIAMOND)
+            .define('f',Items.ECHO_SHARD)
+            .unlockedBy("get_zenith_for_zenith_upgrade",has(ZenithItems.ZENITH.get()))
+            .showNotification(true)
+            .save(recipeOutput,TheZenithMod.loc("zenith_upgrade"));
     }
 }

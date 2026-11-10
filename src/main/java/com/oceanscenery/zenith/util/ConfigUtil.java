@@ -33,6 +33,14 @@ public class ConfigUtil {
         return ZenithConfigs.ZENITH_CONFIG.default_damage.get();
     }
 
+    public static double attackSpeed(boolean shadow) {
+        if (!shadow) {
+            return ModList.get().isLoaded("bettercombat") ? -2.4 : 30;
+        } else {
+            return ModList.get().isLoaded("bettercombat") ? 6 : 30;
+        }
+    }
+
     public static double rangedFactor() {
         return ZenithConfigs.ZENITH_CONFIG.ranged_damage_factor.get();
     }
@@ -69,7 +77,7 @@ public class ConfigUtil {
                 ), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
             .add(Attributes.ATTACK_SPEED, new AttributeModifier(
                     BASE_ATTACK_SPEED_ID,
-                    ModList.get().isLoaded("bettercombat") ? -2.4 : 30,
+                    attackSpeed(false),
                     AttributeModifier.Operation.ADD_VALUE),
                 EquipmentSlotGroup.MAINHAND
             )

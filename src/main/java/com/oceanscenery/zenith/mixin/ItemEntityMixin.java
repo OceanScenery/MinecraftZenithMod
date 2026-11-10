@@ -17,23 +17,26 @@ import java.util.UUID;
 
 @Mixin(value = ItemEntity.class, priority = 2000)
 public abstract class ItemEntityMixin {
+    @Shadow
+    public abstract ItemStack getItem();
+
+    @Shadow
+    private int pickupDelay;
     @Final
     @Shadow
     private static int INFINITE_PICKUP_DELAY;
-    @Shadow
-    private int pickupDelay;
     @Shadow
     private UUID thrower;
     @Shadow
     private int age;
 
     @Shadow
-    public abstract ItemStack getItem();
+    public abstract void setItem(ItemStack stack);
 
     @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
     public void onHurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         ItemEntity itemEntity = (ItemEntity) (Object) this;
-        if (itemEntity.getItem().is(ZenithItems.ZENITH)) {
+        if (itemEntity.getItem().is(ZenithItems.ZENITH.get())) {
             cir.setReturnValue(false);
         }
     }
@@ -42,7 +45,7 @@ public abstract class ItemEntityMixin {
     public void onTick(CallbackInfo ci) {
         ItemEntity itemEntity = (ItemEntity) (Object) this;
         if (!itemEntity.level().isClientSide) {
-            if (this.getItem().is(ZenithItems.ZENITH) && this.pickupDelay != INFINITE_PICKUP_DELAY) {
+            if (this.getItem().is(ZenithItems.ZENITH.get()) && this.pickupDelay != INFINITE_PICKUP_DELAY) {
                 this.age = 0;
             }
         }

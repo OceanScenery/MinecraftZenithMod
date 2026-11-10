@@ -3,6 +3,7 @@ package com.oceanscenery.zenith.client;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.util.AttachmentUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
@@ -33,7 +34,8 @@ public class RenderEntityTip {
         if (player == null) {
             return;
         }
-        if (!player.getMainHandItem().is(ZenithItems.ZENITH) && !player.getOffhandItem().is(ZenithItems.ZENITH)) {
+        if (!AttachmentUtil.getSlot(player).open()
+            && !player.getMainHandItem().is(ZenithItems.ZENITH) && !player.getOffhandItem().is(ZenithItems.ZENITH)) {
             return;
         }
 

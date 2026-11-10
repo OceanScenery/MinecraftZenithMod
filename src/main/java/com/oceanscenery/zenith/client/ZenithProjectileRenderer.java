@@ -1,15 +1,18 @@
 package com.oceanscenery.zenith.client;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.*;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.util.PosUtil;
 import com.oceanscenery.zenith.util.Quaternion;
-import com.oceanscenery.zenith.util.RenderUtil;
 import com.oceanscenery.zenith.util.Vector3;
+import net.minecraft.client.CloudStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -20,7 +23,6 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -30,66 +32,54 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.lwjgl.opengl.GL30;
 
-public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
-    public static final Quaternionf Q1 = Quaternion.trans(new Vector3(1, 1, 0), new Vector3(0, 1, 0)).toQuaternionf();
-    public static final Quaternionf Q2 = Quaternion.trans(new Vector3(0, 1, 0), new Vector3(0, 0, -1)).toQuaternionf();
-    public static final int[][] COLOR = new int[][]{
-        {204, 255, 255},
-        {153, 255, 204},
-        {32, 32, 32},
-        {0, 204, 102},
-        {178, 0, 0},
-        {255, 153, 51},
-        {153, 153, 255},
-        {255, 255, 102},
-        {153, 204, 255},
-        {127, 0, 255},
-        {255, 178, 255},
-        {51, 51, 255},
-        {153, 51, 255},
-        {0, 153, 0},
-        {255, 0, 127},
-        {255, 51, 153},
-        {0, 255, 0},
-        {255, 128, 0},
-        {255, 255, 0},
-        {204, 153, 255},
+public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
+    private static final RenderType TRAIL_TYPE = GlowType.createTrail();
+    private static final RenderType CORE_TYPE = GlowType.createCore();
+    private static final double[] BANDS = {-2.0, -1.15, -0.42, 0, 0.42, 1.15, 2.0};
+    private static final float[] BAND_ALPHA = {0, 0.08F, 0.22F, 0.28F, 0.22F, 0.08F, 0};
+    private static final float[] BAND_WHITE = {0, 0, 0.02F, 0.08F, 0.02F, 0, 0};
+    private static final double[] CORE_BANDS = {-0.42, -0.34, -0.10, 0.10, 0.34, 0.42};
+    private static final float[] CORE_ALPHA = {0, 0.94F, 1, 1, 0.94F, 0};
+    private static final float[] CORE_WHITE = {0, 0.02F, 0.14F, 0.14F, 0.02F, 0};
+    private static final double MAX_WIDTH_SCALE = 3.8;
+    private static final int MAX_TRAIL_SEGMENTS = 128;
+    private static final double HALO_CAMERA_HIDE_RADIUS = 0.5;
+    private static final double HALO_CAMERA_FULL_RADIUS = 2.0;
+    private static final double HALO_RETURN_NARROW_RADIUS = 3.0;
+    private static final double HALO_RETURN_FULL_RADIUS = 8.0;
+    private static final Quaternionf Q1 = Quaternion.trans(
+        new Vector3(1, 1, 0), new Vector3(0, 1, 0)).toQuaternionf();
+    private static final Quaternionf Q2 = Quaternion.trans(
+        new Vector3(0, 1, 0), new Vector3(0, 0, -1)).toQuaternionf();
+    private static final int[][] COLORS = {
+        {204, 255, 255}, {153, 255, 204}, {32, 32, 32}, {0, 204, 102},
+        {178, 0, 0}, {255, 153, 51}, {153, 153, 255}, {255, 255, 102},
+        {153, 204, 255}, {127, 0, 255}, {255, 178, 255}, {51, 51, 255},
+        {153, 51, 255}, {0, 153, 0}, {255, 0, 127}, {255, 51, 153},
+        {0, 255, 0}, {255, 128, 0}, {255, 255, 0}, {204, 153, 255},
         {255, 64, 0}
     };
-    public static final String[] SWORD_MODEL = new String[]{
-        "zenith",
-        "arkhalis",
-        "bee_keeper",
-        "blade_of_grass",
-        "blood_butcherer",
-        "copper_shortsword",
-        "enchanted_sword",
-        "excalibur",
-        "influx_waver",
-        "lights_bane",
-        "meowmere",
-        "muramasa",
-        "nights_edge",
-        "seedler",
-        "star_wrath",
-        "starfury",
-        "terra_blade",
-        "the_horsemans_blade",
-        "true_excalibur",
-        "true_nights_edge",
-        "volcano"
-    };
-    public final ItemRenderer itemRenderer;
 
-    protected ZenithProjectileRenderer(EntityRendererProvider.Context context) {
+    private final ItemRenderer itemRenderer;
+    private final ItemStack[] renderItems = new ItemStack[COLORS.length];
+    private final Orbit orbit = new Orbit();
+    private final GlowPoint[] trailPoints = createTrailPoints();
+    private final Vector3f cameraRight = new Vector3f();
+    private final Vector3f cameraUp = new Vector3f();
+
+    public ZenithProjectileRenderer(EntityRendererProvider.Context context) {
         super(context);
         this.itemRenderer = context.getItemRenderer();
     }
 
     @Override
-    public boolean shouldRender(@NotNull ZenithProjectile livingEntity, @NotNull Frustum camera, double camX, double camY, double camZ) {
+    public boolean shouldRender(@NotNull ZenithProjectile entity, @NotNull Frustum frustum, double cameraX, double cameraY, double cameraZ) {
         return true;
     }
 
@@ -99,182 +89,534 @@ public class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
     }
 
     @Override
-    public @NotNull ResourceLocation getTextureLocation(@NotNull ZenithProjectile entity) {
-        return ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "item/zenith_sword");
-    }
-
-    @Override
-    public void render(ZenithProjectile entity, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
-        double TOTAL_ANGLE = Math.toRadians(ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble());
-        int AMOUNT = ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get() ? (int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble() / 80) / 2 : (int) (60 * ZenithConfigs.ZENITH_CLIENT_CONFIG.TRAIL_ANGLE.getAsDouble() / 80);
-        double ONCE_ANGLE = TOTAL_ANGLE / AMOUNT;
-
-        Quaternion[] fixed = entity.getFixedPose();
-        Quaternion r1 = fixed[0];
-        Quaternion r2 = fixed[1];
-        Quaternion r3 = fixed[2];
-        Quaternion tmp = r3.multiply(r2).multiply(r1);
-        Vector3 normal = new Vector3(0, 1, 0).rot(tmp).normalize();
-
+    public void render(ZenithProjectile entity, float entityYaw, float partialTick
+        , @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
         if (!entity.isAlive() || entity.isRemoved()) {
             return;
         }
-
-        poseStack.pushPose();
-        int sword_type = entity.getSwordType();
-
-        ItemStack render_item = new ItemStack(ZenithItems.ZENITH, 1, DataComponentPatch.builder().set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(sword_type)).build());
-
+        int swordType = entity.getSwordType();
+        if (swordType < 0 || swordType >= COLORS.length) {
+            return;
+        }
         int progress = Math.min(entity.getLocalProgress(), ZenithProjectile.STAGE_COUNT + 1);
-        if (progress > ZenithProjectile.STAGE_COUNT) {
-            poseStack.popPose();
+        if (progress > ZenithProjectile.STAGE_COUNT
+            || !(entity.level().getEntity(entity.getOwnerID()) instanceof LivingEntity owner)) {
             return;
         }
 
-        int[] color = COLOR[sword_type];
-        double angle = entity.getAngle();
-        double distance = entity.getDistance();
-        double progress_angle = Mth.TWO_PI * Mth.lerp(partialTick, (double) progress - 1, progress) / ZenithProjectile.STAGE_COUNT;
-
-        VertexConsumer vertex = bufferSource.getBuffer(RenderType.entityTranslucentEmissive(ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "textures/entity/trail.png")));
-
-        if (!(entity.level().getEntity(entity.getOwnerID()) instanceof LivingEntity owner)) {
-            poseStack.popPose();
+        var config = ZenithConfigs.ZENITH_CLIENT_CONFIG;
+        double trailDegrees = config.TRAIL_ANGLE.get();
+        int amount = (int) (60 * trailDegrees / 80) / 2;
+        if (amount <= 0) {
             return;
+        }
+        double onceAngle = Math.toRadians(trailDegrees) / amount;
+        double progressAngle = Mth.TWO_PI
+            * Mth.lerp(partialTick, (double) progress - 1, progress) / ZenithProjectile.STAGE_COUNT;
+        double distance = entity.getDistance();
+        Vector3[] reference = entity.getReference();
+        Quaternion[] fixed = entity.getFixedPose();
+        Quaternion combined = fixed[2].multiply(fixed[1]).multiply(fixed[0]);
+        Vector3 normal = new Vector3(0, 1, 0).rot(combined).normalize();
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean cameraOwner = owner == minecraft.cameraEntity;
+        orbit.set(reference, normal, distance, entity.getAngle(), cameraOwner);
+
+        double swordX = -reference[2].x();
+        double swordY = -reference[2].y();
+        double swordZ = -reference[2].z();
+        if (progressAngle > 0) {
+            orbit.sample(progressAngle);
+            swordX = orbit.x + orbit.cx;
+            swordY = orbit.y + orbit.cy;
+            swordZ = orbit.z + orbit.cz;
         }
 
         Vec3 pos = entity.getPosition(partialTick);
-
-        poseStack.translate(-pos.x, -pos.y, -pos.z);
-        Vector3[] relative_center = entity.getReference();
-        Vector3[] relative_world = Vector3.WORLD;
-        Vector3 sword_pos = new Vector3(0, 0, -1).VecInNewRefer(relative_center, relative_world).add(Vector3.transToVector3(owner.getEyePosition(partialTick)));
-        boolean firstPerson = owner == Minecraft.getInstance().cameraEntity;
-
-        if (firstPerson && Minecraft.getInstance().options.getCameraType().isFirstPerson() && ZenithConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()) {
-            Vector3 cameraT = new Vector3(0, -1, 0).VecInNewRefer(
-                relative_center,
-                relative_world
-            );
-            poseStack.translate(cameraT.getX(), cameraT.getY(), cameraT.getZ());
-        }
-
-        Vector3 center = new Vector3(0, 0, distance / 2 - 1).VecInNewRefer(
-            relative_center, relative_world
-        ).add(Vector3.transToVector3(owner.getEyePosition(partialTick)));
-
-        Vector3 offset = new Vector3(0, 0, -1).VecInNewRefer(
-            relative_center, relative_world
-        );
-        Vector3 round = null;
-        if (!ZenithConfigs.ZENITH_CLIENT_CONFIG._3D_TRAIL.get()) {
-            Vector3 last_inner = null, last_outer = null;
-            Vector3 near_inner, near_outer, far_inner, far_outer;
-            for (int i = 0; i < AMOUNT && i * ONCE_ANGLE < progress_angle; i++) {
-
-                int factorI = i + AMOUNT - Math.min(AMOUNT, (int) (progress_angle / ONCE_ANGLE));
-                double current_angle = progress_angle - i * ONCE_ANGLE;
-                double next_angle = Math.max(progress_angle - (i + 1) * ONCE_ANGLE, 0);
-                if (last_inner == null) {
-                    Vector3 near = PosUtil.calCenPos(distance, current_angle, angle).VecInNewRefer(
-                        relative_center,
-                        relative_world
-                    );
-                    sword_pos = near.add(center).add(offset);
-                    near_inner = near.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(-0.1 + (0.08 / AMOUNT) * factorI)).add(center).add(offset);
-                    near_outer = near.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(0.1 - (0.08 / AMOUNT) * factorI)).add(center).add(offset);
-                    round = near_outer.multiply(-1).add(near_inner);
-                } else {
-                    near_inner = last_inner;
-                    near_outer = last_outer;
-                }
-                Vector3 far = PosUtil.calCenPos(distance, next_angle, angle).VecInNewRefer(
-                    relative_center,
-                    relative_world
-                );
-
-                far_inner = far.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(-0.1 + factorI * (0.08 / AMOUNT))).add(center).add(offset);
-                far_outer = far.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(!firstPerson ? new Vector3(0, 0, 0) : relative_center[1].multiply(0.1 - factorI * (0.08 / AMOUNT))).add(center).add(offset);
-                last_inner = far_inner;
-                last_outer = far_outer;
-
-                vertex.addVertex(poseStack.last(), far_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0, 0)
-                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(poseStack.last(), 0, 1, 0);
-                vertex.addVertex(poseStack.last(), far_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(0, 1)
-                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - (factorI + 1) * (240 / AMOUNT)).setNormal(poseStack.last(), 0, 1, 0);
-                vertex.addVertex(poseStack.last(), near_outer.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1, 1)
-                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(poseStack.last(), 0, 1, 0);
-                vertex.addVertex(poseStack.last(), near_inner.toVector3f()).setOverlay(OverlayTexture.NO_OVERLAY).setUv(1, 0)
-                    .setLight(LightTexture.FULL_BRIGHT).setColor(color[0], color[1], color[2], 255 - factorI * (240 / AMOUNT)).setNormal(poseStack.last(), 0, 1, 0);
+        Vec3 eye = owner.getEyePosition(partialTick);
+        poseStack.pushPose();
+        try {
+            poseStack.translate(eye.x - pos.x, eye.y - pos.y, eye.z - pos.z);
+            if (cameraOwner && minecraft.options.getCameraType().isFirstPerson()
+                && config.RENDER_OFFSET.get()) {
+                poseStack.translate(-reference[1].x(), -reference[1].y(), -reference[1].z());
             }
-        } else {
-            Vector3[] cp = new Vector3[4], np = new Vector3[4];
-            Vector3[] save = null;
-            for (int i = 0; i < AMOUNT && i * ONCE_ANGLE < progress_angle; i++) {
-                int factorI = i + AMOUNT - Math.min(AMOUNT, (int) (progress_angle / ONCE_ANGLE));
-                double current_angle = progress_angle - i * ONCE_ANGLE;
-                double next_angle = Math.max(progress_angle - (i + 1) * ONCE_ANGLE, 0);
-                if (save == null) {
-                    Vector3 near = PosUtil.calCenPos(distance, current_angle, angle).VecInNewRefer(
-                        relative_center,
-                        relative_world
-                    );
-                    sword_pos = near.add(center).add(offset);
-                    cp[0] = near.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
-                    cp[1] = cp[0].subtract(normal.multiply(0.03));
-                    cp[2] = near.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
-                    cp[3] = cp[2].add(normal.multiply(0.03));
-                    round = null;
-                    save = new Vector3[4];
-                } else {
-                    System.arraycopy(save, 0, cp, 0, 4);
-                }
-                Vector3 far = PosUtil.calCenPos(distance, next_angle, angle).VecInNewRefer(
-                    relative_center,
-                    relative_world
-                );
 
-                np[0] = far.applyOffset(-0.5 + factorI * (0.4 / AMOUNT)).add(center).add(offset).add(normal.multiply(0.025));
-                np[1] = np[0].subtract(normal.multiply(0.03));
-                np[2] = far.applyOffset(0.5 - factorI * (0.4 / AMOUNT)).add(center).add(offset).subtract(normal.multiply(0.025));
-                np[3] = np[2].add(normal.multiply(0.03));
+            renderSword(entity, swordType, progressAngle, distance, fixed, normal,
+                swordX, swordY, swordZ, poseStack, bufferSource);
 
-                System.arraycopy(np, 0, save, 0, 4);
+            if (progressAngle > 0) {
+                renderTrail(entity, partialTick, progressAngle, onceAngle * amount,
+                    COLORS[swordType], eye, minecraft, poseStack.last());
+            }
+        } finally {
+            poseStack.popPose();
+        }
+    }
 
-                RenderUtil.createTrail(vertex, np, cp, poseStack, 255 - (factorI + 1) * (240 / AMOUNT), color);
+    @Override
+    public @NotNull ResourceLocation getTextureLocation(@NotNull ZenithProjectile projectile) {
+        return TheZenithMod.loc("textures/entity/trail.png");
+    }
+
+    private void renderSword(ZenithProjectile entity, int swordType, double progressAngle, double distance
+        , Quaternion[] fixed, Vector3 normal
+        , double x, double y, double z, PoseStack poses, MultiBufferSource buffers) {
+        poses.pushPose();
+        try {
+            poses.translate(x, y, z);
+            Quaternion rotation = Quaternion.rotate(normal, -PosUtil.getPolar(progressAngle, distance));
+            poses.mulPose(rotation.toQuaternionf());
+            poses.mulPose(fixed[2].toQuaternionf());
+            poses.mulPose(fixed[1].toQuaternionf());
+            poses.mulPose(fixed[0].toQuaternionf());
+            poses.mulPose(Q2);
+            poses.mulPose(Q1);
+
+            ItemStack stack = renderItems[swordType];
+            if (stack == null) {
+                stack = ZenithItems.ZENITH.get().getDefaultInstance();
+                stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(swordType));
+                renderItems[swordType] = stack;
+            }
+            BakedModel model = itemRenderer.getModel(stack, entity.level(), null, entity.getId());
+            itemRenderer.render(stack, ItemDisplayContext.NONE, false, poses, buffers,
+                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, model);
+        } finally {
+            poses.popPose();
+        }
+    }
+
+    private void renderTrail(ZenithProjectile entity, float partialTick, double progressAngle, double totalAngle
+        , int[] color, Vec3 eye, Minecraft minecraft, PoseStack.Pose pose) {
+        double span = Math.min(progressAngle, totalAngle);
+        int segments = Math.min(MAX_TRAIL_SEGMENTS,
+            Math.max(12, (int) Math.ceil(span * Math.sqrt(Math.max(1, orbit.a)) * 4)));
+        double widthScale = distanceWidthScale(entity.getDistance());
+        double time = entity.tickCount + partialTick;
+        double phase = (entity.getId() * 0.61803398875) % 1;
+        Vec3 camera = minecraft.gameRenderer.getMainCamera().getPosition();
+        double viewX = eye.x - camera.x, viewY = eye.y - camera.y, viewZ = eye.z - camera.z;
+        if (orbit.cameraOwner && minecraft.options.getCameraType().isFirstPerson()
+            && ZenithConfigs.ZENITH_CLIENT_CONFIG.RENDER_OFFSET.get()) {
+            viewX -= orbit.yx;
+            viewY -= orbit.yy;
+            viewZ -= orbit.yz;
+        }
+        double fov = Math.toRadians(minecraft.options.fov().get());
+        double pixelScale = 3 * Math.tan(fov / 2) / Math.max(1, minecraft.getWindow().getHeight());
+        cameraRight.set(1, 0, 0).rotate(minecraft.gameRenderer.getMainCamera().rotation());
+        cameraUp.set(0, 1, 0).rotate(minecraft.gameRenderer.getMainCamera().rotation());
+        double growth = smoothStep(Math.min(1, progressAngle / 0.20));
+        for (int i = 0; i <= segments; i++) {
+            double age = (double) i / segments;
+            sampleGlow(trailPoints[i], Math.max(0, progressAngle - span * age), age,
+                widthScale, growth, time, phase, color, viewX, viewY, viewZ, pixelScale);
+        }
+
+        DeferredTrails.beginSubmission();
+        VertexConsumer core = DeferredTrails.coreBuilder;
+        for (int i = 1; i <= segments; i++) {
+            ribbon(core, pose, trailPoints[i - 1], trailPoints[i], false, 1, true);
+            ribbon(core, pose, trailPoints[i - 1], trailPoints[i], true, 0.60F, true);
+        }
+
+        VertexConsumer halo = DeferredTrails.haloBuilder;
+        int glintStride = Math.max(1, (segments + 7) / 8);
+        for (int i = 1; i <= segments; i++) {
+            GlowPoint current = trailPoints[i - 1], next = trailPoints[i];
+            double age = (double) i / segments;
+            ribbon(halo, pose, current, next, false, 1, false);
+            ribbon(halo, pose, current, next, true, 0.45F, false);
+            if (i % glintStride == 0 && age < 0.9) {
+                double pulse = Math.pow(Math.max(0, Math.sin(time * 0.24 - age * 19 + phase * 6.28)), 6);
+                glint(halo, pose, next, next.haloWidth * (0.18 + pulse * 0.40), (float) pulse);
             }
         }
-        poseStack.translate(sword_pos.getX(), sword_pos.getY(), sword_pos.getZ());
+    }
 
-        Quaternion r4 = Quaternion.rotate(normal, -PosUtil.getPolar(progress_angle, distance));
+    private static GlowPoint[] createTrailPoints() {
+        GlowPoint[] points = new GlowPoint[MAX_TRAIL_SEGMENTS + 1];
+        for (int i = 0; i < points.length; i++) {
+            points[i] = new GlowPoint();
+        }
+        return points;
+    }
 
-        Vector3 toCenter = new Vector3(0, 0, 1).rot(r4.multiply(tmp));
-        if (round != null && firstPerson) {
-            poseStack.mulPose(Quaternion.trans(toCenter, round).toQuaternionf());
+    private static double distanceWidthScale(double distance) {
+        return Math.min(MAX_WIDTH_SCALE, 1 + 0.18 * Math.sqrt(Math.max(0, distance - 12)));
+    }
+
+    private static double smoothStep(double value) {
+        return value * value * (3 - 2 * value);
+    }
+
+    private static double cameraFade(double distance) {
+        double t = Math.max(0, Math.min(1, (distance - HALO_CAMERA_HIDE_RADIUS)
+            / (HALO_CAMERA_FULL_RADIUS - HALO_CAMERA_HIDE_RADIUS)));
+        return smoothStep(t);
+    }
+
+    private static double haloWidth(double width, double taper, double angle, double ownerDistance) {
+        double returning = smoothStep(Math.max(0, Math.min(1, (angle - Mth.PI) / 0.45)));
+        double nearby = 1 - smoothStep(Math.max(0, Math.min(1,
+            (ownerDistance - HALO_RETURN_NARROW_RADIUS)
+                / (HALO_RETURN_FULL_RADIUS - HALO_RETURN_NARROW_RADIUS))));
+        double narrowWidth = Math.min(width, Math.max(0.5 * taper, width * 0.25));
+        return width + (narrowWidth - width) * returning * nearby;
+    }
+
+    private static double segmentCameraDistance(double ax, double ay, double az,
+                                                double bx, double by, double bz) {
+        double dx = bx - ax, dy = by - ay, dz = bz - az;
+        double lengthSquared = dx * dx + dy * dy + dz * dz;
+        double t = lengthSquared > 1.0E-20
+            ? Math.max(0, Math.min(1, -(ax * dx + ay * dy + az * dz) / lengthSquared)) : 0;
+        double x = ax + t * dx, y = ay + t * dy, z = az + t * dz;
+        return Math.sqrt(x * x + y * y + z * z);
+    }
+
+    private static double haloBandFade(GlowPoint near, GlowPoint far, boolean cross, int band) {
+        double axisScale = cross ? 0.65 : 1;
+        double nearWidth = near.haloWidth * axisScale, farWidth = far.haloWidth * axisScale;
+        double middle = (BANDS[band] + BANDS[band + 1]) * 0.5;
+        double radius = (BANDS[band + 1] - BANDS[band]) * 0.5 * Math.max(nearWidth, farWidth);
+        double ax = near.cameraX + (cross ? near.vx : near.sx) * middle * nearWidth;
+        double ay = near.cameraY + (cross ? near.vy : near.sy) * middle * nearWidth;
+        double az = near.cameraZ + (cross ? near.vz : near.sz) * middle * nearWidth;
+        double bx = far.cameraX + (cross ? far.vx : far.sx) * middle * farWidth;
+        double by = far.cameraY + (cross ? far.vy : far.sy) * middle * farWidth;
+        double bz = far.cameraZ + (cross ? far.vz : far.sz) * middle * farWidth;
+        return cameraFade(Math.max(0, segmentCameraDistance(ax, ay, az, bx, by, bz) - radius));
+    }
+
+    private void sampleGlow(GlowPoint out, double angle, double age, double widthScale,
+                            double growth, double time, double phase, int[] color,
+                            double viewX, double viewY, double viewZ, double pixelScale) {
+        orbit.sample(angle);
+        out.x = orbit.x + orbit.cx;
+        out.y = orbit.y + orbit.cy;
+        out.z = orbit.z + orbit.cz;
+        orbit.ribbonAxes(out, angle);
+        out.cameraX = out.x + viewX;
+        out.cameraY = out.y + viewY;
+        out.cameraZ = out.z + viewZ;
+        double cameraDistance = Math.sqrt(out.cameraX * out.cameraX
+            + out.cameraY * out.cameraY + out.cameraZ * out.cameraZ);
+        double pixelFloor = Math.min(1.2, cameraDistance * pixelScale);
+        double taper = Math.pow(Math.max(0, 1 - age), 0.65);
+        out.width = Math.min(4, Math.max(0.5 * widthScale, pixelFloor)) * taper;
+        out.haloWidth = haloWidth(out.width, taper, angle,
+            Math.sqrt(out.x * out.x + out.y * out.y + out.z * out.z));
+        double pulse = Math.pow(0.5 + 0.5 * Math.sin(age * 18 - time * 0.35 + phase * 6.28), 8);
+        double hue = phase + age * 0.32 - time * 0.004;
+        int rainbow = Mth.hsvToRgb((float) (hue - Math.floor(hue)), 0.68F, 1);
+        float brightness = 1 + (float) pulse * 0.06F;
+        out.r = Math.min(1, (color[0] / 255F * 0.88F + ((rainbow >> 16) & 255) / 255F * 0.12F) * brightness);
+        out.g = Math.min(1, (color[1] / 255F * 0.88F + ((rainbow >> 8) & 255) / 255F * 0.12F) * brightness);
+        out.b = Math.min(1, (color[2] / 255F * 0.88F + (rainbow & 255) / 255F * 0.12F) * brightness);
+        out.alpha = (float) (0.78 * growth * Math.pow(Math.max(0, 1 - age), 1.15)
+            * (0.75 + 0.25 * pulse));
+        out.coreAlpha = (float) (0.94 * growth * Math.pow(Math.max(0, 1 - age), 0.55)
+            * (0.96 + 0.04 * pulse));
+    }
+
+    private static void ribbon(VertexConsumer vertex, PoseStack.Pose pose, GlowPoint near,
+                               GlowPoint far, boolean cross, float opacity, boolean core) {
+        int bandCount = core ? CORE_BANDS.length : BANDS.length;
+        for (int band = 0; band < bandCount - 1; band++) {
+            float bandOpacity = core ? opacity : opacity * (float) haloBandFade(near, far, cross, band);
+            bandVertex(vertex, pose, far, band, cross, bandOpacity, core);
+            bandVertex(vertex, pose, far, band + 1, cross, bandOpacity, core);
+            bandVertex(vertex, pose, near, band + 1, cross, bandOpacity, core);
+            bandVertex(vertex, pose, near, band, cross, bandOpacity, core);
+        }
+    }
+
+    private static void bandVertex(VertexConsumer vertex, PoseStack.Pose pose, GlowPoint point,
+                                   int band, boolean cross, float opacity, boolean core) {
+        double extent = (core ? CORE_BANDS[band] * point.width : BANDS[band] * point.haloWidth)
+            * (cross ? 0.65 : 1);
+        double ax = cross ? point.vx : point.sx;
+        double ay = cross ? point.vy : point.sy;
+        double az = cross ? point.vz : point.sz;
+        float white = core ? CORE_WHITE[band] : BAND_WHITE[band];
+        float alpha = core ? point.coreAlpha * CORE_ALPHA[band] : point.alpha * BAND_ALPHA[band];
+        if (!core) {
+            double x = point.cameraX + ax * extent;
+            double y = point.cameraY + ay * extent;
+            double z = point.cameraZ + az * extent;
+            alpha *= (float) cameraFade(Math.sqrt(x * x + y * y + z * z));
+        }
+        glowVertex(vertex, pose, point.x + ax * extent, point.y + ay * extent, point.z + az * extent,
+            point.r + (1 - point.r) * white, point.g + (1 - point.g) * white,
+            point.b + (1 - point.b) * white, alpha * opacity);
+    }
+
+    private void glint(VertexConsumer vertex, PoseStack.Pose pose, GlowPoint point,
+                       double size, float pulse) {
+        double cameraDistance = Math.sqrt(point.cameraX * point.cameraX
+            + point.cameraY * point.cameraY + point.cameraZ * point.cameraZ);
+        pulse *= (float) cameraFade(Math.max(0, cameraDistance - size));
+        if (pulse < 0.05F || point.alpha < 0.01F) {
+            return;
+        }
+        for (int i = 0; i < 4; i++) {
+            double ax = i == 0 ? cameraRight.x : i == 1 ? cameraUp.x : i == 2 ? -cameraRight.x : -cameraUp.x;
+            double ay = i == 0 ? cameraRight.y : i == 1 ? cameraUp.y : i == 2 ? -cameraRight.y : -cameraUp.y;
+            double az = i == 0 ? cameraRight.z : i == 1 ? cameraUp.z : i == 2 ? -cameraRight.z : -cameraUp.z;
+            int j = (i + 1) % 4;
+            double bx = j == 0 ? cameraRight.x : j == 1 ? cameraUp.x : j == 2 ? -cameraRight.x : -cameraUp.x;
+            double by = j == 0 ? cameraRight.y : j == 1 ? cameraUp.y : j == 2 ? -cameraRight.y : -cameraUp.y;
+            double bz = j == 0 ? cameraRight.z : j == 1 ? cameraUp.z : j == 2 ? -cameraRight.z : -cameraUp.z;
+            glowVertex(vertex, pose, point.x, point.y, point.z, 1, 1, 1, point.alpha * pulse);
+            glowVertex(vertex, pose, point.x + ax * size, point.y + ay * size, point.z + az * size,
+                point.r, point.g, point.b, 0);
+            glowVertex(vertex, pose, point.x + bx * size, point.y + by * size, point.z + bz * size,
+                point.r, point.g, point.b, 0);
+            glowVertex(vertex, pose, point.x + bx * size, point.y + by * size, point.z + bz * size,
+                point.r, point.g, point.b, 0);
+        }
+    }
+
+    private static void glowVertex(VertexConsumer vertex, PoseStack.Pose pose, double x, double y, double z, float r, float g, float b, float alpha) {
+        vertex.addVertex(pose.pose(), (float) x, (float) y, (float) z).setColor(r, g, b, alpha);
+    }
+
+    private static final class GlowPoint {
+        private double x, y, z, sx, sy, sz, vx, vy, vz, width, haloWidth;
+        private double cameraX, cameraY, cameraZ;
+        private float r, g, b, alpha, coreAlpha;
+    }
+
+    static void beginTrailFrame() {
+        DeferredTrails.discard();
+    }
+
+    static void captureDepthBeforeClouds() {
+        DeferredTrails.captureDepthBeforeClouds();
+    }
+
+    static void drawTrailsAfterLevel() {
+        DeferredTrails.draw();
+    }
+
+    static void discardPendingTrails() {
+        DeferredTrails.discard();
+    }
+
+    static void releaseTrailResources() {
+        DeferredTrails.discard();
+        DeferredTrails.releaseDepthTarget();
+    }
+
+    private static final class DeferredTrails {
+        private static final ByteBufferBuilder CORE_BUFFER = new ByteBufferBuilder(CORE_TYPE.bufferSize());
+        private static final ByteBufferBuilder HALO_BUFFER = new ByteBufferBuilder(TRAIL_TYPE.bufferSize());
+        private static final Matrix4f modelViewAtSubmission = new Matrix4f();
+        private static BufferBuilder coreBuilder, haloBuilder;
+        private static TextureTarget depthBeforeClouds;
+        private static RenderTarget capturedMainTarget;
+
+        private static void beginSubmission() {
+            if (coreBuilder == null) {
+                modelViewAtSubmission.set(RenderSystem.getModelViewStack());
+                coreBuilder = new BufferBuilder(CORE_BUFFER, CORE_TYPE.mode(), CORE_TYPE.format());
+                haloBuilder = new BufferBuilder(HALO_BUFFER, TRAIL_TYPE.mode(), TRAIL_TYPE.format());
+            }
         }
 
-        poseStack.mulPose(r4.toQuaternionf());
-        poseStack.mulPose(r3.toQuaternionf());
-        poseStack.mulPose(r2.toQuaternionf());
-        poseStack.mulPose(r1.toQuaternionf());
+        private static void captureDepthBeforeClouds() {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (coreBuilder == null || Minecraft.useShaderTransparency()
+                || minecraft.options.getCloudsType() == CloudStatus.OFF) {
+                return;
+            }
+            RenderTarget main = minecraft.getMainRenderTarget();
+            if (!main.useDepth) {
+                return;
+            }
+            try {
+                if (depthBeforeClouds == null || depthBeforeClouds.isStencilEnabled() != main.isStencilEnabled()) {
+                    releaseDepthTarget();
+                    depthBeforeClouds = new TextureTarget(main.width, main.height, true, Minecraft.ON_OSX);
+                    if (main.isStencilEnabled()) {
+                        depthBeforeClouds.enableStencil();
+                    }
+                } else if (depthBeforeClouds.width != main.width || depthBeforeClouds.height != main.height) {
+                    depthBeforeClouds.resize(main.width, main.height, Minecraft.ON_OSX);
+                }
+                depthBeforeClouds.copyDepthFrom(main);
+                capturedMainTarget = main;
+            } finally {
+                main.bindWrite(false);
+            }
+        }
 
-        poseStack.mulPose(Q2);
-        poseStack.mulPose(Q1);
+        private static void draw() {
+            if (coreBuilder == null) {
+                return;
+            }
+            RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
+            boolean usePreCloudDepth = capturedMainTarget == main
+                && depthBeforeClouds.width == main.width && depthBeforeClouds.height == main.height;
+            Matrix4fStack modelView = RenderSystem.getModelViewStack();
+            modelView.pushMatrix();
+            try {
+                modelView.set(modelViewAtSubmission);
+                RenderSystem.applyModelViewMatrix();
+                if (usePreCloudDepth) {
+                    depthBeforeClouds.bindWrite(false);
+                    attachColor(main.getColorTextureId());
+                } else {
+                    main.bindWrite(false);
+                }
+                drawBatch(CORE_TYPE, CORE_BUFFER, coreBuilder);
+                drawBatch(TRAIL_TYPE, HALO_BUFFER, haloBuilder);
+            } finally {
+                if (usePreCloudDepth) {
+                    depthBeforeClouds.bindWrite(false);
+                    attachColor(depthBeforeClouds.getColorTextureId());
+                }
+                main.bindWrite(false);
+                modelView.popMatrix();
+                RenderSystem.applyModelViewMatrix();
+                discard();
+            }
+        }
 
-        BakedModel model = this.itemRenderer.getModel(render_item, entity.level(), null, entity.getId());
+        private static void drawBatch(RenderType type, ByteBufferBuilder storage, BufferBuilder builder) {
+            try (MeshData mesh = builder.build()) {
+                if (mesh != null) {
+                    if (type.sortOnUpload()) {
+                        mesh.sortQuads(storage, RenderSystem.getVertexSorting());
+                    }
+                    type.draw(mesh);
+                }
+            }
+        }
 
-        itemRenderer.render(
-            render_item,
-            ItemDisplayContext.NONE,
-            false,
-            poseStack,
-            bufferSource,
-            LightTexture.FULL_BRIGHT,
-            OverlayTexture.NO_OVERLAY,
-            model
-        );
+        private static void discard() {
+            if (coreBuilder != null) {
+                discardVertices(CORE_BUFFER);
+                discardVertices(HALO_BUFFER);
+                coreBuilder = haloBuilder = null;
+            }
+            capturedMainTarget = null;
+        }
 
+        private static void discardVertices(ByteBufferBuilder storage) {
+            try (ByteBufferBuilder.Result ignored = storage.build()) {
+            }
+        }
 
-        poseStack.popPose();
+        private static void attachColor(int texture) {
+            GlStateManager._glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
+                GL30.GL_TEXTURE_2D, texture, 0);
+        }
+
+        private static void releaseDepthTarget() {
+            if (depthBeforeClouds != null) {
+                depthBeforeClouds.destroyBuffers();
+                depthBeforeClouds = null;
+            }
+        }
+    }
+
+    private static final class GlowType extends RenderType {
+        private GlowType() {
+            super("zenith_glow_states", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS,
+                256, false, false, () -> {
+                }, () -> {
+                });
+        }
+
+        private static RenderType createCore() {
+            return create(TheZenithMod.MOD_ID + ":prismatic_trail_core", DefaultVertexFormat.POSITION_COLOR,
+                VertexFormat.Mode.QUADS, 32768, false, true,
+                CompositeState.builder()
+                    .setShaderState(RENDERTYPE_LIGHTNING_SHADER)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .createCompositeState(false));
+        }
+
+        private static RenderType createTrail() {
+            return create(TheZenithMod.MOD_ID + ":prismatic_trail", DefaultVertexFormat.POSITION_COLOR,
+                VertexFormat.Mode.QUADS, 32768, false, false,
+                CompositeState.builder()
+                    .setShaderState(RENDERTYPE_LIGHTNING_SHADER)
+                    .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .createCompositeState(false));
+        }
+    }
+
+    private static final class Orbit {
+        private double a, b, ux, uy, uz, zx, zy, zz, yx, yy, yz, nx, ny, nz;
+        private double cx, cy, cz, x, y, z;
+        private boolean cameraOwner;
+
+        private void set(Vector3[] ref, Vector3 normal, double distance, double angle, boolean cameraOwner) {
+            a = distance / 2;
+            b = Math.min(distance / 4, 10);
+            double cos = Math.cos(angle), sin = Math.sin(angle);
+            ux = ref[0].x() * cos + ref[1].x() * sin;
+            uy = ref[0].y() * cos + ref[1].y() * sin;
+            uz = ref[0].z() * cos + ref[1].z() * sin;
+            zx = ref[2].x();
+            zy = ref[2].y();
+            zz = ref[2].z();
+            yx = ref[1].x();
+            yy = ref[1].y();
+            yz = ref[1].z();
+            nx = normal.x();
+            ny = normal.y();
+            nz = normal.z();
+            cx = (a - 2) * zx;
+            cy = (a - 2) * zy;
+            cz = (a - 2) * zz;
+            this.cameraOwner = cameraOwner;
+        }
+
+        private void sample(double progressAngle) {
+            double theta = Mth.PI - progressAngle;
+            double lateral = b * Math.sin(theta), forward = a * Math.cos(theta);
+            x = lateral * ux + forward * zx;
+            y = lateral * uy + forward * zy;
+            z = lateral * uz + forward * zz;
+        }
+
+        private void ribbonAxes(GlowPoint out, double progressAngle) {
+            double theta = Mth.PI - progressAngle;
+            double lateral = -b * Math.cos(theta), forward = a * Math.sin(theta);
+            double tx = lateral * ux + forward * zx;
+            double ty = lateral * uy + forward * zy;
+            double tz = lateral * uz + forward * zz;
+            double tangentLength = Math.sqrt(tx * tx + ty * ty + tz * tz);
+            if (tangentLength < 1.0E-12) {
+                tx = zx;
+                ty = zy;
+                tz = zz;
+                tangentLength = Math.max(1.0E-12, Math.sqrt(tx * tx + ty * ty + tz * tz));
+            }
+            tx /= tangentLength;
+            ty /= tangentLength;
+            tz /= tangentLength;
+            double sx = ny * tz - nz * ty;
+            double sy = nz * tx - nx * tz;
+            double sz = nx * ty - ny * tx;
+            double inverse = 1 / Math.max(1.0E-12, Math.sqrt(sx * sx + sy * sy + sz * sz));
+            out.sx = sx * inverse;
+            out.sy = sy * inverse;
+            out.sz = sz * inverse;
+            out.vx = ty * out.sz - tz * out.sy;
+            out.vy = tz * out.sx - tx * out.sz;
+            out.vz = tx * out.sy - ty * out.sx;
+        }
     }
 }

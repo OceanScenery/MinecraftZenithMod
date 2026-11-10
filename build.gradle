@@ -104,11 +104,9 @@ neoForge {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 sourceSets {
-    bootstrap {
-        java.srcDirs = ['src/bootstrap/java']
-        resources.srcDirs = ['src/bootstrap/resources']
-        compileClasspath += sourceSets.main.compileClasspath
-        runtimeClasspath += sourceSets.main.runtimeClasspath
+    // 自注册 agent 的宿主，编译成一个独立的小 jar，再内嵌进 mod jar
+    agent {
+        java.setSrcDirs(['src/agent/java'])
     }
 }
 
@@ -117,7 +115,6 @@ sourceSets {
 // a dependency that will be present for runtime testing but that is
 // "optional", meaning it will not be pulled by dependents of this mod.
 configurations {
-    bootstrapImplementation.extendsFrom implementation
     runtimeClasspath.extendsFrom localRuntime
 }
 
@@ -170,45 +167,11 @@ sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
 
-tasks.named('jar', Jar) {
-    archiveClassifier = 'payload'
-
-    manifest {
-        attributes(
-                'MixinConfigs': "${mod_id}.mixins.json"
-        )
-    }
-}
-
-def bootstrapJar = tasks.register('bootstrapJar', Jar) {
-    dependsOn tasks.named('jar')
-
-    archiveClassifier = ''
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    from sourceSets.bootstrap.output
-    from(tasks.named('jar').flatMap { it.archiveFile }) {
-        into 'META-INF/the_zenith_sword'
-        rename { 'payload.jar' }
-    }
-
-    manifest {
-        attributes(
-                'Automatic-Module-Name': 'the.zenith.sword.bootstrap',
-                'FMLModType': 'LIBRARY'
-        )
-    }
-}
-
-tasks.named('assemble').configure {
-    dependsOn bootstrapJar
-}
-
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            artifact bootstrapJar
+            artifact tasks.named('jar')
         }
     }
     repositories {
@@ -220,6 +183,48 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+// 自注册 agent 本体：只装 src/agent/java 下的引导类，真正的转换器仍在主源集里
+tasks.register('agentJar', Jar) {
+    archiveBaseName = 'zenith_agent'
+    archiveVersion = ''
+    archiveClassifier = ''
+    destinationDirectory = layout.buildDirectory.dir('agent')
+    from sourceSets.agent.output
+    manifest {
+        attributes(
+                'Launcher-Agent-Class'   : 'com.oceanscenery.zenith.coreagent.ZenithAgent',
+                'Agent-Class'            : 'com.oceanscenery.zenith.coreagent.ZenithAgent',
+                'Premain-Class'          : 'com.oceanscenery.zenith.coreagent.ZenithAgent',
+                'Can-Redefine-Classes'   : 'true',
+                'Can-Retransform-Classes': 'true'
+        )
+    }
+}
+
+// 把 zenith_agent.jar 放到资源根目录，ZenithAgentInstaller 运行时会以 /zenith_agent.jar 取出来
+tasks.named('processResources', ProcessResources).configure {
+    dependsOn tasks.named('agentJar')
+    from(tasks.named('agentJar')) {
+        into '/'
+    }
+}
+
+// 最终 mod jar：直接由标准 jar 任务产出，不再套 bootstrap/payload 一层
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title'     : mod_id,
+                'Specification-Vendor'    : mod_authors,
+                'Specification-Version'   : '1', // We are version 1 of ourselves
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.version,
+                'Implementation-Vendor'   : mod_authors,
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                'MixinConfigs'            : "${mod_id}.mixins.json"
+        ])
+    }
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

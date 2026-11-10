@@ -2,17 +2,12 @@ package com.oceanscenery.zenith.mod_class.entity;
 
 import com.oceanscenery.zenith.registry.ZenithEntityDataSerializer;
 import com.oceanscenery.zenith.registry.ZenithItems;
-import com.oceanscenery.zenith.util.DamageHandler;
-import com.oceanscenery.zenith.util.LevelUtil;
-import com.oceanscenery.zenith.util.PosUtil;
-import com.oceanscenery.zenith.util.Quaternion;
-import com.oceanscenery.zenith.util.Vector3;
+import com.oceanscenery.zenith.util.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -24,9 +19,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -100,7 +95,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         if (this.cachedOwner != null && !this.cachedOwner.isRemoved()) {
             return this.cachedOwner;
         } else if (this.getOwnerUUID() != null) {
-            this.cachedOwner = LevelUtil.getEntity(this.level(),this.getOwnerUUID());
+            this.cachedOwner = LevelUtil.getEntity(this.level(), this.getOwnerUUID());
             return this.cachedOwner;
         } else {
             return null;
@@ -120,7 +115,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     }
 
     public void setOwner(UUID uuid) {
-        Entity found = LevelUtil.getEntity(this.level(),uuid);
+        Entity found = LevelUtil.getEntity(this.level(), uuid);
         this.setOwner(found);
     }
 
@@ -257,7 +252,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         Vector3[] reference = this.getReference();
         Vector3[] world = Vector3.WORLD;
 
-        Vec3 realPos = pos.setZ(pos.getZ() - 1).VecInNewRefer(
+        Vec3 realPos = pos.setZ(pos.z() - 1).VecInNewRefer(
             reference, world
         ).toVec3().add(owner.getEyePosition());
 
@@ -276,7 +271,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             AABB box = new AABB(realPos, last_pos).inflate(2);
             List<Entity> list = this.level().getEntitiesOfClass(Entity.class, box, this::canHit);
             for (Entity entity : list) {
-                DamageHandler.applyDamage(this, entity, weapon);
+                DamageHandler.applyDamage(this, entity, weapon, 1);
             }
         }
 
@@ -366,8 +361,8 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     public Quaternion[] getFixedPose() {
         if (this.fixedPose == null) {
             this.fixedPose = new Quaternion[3];
-            this.fixedPose[0] = Quaternion.trans(new Vector3(0, 0, 1), new Vector3(this.getReference()[2].getX(), 0, this.getReference()[2].getZ()));
-            this.fixedPose[1] = Quaternion.trans(new Vector3(this.getReference()[2].getX(), 0, this.getReference()[2].getZ()), this.getReference()[2]);
+            this.fixedPose[0] = Quaternion.trans(new Vector3(0, 0, 1), new Vector3(this.getReference()[2].x(), 0, this.getReference()[2].z()));
+            this.fixedPose[1] = Quaternion.trans(new Vector3(this.getReference()[2].x(), 0, this.getReference()[2].z()), this.getReference()[2]);
             this.fixedPose[2] = Quaternion.rotate(this.getReference()[2], this.getAngle());
         }
         return this.fixedPose;

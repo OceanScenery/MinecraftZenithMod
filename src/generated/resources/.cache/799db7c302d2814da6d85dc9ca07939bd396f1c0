@@ -1,4 +1,4 @@
-// 1.21.1	2026-03-04T14:34:04.2356786	Item Models: the_zenith_sword
+// 1.21.1	2026-11-08T15:09:32.584016	Item Models: the_zenith_sword
 066567cc1300dfc2dcc5f977aa2e497e242e0a00 assets/the_zenith_sword/models/item/arkhalis.json
 75d4e5c62a5e818609e7ae9b2067bfa45808fcde assets/the_zenith_sword/models/item/bee_keeper.json
 5debcf485ded1c53859b46956fd1d005aab678ab assets/the_zenith_sword/models/item/blade_of_grass.json
@@ -20,3 +20,4 @@ a6f1de42d7523e9597704e78ef71720130c49cda assets/the_zenith_sword/models/item/the
 3d5cab0d944d69d76ecfd98de08b638058583bc0 assets/the_zenith_sword/models/item/true_nights_edge.json
 81203d73df55fae75387e96a057ab431963af73c assets/the_zenith_sword/models/item/volcano.json
 729ccf7bdaaf5f889c83fd4f8b1b6d025c935bbc assets/the_zenith_sword/models/item/zenith.json
+130e3c55352589beca366226e506fd79c58d4c2b assets/the_zenith_sword/models/item/zenith_upgrade.json

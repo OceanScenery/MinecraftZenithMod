@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 public record ToggleBlacklistPacket(int playerId, int entityId,
                                     boolean shifted) implements CustomPacketPayload {
+    public static final double MAX_HANDLE_DISTANCE = 10.0;
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_blacklist");
     public static final CustomPacketPayload.Type<ToggleBlacklistPacket> TYPE = new CustomPacketPayload.Type<>(ID);
     public static final StreamCodec<ByteBuf, ToggleBlacklistPacket> STREAM_CODEC = StreamCodec.composite(
@@ -33,7 +34,7 @@ public record ToggleBlacklistPacket(int playerId, int entityId,
             }
             Entity selected = serverLevel.getEntity(packet.entityId);
 
-            if (selected == null) {
+            if (selected == null || player.distanceTo(selected) > MAX_HANDLE_DISTANCE) {
                 return;
             }
             if (packet.shifted()) {

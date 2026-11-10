@@ -34,13 +34,6 @@ public class ZenithNetworkHandler {
         );
 
         register.playToServer(
-            CycleAttackPlayerPacket.TYPE,
-            CycleAttackPlayerPacket.STREAM_CODEC,
-            (payload, context)
-                -> context.enqueueWork(() -> CycleAttackPlayerPacket.handle(payload, context))
-        );
-
-        register.playToServer(
             ZenithAttackPacket.TYPE,
             ZenithAttackPacket.STREAM_CODEC,
             (payload, context)
@@ -61,6 +54,18 @@ public class ZenithNetworkHandler {
             (payload, context) -> context.enqueueWork(
                 () -> ZenithUpdatePickedEntityQuestPacket.handle(payload, context)
             )
+        );
+
+        register.playToServer(
+            ToggleZenithSlotOpenStatePacket.TYPE,
+            ToggleZenithSlotOpenStatePacket.STREAM_CODEC,
+            (payload, context) -> context.enqueueWork(() -> ToggleZenithSlotOpenStatePacket.handle(payload, context))
+        );
+
+        register.playToServer(
+            SetZenithGhostConfigPacket.TYPE,
+            SetZenithGhostConfigPacket.STREAM_CODEC,
+            (payload, context) -> context.enqueueWork(() -> SetZenithGhostConfigPacket.handle(payload, context))
         );
 
         register.playToClient(

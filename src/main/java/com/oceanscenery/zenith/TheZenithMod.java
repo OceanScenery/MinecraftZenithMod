@@ -1,13 +1,9 @@
 package com.oceanscenery.zenith;
 
 import com.mojang.logging.LogUtils;
-import com.oceanscenery.zenith.registry.ZenithAttachments;
-import com.oceanscenery.zenith.registry.ZenithConfigs;
-import com.oceanscenery.zenith.registry.ZenithCreativeTab;
-import com.oceanscenery.zenith.registry.ZenithDataComponents;
-import com.oceanscenery.zenith.registry.ZenithEntities;
-import com.oceanscenery.zenith.registry.ZenithEntityDataSerializer;
-import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.agent.ZenithAgentCallback;
+import com.oceanscenery.zenith.registry.*;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
@@ -23,7 +19,12 @@ public class TheZenithMod {
 
     public static final boolean TERRA_LOADED = ModList.get().isLoaded("confluence");
 
+    public static ResourceLocation loc(String path) {
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    }
+
     public TheZenithMod(IEventBus modEventBus, ModContainer modContainer) {
+        ZenithAgentCallback.preload();
         ZenithDataComponents.DATA_COMPONENTS.register(modEventBus);
         modContainer.registerConfig(ModConfig.Type.SERVER, ZenithConfigs.CONFIG);
         ZenithItems.ITEMS.register(modEventBus);
