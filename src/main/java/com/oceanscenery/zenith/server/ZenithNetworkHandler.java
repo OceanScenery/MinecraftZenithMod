@@ -2,12 +2,7 @@ package com.oceanscenery.zenith.server;
 
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.client.packet.ZenithSendPickedEntityInfPacket;
-import com.oceanscenery.zenith.server.packet.CycleAttackModePacket;
-import com.oceanscenery.zenith.server.packet.CycleAttackPlayerPacket;
-import com.oceanscenery.zenith.server.packet.CycleZenithDefaultDistancePacket;
-import com.oceanscenery.zenith.server.packet.ToggleBlacklistPacket;
-import com.oceanscenery.zenith.server.packet.ZenithAttackPacket;
-import com.oceanscenery.zenith.server.packet.ZenithUpdatePickedEntityQuestPacket;
+import com.oceanscenery.zenith.server.packet.*;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -40,13 +35,6 @@ public class ZenithNetworkHandler {
         );
 
         register.playToServer(
-            CycleAttackPlayerPacket.TYPE,
-            CycleAttackPlayerPacket.STREAM_CODEC,
-            (payload, context)
-                -> context.enqueueWork(() -> CycleAttackPlayerPacket.handle(payload, context))
-        );
-
-        register.playToServer(
             ZenithAttackPacket.TYPE,
             ZenithAttackPacket.STREAM_CODEC,
             (payload, context)
@@ -67,6 +55,18 @@ public class ZenithNetworkHandler {
             (payload, context) -> context.enqueueWork(
                 () -> ZenithUpdatePickedEntityQuestPacket.handle(payload, context)
             )
+        );
+
+        register.playToServer(
+            ToggleZenithSlotOpenStatePacket.TYPE,
+            ToggleZenithSlotOpenStatePacket.STREAM_CODEC,
+            (payload, context) -> context.enqueueWork(() -> ToggleZenithSlotOpenStatePacket.handle(payload, context))
+        );
+
+        register.playToServer(
+            SetZenithGhostConfigPacket.TYPE,
+            SetZenithGhostConfigPacket.STREAM_CODEC,
+            (payload, context) -> context.enqueueWork(() -> SetZenithGhostConfigPacket.handle(payload, context))
         );
 
         register.playToClient(

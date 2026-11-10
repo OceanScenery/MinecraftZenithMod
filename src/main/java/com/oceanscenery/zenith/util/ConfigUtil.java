@@ -33,6 +33,14 @@ public class ConfigUtil {
         return ZenithConfigs.ZENITH_CONFIG.default_damage.get();
     }
 
+    public static double attackSpeed(boolean shadow) {
+        if (!shadow) {
+            return ModList.get().isLoaded("bettercombat") ? -2.4 : 30;
+        } else {
+            return ModList.get().isLoaded("bettercombat") ? 6 : 30;
+        }
+    }
+
     public static double rangedFactor() {
         return ZenithConfigs.ZENITH_CONFIG.ranged_damage_factor.get();
     }

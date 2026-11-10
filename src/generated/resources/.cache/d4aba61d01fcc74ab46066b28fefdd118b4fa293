@@ -1,3 +1,5 @@
-// 26.1.2	2026-09-12T22:55:52.794788	zenith_recipe_gen
+// 26.1.2	2026-11-10T21:09:09.9064695	zenith_recipe_gen
 dab281c3b5a916c78b5ec5464455f01a9a7fdaf8 data/the_zenith_sword/advancement/recipes/combat/zenith.json
+5fb2738e9063aa3046f5f06d64f2468ec724caab data/the_zenith_sword/advancement/recipes/combat/zenith_upgrade.json
 79c1286719c1effbe89071416788c83dfb77a9af data/the_zenith_sword/recipe/zenith.json
+b5eac5e7599644ef80f90a25b323330bc77feb98 data/the_zenith_sword/recipe/zenith_upgrade.json

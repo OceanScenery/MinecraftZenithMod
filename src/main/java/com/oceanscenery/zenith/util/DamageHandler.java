@@ -1,18 +1,22 @@
 package com.oceanscenery.zenith.util;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.mixin.EntityAccessor;
-import com.oceanscenery.zenith.mixin.LivingEntityAccessor;
+import com.oceanscenery.zenith.mixin.accessor.EntityAccessor;
+import com.oceanscenery.zenith.mixin.accessor.LivingEntityAccessor;
+import com.oceanscenery.zenith.mixin.accessor.PlayerAccessor;
+import com.oceanscenery.zenith.mixin.accessor.ServerPlayerAccessor;
 import com.oceanscenery.zenith.mod_class.ZenithDamageSource;
 import com.oceanscenery.zenith.mod_class.data_component.AttackMode;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
-import com.oceanscenery.zenith.registry.ZenithAttachments;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithDataComponents;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
@@ -23,15 +27,50 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.scores.ScoreAccess;
+import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 public class DamageHandler {
     private static final ThreadLocal<Boolean> inMethod = ThreadLocal.withInitial(() -> false);
+
+    public static final AttackFilter DEFAULT_FILTER = (attacker, victim, weapon) -> {
+        if (weapon == null) {
+            return false;
+        }
+        if (weapon.is(ZenithItems.ZENITH.get())) {
+            if (victim instanceof ZenithProjectile) {
+                return false;
+            }
+            if ((victim instanceof ItemEntity || victim instanceof ExperienceOrb) && !ZenithConfigs.ZENITH_CONFIG.enable_attack_item.get()) {
+                return false;
+            }
+            AttackMode atk = Optional.ofNullable(weapon.get(ZenithDataComponents.ATTACK_MODE)).orElse(AttackMode.LIVING_ENTITY);
+            if (!victim.isAttackable() && atk != AttackMode.ALL) {
+                return false;
+            }
+            if (!(victim instanceof LivingEntity) && atk == AttackMode.LIVING_ENTITY) {
+                return false;
+            }
+            if (victim instanceof ArmorStand && atk != AttackMode.ALL) {
+                return false;
+            }
+            if (!AttachmentUtil.checkCanAttack(attacker, victim)) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    };
+
+    public interface AttackFilter {
+        boolean canAttack(Entity attacker, Entity victim, ItemStack weapon);
+    }
 
     public static class VictimRecord {
         public VictimRecord(float health, float damage, float extra) {
@@ -45,22 +84,19 @@ public class DamageHandler {
         public float initialHealth;
     }
 
-    public static final Map<LivingEntity, VictimRecord> checkedVictims = new HashMap<>();
+    public static void addLivingVictim(LivingEntity livingVictim, float currDamage) {
+        addLivingVictim(livingVictim, currDamage, 0f);
+    }
 
     public static void addLivingVictim(LivingEntity livingVictim, float currDamage, float extraDamage) {
-        if (checkedVictims.containsKey(livingVictim)) {
-            VictimRecord rec = checkedVictims.get(livingVictim);
+        if (StaticCollections.checkedVictims.containsKey(livingVictim)) {
+            VictimRecord rec = StaticCollections.checkedVictims.get(livingVictim);
             rec.expectedDamage += currDamage;
             rec.extraDamage += extraDamage;
 
         } else {
-            checkedVictims.put(livingVictim, new VictimRecord(getTrueHealth(livingVictim), currDamage, extraDamage));
+            StaticCollections.checkedVictims.put(livingVictim, new VictimRecord(livingVictim.getHealth(), currDamage, extraDamage));
         }
-    }
-
-    public static float getTrueHealth(LivingEntity livingVictim) {
-        SynchedEntityData data = ((EntityAccessor) livingVictim).getRealEntityData();
-        return data.get(LivingEntityAccessor.getHealthId());
     }
 
     private static boolean applyDamageAmount(Entity victim, ZenithDamageSource source, float damage, ItemStack weapon, float scale) {
@@ -74,27 +110,50 @@ public class DamageHandler {
             if (attacker == null || !(attacker.level() instanceof ServerLevel serverLevel)) {
                 return false;
             }
-
-            EnchantmentHelper.doPostAttackEffectsWithItemSource((ServerLevel) attacker.level(), victim, source, weapon);
-            damage = EnchantmentHelper.modifyDamage((ServerLevel) attacker.level(), weapon, victim, source, damage);
+            if (attacker instanceof LivingEntity livingAttacker) {
+                Optional.of(livingAttacker.level()).filter(l -> l instanceof ServerLevel).ifPresent(
+                    level -> {
+                        EnchantmentHelper.doPostAttackEffectsWithItemSource(
+                            (ServerLevel) level, victim, source, weapon
+                        );
+                    }
+                );
+            }
+            if (victim instanceof LivingEntity living) {
+                damage = EnchantmentHelper.modifyDamage(
+                    serverLevel, weapon, living, source, damage
+                );
+            }
             damage = damage * (float) (Math.min(ConfigUtil.rangedFactor() * ((TheZenithMod.TERRA_LOADED && ZenithConfigs.ZENITH_CONFIG.enable_terra_damage_modifier.get()) ? 10 : 1), 1)) * scale;
             victim.invulnerableTime = 0;
 
-            checkedVictims.clear();
+            StaticCollections.checkedVictims.clear();
 
-            if (victim instanceof LivingEntity living && !AttachmentUtil.hitByZenith(living)) {
-                AttachmentUtil.setHealth(living, living.getHealth());
+            if (victim instanceof LivingEntity living) {
+                if (!AttachmentUtil.getHealth(living).valid(living)) {
+                    float value = living.getHealth();
+                    if (Float.isNaN(value) || Float.isInfinite(value)) {
+                        value = -1f;
+                    }
+                    AttachmentUtil.setHealth(living, value);
+                }
             }
+
             AttachmentUtil.setHitByZenith(victim, origin -> true);
             victim.hurtServer(serverLevel, source.setDamage(damage), damage);
-            if (victim instanceof LivingEntity livingVictim && !checkedVictims.containsKey(livingVictim)) {
-                addLivingVictim(
-                    livingVictim, damage + ConfigUtil.healthPercentage() * livingVictim.getMaxHealth(),
-                    Optional.ofNullable(livingVictim.getData(ZenithAttachments.DAMAGE_MARK).getMap().remove(attacker.getUUID())).orElse(0f)
-                );
+
+            if (victim instanceof LivingEntity livingVictim && !StaticCollections.checkedVictims.containsKey(livingVictim)) {
+                try {
+                    addLivingVictim(
+                        livingVictim, damage + ConfigUtil.healthPercentage() * livingVictim.getMaxHealth(),
+                        Optional.ofNullable(AttachmentUtil.getMark(livingVictim).getMap().remove(attacker.getUUID())).orElse(0f)
+                    );
+                } catch (Exception e) {
+                    TheZenithMod.LOGGER.error("Capability registered error", e);
+                }
             }
 
-            for (Map.Entry<LivingEntity, VictimRecord> current : new ArrayList<>(checkedVictims.entrySet())) {
+            for (Map.Entry<LivingEntity, VictimRecord> current : new ArrayList<>(StaticCollections.checkedVictims.entrySet())) {
                 float factor;
                 if (ConfigUtil.bypass()) {
                     factor = 1f;
@@ -104,7 +163,7 @@ public class DamageHandler {
 
                 LivingEntity currVictim = current.getKey();
                 VictimRecord currRecord = current.getValue();
-                float realDamage = currRecord.initialHealth - getTrueHealth(currVictim);
+                float realDamage = currRecord.initialHealth - currVictim.getHealth();
                 float expectedDamage = currRecord.expectedDamage * factor + currRecord.extraDamage;
 
                 if (realDamage < expectedDamage) {
@@ -112,7 +171,7 @@ public class DamageHandler {
                 }
             }
 
-            checkedVictims.clear();
+            StaticCollections.checkedVictims.clear();
 
             victim.invulnerableTime = 0;
             return true;
@@ -121,50 +180,45 @@ public class DamageHandler {
         }
     }
 
-    public static boolean applyDamage(ZenithProjectile projectile, Entity victim, @NotNull ItemStack weapon) {
-        return applyDamage(projectile, victim, weapon, 1);
-    }
-
-    public static boolean applyDamage(ZenithProjectile projectile, Entity victim, @NotNull ItemStack weapon, float scale) {
+    public static boolean applyDamage(ZenithProjectile projectile, Entity victim, @NotNull ItemStack weapon, float scale, AttackFilter filter) {
         if (!projectile.level().isClientSide()) {
             float damage = projectile.getDamage();
             Entity attacker = projectile.getOwner();
             ZenithDamageSource source;
 
-            if (!canAttack(attacker, victim, weapon)) {
+            if (!filter.canAttack(attacker, victim, weapon)) {
                 return false;
             }
 
-            if (attacker == null) {
-                source = ZenithDamageSource.zenith(projectile);
-            } else {
-                if (ZenithConfigs.ZENITH_CONFIG.disable_knockback.get()) {
-                    source = ZenithDamageSource.zenith(attacker);
-                } else {
-                    source = ZenithDamageSource.zenithKnock(attacker);
-                }
+            source = ZenithDamageSource.getRightSource(
+                Optional.ofNullable(attacker).orElse(projectile),
+                filter, weapon
+            );
+            return applyDamageAmount(victim, source, damage, weapon, scale);
+        }
+        return false;
+    }
+
+    public static boolean applyDamage(ZenithProjectile projectile, Entity victim, @NotNull ItemStack weapon, float scale) {
+        return applyDamage(projectile, victim, weapon, scale, DEFAULT_FILTER);
+    }
+
+    public static boolean applyDirectDamage(@NotNull Entity attacker, Entity victim, ItemStack weapon, float scale, float damage, AttackFilter filter) {
+        if (!attacker.level().isClientSide()) {
+            ZenithDamageSource source;
+
+            if (!filter.canAttack(attacker, victim, weapon)) {
+                return false;
             }
+
+            source = ZenithDamageSource.getRightSource(attacker, filter, weapon);
             return applyDamageAmount(victim, source, damage, weapon, scale);
         }
         return false;
     }
 
     public static boolean applyDirectDamage(@NotNull Entity attacker, Entity victim, ItemStack weapon, float scale, float damage) {
-        if (!attacker.level().isClientSide()) {
-            ZenithDamageSource source;
-
-            if (!canAttack(attacker, victim, weapon)) {
-                return false;
-            }
-
-            if (ZenithConfigs.ZENITH_CONFIG.disable_knockback.get()) {
-                source = ZenithDamageSource.zenith(attacker);
-            } else {
-                source = ZenithDamageSource.zenithKnock(attacker);
-            }
-            return applyDamageAmount(victim, source, damage, weapon, scale);
-        }
-        return false;
+        return applyDirectDamage(attacker, victim, weapon, scale, damage, DEFAULT_FILTER);
     }
 
     public static void setHealthAndHurt(LivingEntity livingVictim, float health, DamageSource source) {
@@ -175,7 +229,7 @@ public class DamageHandler {
         } else if (attacker instanceof LivingEntity livingAttacker) {
             livingVictim.setLastHurtByMob(livingAttacker);
         }
-        float damage = getTrueHealth(livingVictim) - health;
+        float damage = livingVictim.getHealth() - health;
         livingVictim.getCombatTracker().recordDamage(source, damage);
         attacker.level().broadcastDamageEvent(livingVictim, source);
 
@@ -187,8 +241,8 @@ public class DamageHandler {
             shouldCheck = true;
         }
 
-        AttachmentUtil.setHealth(livingVictim, health);
         livingVictim.setHealth(health);
+        AttachmentUtil.setHealth(livingVictim, health);
         float postCheckedHealth = livingVictim.getHealth();
 
         ConfigUtil.redirectDamageAction(livingVictim, prevCheckedHealth, postCheckedHealth, damage, source);
@@ -199,75 +253,78 @@ public class DamageHandler {
     }
 
     public static void decideDeath(LivingEntity livingVictim, float prevCheckedHealth, float postCheckedHealth, float damage, DamageSource source) {
-        if (postCheckedHealth >= prevCheckedHealth || (!livingVictim.isDeadOrDying() && livingVictim.getHealth() <= 0f)) {
+        if (postCheckedHealth >= prevCheckedHealth && !livingVictim.isDeadOrDying()) {
+            deathProcess(livingVictim, source);
+        } else if (livingVictim.isDeadOrDying() || livingVictim.getHealth() <= 0f) {
             deathProcess(livingVictim, source);
         }
     }
 
     public static void deathProcess(LivingEntity livingVictim, DamageSource source) {
         if (livingVictim.level() instanceof ServerLevel serverLevel) {
-            ((LivingEntityAccessor) livingVictim).callDropAllDeathLoot(serverLevel, source);
-        }
-        livingVictim.setRemoved(Entity.RemovalReason.KILLED);
-        LivingEntity killer = livingVictim.getKillCredit();
-        if (killer != null) {
-            killer.awardKillScore(livingVictim, source);
-        }
-        if (livingVictim.isSleeping()) {
-            livingVictim.stopSleeping();
-        }
-        livingVictim.stopUsingItem();
-        ((LivingEntityAccessor) livingVictim).setDead(true);
-        if (livingVictim.level() instanceof ServerLevel serverLevel) {
-            if (source.getEntity() == null || source.getEntity().killedEntity(serverLevel, livingVictim, source)) {
-                livingVictim.gameEvent(GameEvent.ENTITY_DIE);
+            if (!(livingVictim instanceof ServerPlayer sp) || !sp.isSpectator()) {
+                ((LivingEntityAccessor) livingVictim).callDropAllDeathLoot(serverLevel, source);
             }
-            serverLevel.broadcastEntityEvent(livingVictim, (byte) 3);
         }
-    }
 
-    public static boolean canAttack(Entity attacker, Entity victim, ItemStack stack) {
-        if (stack == null) {
-            return false;
+        if (!(livingVictim instanceof ServerPlayer)) {
+            LivingEntity killer = livingVictim.getKillCredit();
+            if (killer != null) {
+                killer.awardKillScore(livingVictim, source);
+            }
+            if (livingVictim.isSleeping()) {
+                livingVictim.stopSleeping();
+            }
+            livingVictim.stopUsingItem();
+            ((LivingEntityAccessor) livingVictim).setDead(true);
+            if (livingVictim.level() instanceof ServerLevel serverLevel) {
+                if (source.getEntity() == null || source.getEntity().killedEntity(serverLevel, livingVictim, source)) {
+                    livingVictim.gameEvent(GameEvent.ENTITY_DIE);
+                }
+                serverLevel.broadcastEntityEvent(livingVictim, (byte) 3);
+            }
         }
-        if (stack.is(ZenithItems.ZENITH)) {
-            if ((victim instanceof ItemEntity || victim instanceof ExperienceOrb) && !ZenithConfigs.ZENITH_CONFIG.enable_attack_item.get()) {
-                return false;
+
+        if (livingVictim instanceof ServerPlayer serverPlayer) {
+            serverPlayer.gameEvent(GameEvent.ENTITY_DIE);
+
+            if ((Boolean)serverPlayer.level().getGameRules().get(GameRules.FORGIVE_DEAD_PLAYERS)) {
+                ((ServerPlayerAccessor)serverPlayer).zenith$tellNeutralMobsThatIDied();
             }
-            if (stack.get(ZenithDataComponents.ATTACK_MODE) == null) {
-                stack.set(ZenithDataComponents.ATTACK_MODE, new AttackMode(AttackMode.Mode.LIVING_ENTITY, true));
+
+            serverPlayer.level().getScoreboard().forAllObjectives(ObjectiveCriteria.DEATH_COUNT, serverPlayer, ScoreAccess::increment);
+            LivingEntity killer = serverPlayer.getKillCredit();
+            if (killer != null) {
+                serverPlayer.awardStat(Stats.ENTITY_KILLED_BY.get(killer.getType()));
+                killer.awardKillScore(serverPlayer, source);
             }
-            AttackMode atk = stack.get(ZenithDataComponents.ATTACK_MODE);
-            if (atk != null && victim instanceof Player && !atk.attackPlayer()) {
-                return false;
-            }
-            if (atk != null && !victim.isAttackable() && !atk.getMode().equals(AttackMode.Mode.ALL)) {
-                return false;
-            }
-            if (atk != null && !(victim instanceof LivingEntity) && !(atk.getMode().equals(AttackMode.Mode.ATTACKABLE_ENTITY) || atk.getMode().equals(AttackMode.Mode.ALL))) {
-                return false;
-            }
-            if (atk != null && victim instanceof ArmorStand && !atk.getMode().equals(AttackMode.Mode.ALL)) {
-                return false;
-            }
-            if (!AttachmentUtil.checkCanAttack(attacker, victim)) {
-                return false;
-            }
-            return true;
+
+            serverPlayer.level().broadcastEntityEvent(serverPlayer, (byte)3);
+            serverPlayer.awardStat(Stats.DEATHS);
+            serverPlayer.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_DEATH));
+            serverPlayer.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_REST));
+            serverPlayer.clearFire();
+            serverPlayer.setTicksFrozen(0);
+            serverPlayer.setSharedFlagOnFire(false);
+            serverPlayer.getCombatTracker().recheckStatus();
+            serverPlayer.setLastDeathLocation(
+                Optional.of(GlobalPos.of(serverPlayer.level().dimension(), serverPlayer.blockPosition()))
+            );
         }
-        return false;
+
+        EntityUtil.remove(livingVictim);
     }
 
     public static void checkDeath(LivingEntity livingEntity, ServerLevel serverLevel, DamageSource source) {
         SynchedEntityData data = ((EntityAccessor) livingEntity).getRealEntityData();
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
-        if (data.get(healthId) <= 0f) {
+        if ((data.get(healthId) <= 0f || livingEntity.getHealth() <= 0f) && !livingEntity.isRemoved()) {
             if (!((LivingEntityAccessor) livingEntity).callCheckTotemDeathProtection(source)) {
                 livingEntity.die(source);
-                if (!livingEntity.isDeadOrDying()) {
-                    deathProcess(livingEntity, source);
-                }
+                ((LivingEntityAccessor) livingEntity).setDead(true);
+            } else {
+                AttachmentUtil.setHealth(livingEntity, Math.min(20f, livingEntity.getMaxHealth()));
             }
         }
     }

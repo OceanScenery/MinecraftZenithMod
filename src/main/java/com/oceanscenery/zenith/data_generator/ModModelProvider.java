@@ -40,6 +40,15 @@ public class ModModelProvider extends ModelProvider {
             ModelTemplates.FLAT_HANDHELD_ITEM
         );
 
+        Identifier zenithUpgrade = itemModels.createFlatItemModel(
+            ZenithItems.ZENITH_UPGRADE.get(),
+            ModelTemplates.FLAT_HANDHELD_ITEM
+        );
+        itemModels.itemModelOutput.accept(
+            ZenithItems.ZENITH_UPGRADE.get(),
+            ItemModelUtils.plainModel(zenithUpgrade)
+        );
+
         ModelTemplate template = ExtendedModelTemplateBuilder.of(ModelTemplates.FLAT_HANDHELD_ITEM)
             .transform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND,
                 transformVecBuilder -> transformVecBuilder.rotation(149.49f, -87.13f, 111.83f)

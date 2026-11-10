@@ -16,6 +16,8 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jspecify.annotations.NonNull;
 
+import java.util.Optional;
+
 public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
     public static final Type<CycleAttackModePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_cycle_attack_mode"));
     public static final Identifier ID = Identifier.fromNamespaceAndPath(TheZenithMod.MOD_ID, "zenith_cycle_attack_mode");
@@ -34,15 +36,21 @@ public record CycleAttackModePacket(int slot) implements CustomPacketPayload {
             ItemStack item = player.getInventory().getItem(packet.slot);
             if (item.is(ZenithItems.ZENITH.get())) {
                 if (item.get(ZenithDataComponents.ATTACK_MODE) == null) {
-                    item.set(ZenithDataComponents.ATTACK_MODE.get(), new AttackMode(AttackMode.Mode.LIVING_ENTITY, true));
+                    item.set(ZenithDataComponents.ATTACK_MODE.get(), AttackMode.LIVING_ENTITY);
                 } else {
-                    int id = item.get(ZenithDataComponents.ATTACK_MODE.get()).getMode().ordinal();
-                    id = (id + 1) % 3;
-                    item.set(ZenithDataComponents.ATTACK_MODE.get(), new AttackMode(AttackMode.Mode.values()[id], item.get(ZenithDataComponents.ATTACK_MODE).attackPlayer()));
+                    item.set(
+                        ZenithDataComponents.ATTACK_MODE.get(),
+                        Optional.ofNullable(item.get(ZenithDataComponents.ATTACK_MODE)).map(
+                            AttackMode::next
+                        ).orElse(AttackMode.LIVING_ENTITY)
+                    );
                 }
 
                 player.sendSystemMessage(
-                    Component.translatable("the_zenith_sword.packet.attack_mode").append(":" + item.get(ZenithDataComponents.ATTACK_MODE).getStrMode()),
+                    Component.translatable("the_zenith_sword.packet.attack_mode").append(
+                        ":" + Optional.ofNullable(item.get(ZenithDataComponents.ATTACK_MODE))
+                            .map(AttackMode::entityMode).orElse("living_entity")
+                    ),
                     true
                 );
             }

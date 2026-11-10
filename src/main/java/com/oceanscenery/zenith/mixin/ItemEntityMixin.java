@@ -3,8 +3,6 @@ package com.oceanscenery.zenith.mixin;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -18,23 +16,24 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = ItemEntity.class, priority = 2000)
 public abstract class ItemEntityMixin {
+    @Shadow
+    public abstract ItemStack getItem();
+
+    @Shadow
+    private int pickupDelay;
     @Final
     @Shadow
     private static int INFINITE_PICKUP_DELAY;
     @Shadow
-    private int pickupDelay;
-    @Shadow
-    private EntityReference<Entity> thrower;
-    @Shadow
     private int age;
 
     @Shadow
-    public abstract ItemStack getItem();
+    public abstract void setItem(ItemStack stack);
 
     @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
     public void onHurt(ServerLevel level, DamageSource source, float damage, CallbackInfoReturnable<Boolean> cir) {
         ItemEntity itemEntity = (ItemEntity) (Object) this;
-        if (itemEntity.getItem().is(ZenithItems.ZENITH)) {
+        if (itemEntity.getItem().is(ZenithItems.ZENITH.get())) {
             cir.setReturnValue(false);
         }
     }
@@ -43,7 +42,7 @@ public abstract class ItemEntityMixin {
     public void onTick(CallbackInfo ci) {
         ItemEntity itemEntity = (ItemEntity) (Object) this;
         if (!itemEntity.level().isClientSide()) {
-            if (this.getItem().is(ZenithItems.ZENITH) && this.pickupDelay != INFINITE_PICKUP_DELAY) {
+            if (this.getItem().is(ZenithItems.ZENITH.get()) && this.pickupDelay != INFINITE_PICKUP_DELAY) {
                 this.age = 0;
             }
         }

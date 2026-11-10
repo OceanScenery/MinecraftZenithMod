@@ -1,7 +1,10 @@
 package com.oceanscenery.zenith.server.packet;
 
 import com.oceanscenery.zenith.TheZenithMod;
+import com.oceanscenery.zenith.mod_class.attachment.ZenithSlot;
 import com.oceanscenery.zenith.mod_class.item.ZenithItem;
+import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.util.AttachmentUtil;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -25,6 +28,11 @@ public record ZenithAttackPacket(int id) implements CustomPacketPayload {
     public static void handle(final ZenithAttackPacket packet, final IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player && player.level() instanceof ServerLevel) {
             if (player.getId() != packet.id) {
+                return;
+            }
+            ZenithSlot slot = AttachmentUtil.getSlot(player);
+            if (slot.open()) {
+                ZenithItems.ZENITH.get().attack(slot.shadow(), player, player.level(), InteractionHand.MAIN_HAND);
                 return;
             }
             ItemStack mainHandItemItem = player.getMainHandItem();

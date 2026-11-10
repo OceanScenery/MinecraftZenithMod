@@ -1,6 +1,7 @@
 package com.oceanscenery.zenith.mod_class.data_component;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -14,6 +15,9 @@ public record Distance(double dist) {
         Distance::new,
         Distance::dist
     );
+
+    public static final MapCodec<Distance> MAP_CODEC = CODEC.fieldOf("distance");
+
     public static final StreamCodec<ByteBuf, Distance> STREAM_CODEC = ByteBufCodecs.DOUBLE.map(
         Distance::new,
         Distance::dist

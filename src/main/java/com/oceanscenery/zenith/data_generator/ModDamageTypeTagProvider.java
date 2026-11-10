@@ -1,7 +1,7 @@
 package com.oceanscenery.zenith.data_generator;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.registry.ZenithDamageType;
+import com.oceanscenery.zenith.registry.ZenithDamageTypes;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.DamageTypeTagsProvider;
@@ -17,9 +17,9 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        tag(DamageTypeTags.NO_KNOCKBACK).add(ZenithDamageType.ZENITH);
-        tag(DamageTypeTags.IS_PLAYER_ATTACK).add(ZenithDamageType.ZENITH).add(ZenithDamageType.ZENITH_KNOCKBACK);
-        tag(DamageTypeTags.BYPASSES_COOLDOWN).add(ZenithDamageType.ZENITH).add(ZenithDamageType.ZENITH_KNOCKBACK);
-        tag(DamageTypeTags.BYPASSES_SHIELD).add(ZenithDamageType.ZENITH).add(ZenithDamageType.ZENITH_KNOCKBACK);
+        tag(DamageTypeTags.NO_KNOCKBACK).add(ZenithDamageTypes.ZENITH);
+        tag(DamageTypeTags.IS_PLAYER_ATTACK).add(ZenithDamageTypes.ZENITH).add(ZenithDamageTypes.ZENITH_KNOCKBACK);
+        tag(DamageTypeTags.BYPASSES_COOLDOWN).add(ZenithDamageTypes.ZENITH).add(ZenithDamageTypes.ZENITH_KNOCKBACK);
+        tag(DamageTypeTags.BYPASSES_SHIELD).add(ZenithDamageTypes.ZENITH).add(ZenithDamageTypes.ZENITH_KNOCKBACK);
     }
 }

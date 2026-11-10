@@ -261,7 +261,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
         Vector3[] reference = this.getReference();
         Vector3[] world = Vector3.WORLD;
 
-        Vec3 realPos = pos.setZ(pos.getZ() - 1).VecInNewRefer(
+        Vec3 realPos = pos.setZ(pos.z() - 1).VecInNewRefer(
             reference, world
         ).toVec3().add(owner.getEyePosition());
 
@@ -280,7 +280,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
             AABB box = new AABB(realPos, last_pos).inflate(2);
             List<Entity> list = this.level().getEntitiesOfClass(Entity.class, box, this::canHit);
             for (Entity entity : list) {
-                DamageHandler.applyDamage(this, entity, weapon);
+                DamageHandler.applyDamage(this, entity, weapon, 1);
             }
         }
 
@@ -354,8 +354,8 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     public Quaternion[] getFixedPose() {
         if (this.fixedPose == null) {
             this.fixedPose = new Quaternion[3];
-            this.fixedPose[0] = Quaternion.trans(new Vector3(0, 0, 1), new Vector3(this.getReference()[2].getX(), 0, this.getReference()[2].getZ()));
-            this.fixedPose[1] = Quaternion.trans(new Vector3(this.getReference()[2].getX(), 0, this.getReference()[2].getZ()), this.getReference()[2]);
+            this.fixedPose[0] = Quaternion.trans(new Vector3(0, 0, 1), new Vector3(this.getReference()[2].x(), 0, this.getReference()[2].z()));
+            this.fixedPose[1] = Quaternion.trans(new Vector3(this.getReference()[2].x(), 0, this.getReference()[2].z()), this.getReference()[2]);
             this.fixedPose[2] = Quaternion.rotate(this.getReference()[2], this.getAngle());
         }
         return this.fixedPose;

@@ -1,6 +1,7 @@
 package com.oceanscenery.zenith.mod_class.data_component;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -13,6 +14,9 @@ public record LastUseTime(long tickTime) {
         LastUseTime::new,
         LastUseTime::tickTime
     );
+
+    public static final MapCodec<LastUseTime> MAP_CODEC = CODEC.fieldOf("last_time");
+
     public static final StreamCodec<ByteBuf, LastUseTime> STREAM_CODEC = ByteBufCodecs.VAR_LONG.map(
         LastUseTime::new,
         LastUseTime::tickTime

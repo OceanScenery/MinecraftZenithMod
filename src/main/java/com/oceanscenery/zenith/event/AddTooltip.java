@@ -29,15 +29,12 @@ public class AddTooltip {
             stack.set(ZenithDataComponents.DISTANCE, new Distance(20));
         }
         if (stack.get(ZenithDataComponents.ATTACK_MODE) == null) {
-            stack.set(ZenithDataComponents.ATTACK_MODE, new AttackMode(AttackMode.Mode.LIVING_ENTITY, true));
+            stack.set(ZenithDataComponents.ATTACK_MODE, AttackMode.LIVING_ENTITY);
         }
         double dist = stack.get(ZenithDataComponents.DISTANCE).dist();
-        String atk = stack.get(ZenithDataComponents.ATTACK_MODE).getStrMode();
-        boolean atkP = stack.get(ZenithDataComponents.ATTACK_MODE).attackPlayer();
+        String atk = stack.get(ZenithDataComponents.ATTACK_MODE).entityMode();
         if (advanced && tooltipComponents.size() >= 2) {
             int i = tooltipComponents.size();
-            tooltipComponents.add(i - 2, Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.post"));
-            tooltipComponents.add(i - 2, Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.pre").append(":" + atkP));
             tooltipComponents.add(i - 2, Component.translatable("the_zenith_sword.item.attack_mode.tooltip_post"));
             tooltipComponents.add(i - 2, Component.translatable("the_zenith_sword.item.attack_mode.tooltip_pre").append(":" + atk));
             tooltipComponents.add(i - 2, Component.translatable("the_zenith_sword.item.distance.tooltip_post"));
@@ -48,7 +45,5 @@ public class AddTooltip {
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.distance.tooltip_post"));
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_mode.tooltip_pre").append(":" + atk));
         tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_mode.tooltip_post"));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.pre").append(":" + atkP));
-        tooltipComponents.add(Component.translatable("the_zenith_sword.item.attack_player_mode.tooltip.post"));
     }
 }

@@ -1,6 +1,6 @@
 package com.oceanscenery.zenith.data_generator;
 
-import com.oceanscenery.zenith.registry.ZenithDamageType;
+import com.oceanscenery.zenith.registry.ZenithDamageTypes;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
@@ -27,7 +27,7 @@ public class DataGen {
         event.createDatapackRegistryObjects(new RegistrySetBuilder()
             .add(Registries.DAMAGE_TYPE, bootstrap -> {
                 bootstrap.register(
-                    ZenithDamageType.ZENITH,
+                    ZenithDamageTypes.ZENITH,
                     new DamageType(
                         "player",
                         DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER,
@@ -36,7 +36,7 @@ public class DataGen {
                         DeathMessageType.DEFAULT)
                 );
                 bootstrap.register(
-                    ZenithDamageType.ZENITH_KNOCKBACK,
+                    ZenithDamageTypes.ZENITH_KNOCKBACK,
                     new DamageType(
                         "player",
                         DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER,
