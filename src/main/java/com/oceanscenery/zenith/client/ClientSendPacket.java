@@ -8,6 +8,7 @@ import com.oceanscenery.zenith.registry.ZenithKeyMappings;
 import com.oceanscenery.zenith.server.ZenithNetworkHandler;
 import com.oceanscenery.zenith.server.packet.*;
 import com.oceanscenery.zenith.util.AttachmentUtil;
+import com.oceanscenery.zenith.util.InHandItemUtil;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -65,8 +66,7 @@ public class ClientSendPacket {
         LocalPlayer player = Minecraft.getInstance().player;
         KeyMapping right = Minecraft.getInstance().options.keyUse;
         if (((KeyMappingAccessor) right).getIsDown()) {
-            if (player != null && (AttachmentUtil.getSlot(player).open()
-                || player.getMainHandItem().is(ZenithItems.ZENITH) || player.getOffhandItem().is(ZenithItems.ZENITH))) {
+            if (InHandItemUtil.matchHoldZenith(player)) {
                 ZenithNetworkHandler.sendToServer(new ZenithAttackPacket(player.getId()));
             }
         }
