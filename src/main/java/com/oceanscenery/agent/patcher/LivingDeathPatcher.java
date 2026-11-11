@@ -153,7 +153,6 @@ public final class LivingDeathPatcher {
                 continue;
             }
 
-            int originalMaxStack = method.maxStack;
             MethodKey methodKey = MethodKey.of(method);
             //获取当前方法的上下文
             Set<DeathContext> methodContexts = contexts.get(methodKey);
@@ -162,9 +161,6 @@ public final class LivingDeathPatcher {
             boolean rootDie = isDie(method);
             //判断是否为死亡方法所调用的方法
             boolean deathMethod = methodContexts != null;
-            if (deathMethod) {
-                method.maxStack = originalMaxStack + 4;
-            }
 
             //先去处理deathTime的写入
             boolean local = beforeModifyDeathTime(method);
@@ -188,9 +184,6 @@ public final class LivingDeathPatcher {
                             method.desc,
                             methodContexts
                         );
-                    }
-                    if (!deathMethod) {
-                        method.maxStack = originalMaxStack;
                     }
                     continue;
                 }
@@ -216,13 +209,7 @@ public final class LivingDeathPatcher {
             }
 
             if (local) {
-                //成功插入，所以要更新一下最大栈深度
-                if (!deathMethod) {
-                    method.maxStack = originalMaxStack + 4;
-                }
                 changed = true;
-            } else if (deathMethod) {
-                method.maxStack = originalMaxStack;
             }
         }
         if (PATCH_LOG && contexts.size() > 1) {
@@ -260,9 +247,10 @@ public final class LivingDeathPatcher {
 
     /**
      * 用于从一个类中找到所有由死亡方法开始调用的方法，并记录上下文
+     *
      * @param classNode 类
-     * @param methods 类的方法映射(method key->method),当遍历涉及某个方法时,需要从方法名获取方法,然后分析,递归进行得到方法的方法调用
-     * @param contexts 初始为die和tickDeath,函数执行完后会包含所有死亡方法涉及到的方法(仅限类的内部)
+     * @param methods   类的方法映射(method key->method),当遍历涉及某个方法时,需要从方法名获取方法,然后分析,递归进行得到方法的方法调用
+     * @param contexts  初始为die和tickDeath,函数执行完后会包含所有死亡方法涉及到的方法(仅限类的内部)
      */
     private static void discoverDeathClosure(ClassNode classNode
         , Map<MethodKey, MethodNode> methods, Map<MethodKey, Set<DeathContext>> contexts) {
@@ -357,11 +345,12 @@ public final class LivingDeathPatcher {
 
     /**
      * 获取某个方法对应的key（同时稍微判断这个方法是否为helper方法）
+     *
      * @param classNode 类的对象
-     * @param methods 类的所有方法
-     * @param owner 此方法的所属类
-     * @param name 此方法的方法名
-     * @param desc 此方法的描述符
+     * @param methods   类的所有方法
+     * @param owner     此方法的所属类
+     * @param name      此方法的方法名
+     * @param desc      此方法的描述符
      * @return MethodKey对象，如果此方法不该被分析，就返回null
      */
     private static MethodKey helperTarget(ClassNode classNode
@@ -386,6 +375,7 @@ public final class LivingDeathPatcher {
 
     /**
      * 获取一个类中 所有方法->所有可能会调用它的方法的集合 的映射
+     *
      * @param classNode 要分析的类
      * @return 映射表
      */
@@ -538,10 +528,11 @@ public final class LivingDeathPatcher {
 
     /**
      * 负责将控制流的路径导向目标方法调用
-     * @param owner 类名
-     * @param method 方法
-     * @param match 方法调用的匹配项（即目标）
-     * @param primaryGate 一般为0，默认方法允许在多少tick后强制导向目标tick
+     *
+     * @param owner        类名
+     * @param method       方法
+     * @param match        方法调用的匹配项（即目标）
+     * @param primaryGate  一般为0，默认方法允许在多少tick后强制导向目标tick
      * @param fallbackGate 一般为20，控制最终的结尾方法在多少tick后强制执行
      * @return 是否正常修改了方法
      */
@@ -549,6 +540,7 @@ public final class LivingDeathPatcher {
         if (match == null) {
             return false;
         }
+        method.maxStack += 4;
         //内部的分析类，用于获取控制流图
         InnerAnalyzer analyzer = new InnerAnalyzer();
         try {
@@ -659,9 +651,10 @@ public final class LivingDeathPatcher {
 
     /**
      * 用于将分支语句导向可以到达目标的语句
-     * @param method 方法
-     * @param branch 分支语句
-     * @param chosen 目标分支（可以到达目标的第一个分支）
+     *
+     * @param method       方法
+     * @param branch       分支语句
+     * @param chosen       目标分支（可以到达目标的第一个分支）
      * @param minDeathTime 强制导向的最小deathTime
      * @return 是否修改了方法
      */
@@ -724,7 +717,8 @@ public final class LivingDeathPatcher {
 
     /**
      * 选取一个分支语句的所有可能的下一条语句（指令）
-     * @param insns 整个方法的所有语句
+     *
+     * @param insns  整个方法的所有语句
      * @param branch 分支语句
      * @return 后继指令构成的列表
      */
@@ -846,6 +840,7 @@ public final class LivingDeathPatcher {
 
     /**
      * 如果分支前面的语句是辅助方法调用，那么说明这个分支处被注入过，此时停止进一步处理
+     *
      * @param node 一个分支节点
      */
     private static boolean alreadyHooked(AbstractInsnNode node) {

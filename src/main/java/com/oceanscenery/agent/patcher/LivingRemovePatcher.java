@@ -81,7 +81,6 @@ public class LivingRemovePatcher {
                     ON_REMOVE.desc()
                 ));
                 method.instructions.insertBefore(ret, insl);
-                method.maxStack += 2;
                 flag = true;
             }
         }
@@ -102,7 +101,6 @@ public class LivingRemovePatcher {
                     ON_REMOVE.desc()
                 ));
                 method.instructions.insertBefore(ret, insl);
-                method.maxStack += 2;
                 flag = true;
             }
         }
@@ -123,13 +121,11 @@ public class LivingRemovePatcher {
                     ON_REMOVE.desc()
                 ));
                 method.instructions.insertBefore(ret, insl);
-                method.maxStack += 2;
                 flag = true;
             }
         }
 
         if (IS_REMOVED.compareWith(method)) {
-            boolean flag2 = false;
             for (AbstractInsnNode insn : method.instructions) {
                 if (insn.getOpcode() == Opcodes.IRETURN) {
                     InsnList list = new InsnList();
@@ -142,11 +138,7 @@ public class LivingRemovePatcher {
                     ));
                     method.instructions.insertBefore(insn, list);
                     flag = true;
-                    flag2 = true;
                 }
-            }
-            if (flag2) {
-                method.maxStack += 2;
             }
         }
         return flag;

@@ -75,9 +75,6 @@ public final class LivingHealthPatcher {
             method.instructions.insertBefore(instruction, patch);
             flag = true;
         }
-        if (flag) {
-            method.maxStack += 1;
-        }
         return flag;
     }
 
@@ -107,7 +104,6 @@ public final class LivingHealthPatcher {
         ));
 
         method.instructions.insertBefore(ins, list);
-        method.maxStack += 2;
         return true;
     }
 
@@ -141,9 +137,6 @@ public final class LivingHealthPatcher {
             method.instructions.insertBefore(instruction, patch);
             flag = true;
         }
-        if (flag) {
-            method.maxStack += 1;
-        }
         return flag;
     }
 
@@ -176,9 +169,6 @@ public final class LivingHealthPatcher {
 
             method.instructions.insertBefore(instruction, patch);
             flag = true;
-        }
-        if (flag) {
-            method.maxStack += 1;
         }
         return flag;
     }
