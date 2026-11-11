@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "the_zenith_sword:item/zenith_upgrade"
+  }
+}
