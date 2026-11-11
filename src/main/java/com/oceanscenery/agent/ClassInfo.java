@@ -60,6 +60,10 @@ public final class ClassInfo {
     public static ClassInfo fromClassNode(ClassNode node) {
         Map<String, MethodInfo> methods = new LinkedHashMap<>();
         for (MethodNode method : node.methods) {
+            if (method.name.startsWith("<")) {
+                continue;
+            }
+
             //分析方法控制流
             MethodControlFlow controlFlow = MethodControlFlow.analyze(method);
             //当前方法的调用边收集

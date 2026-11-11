@@ -2,11 +2,8 @@ package com.oceanscenery.zenith;
 
 import com.mojang.logging.LogUtils;
 import com.oceanscenery.agent.ZenithAgentCallback;
-import com.oceanscenery.zenith.registry.ZenithConfigs;
-import com.oceanscenery.zenith.registry.ZenithCreativeModeTabs;
-import com.oceanscenery.zenith.registry.ZenithEntities;
-import com.oceanscenery.zenith.registry.ZenithEntityDataSerializers;
-import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.agent.ZenithAgentInstaller;
+import com.oceanscenery.zenith.registry.*;
 import com.oceanscenery.zenith.server.ZenithNetworkHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
@@ -33,6 +30,7 @@ public class TheZenithMod {
         TERRA_LOADED = ModList.get().isLoaded("confluence");
         MixinBootstrap.init();
         ZenithAgentCallback.preload();
+        ZenithAgentInstaller.install();
         context.registerConfig(ModConfig.Type.SERVER, ZenithConfigs.CONFIG);
         context.registerConfig(ModConfig.Type.CLIENT, ZenithConfigs.CLIENT_CONFIG);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> TheZenithModClient.register(context));

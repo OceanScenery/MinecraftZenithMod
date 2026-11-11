@@ -4,21 +4,10 @@ import com.oceanscenery.agent.util.MethodControlFlow;
 import com.oceanscenery.zenith.TheZenithMod;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InvokeDynamicInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 
 import java.io.InputStream;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 //用于追踪死亡流程的跨方法调用
@@ -30,7 +19,8 @@ public final class DeathPathTracer {
 
     /**
      * 追踪结果：包含是否追踪成功，目标方法调用（即哪些方法最后可以到达预期的收尾结果），以及调用的方法路径（比如die->customProcess()->Helper.remove()）
-     * @param status 是否找到目标这个结果对应的状态
+     *
+     * @param status    是否找到目标这个结果对应的状态
      * @param goalCalls 找到的所有收尾目标
      * @param chainDesc 调用链描述
      */
@@ -62,9 +52,12 @@ public final class DeathPathTracer {
     //追踪一个类某个方法中是否存在间接收尾的方法
     public TraceResult trace(ClassNode owner, MethodNode method) {
         //从类节点加载类信息
-        ClassInfo currentClass = ClassInfo.fromClassNode(owner);
-        //存储运行时类信息
-        this.runtimeClasses.put(owner.name, currentClass);
+        ClassInfo currentClass = runtimeClasses.get(owner.name);
+        if (currentClass == null) {
+            currentClass = ClassInfo.fromClassNode(owner);
+            //存储运行时类信息
+            runtimeClasses.put(owner.name, currentClass);
+        }
         //用来收集目标（如果某个调用能够收尾）的集合，目前为空
         Set<AbstractInsnNode> goals = Collections.newSetFromMap(new IdentityHashMap<>());
         //获取方法的控制流
@@ -323,10 +316,19 @@ public final class DeathPathTracer {
     }
 
     /**
+     * 类字节码发生变化后，移除这个类的分析缓存
+     */
+    public void invalidate(String internalName) {
+        this.runtimeClasses.remove(internalName);
+        this.classCache.remove(internalName);
+    }
+
+    /**
      * 从对应类中获取符合描述的方法信息
+     *
      * @param owner 要查找的类的类名
-     * @param name 方法名
-     * @param desc 方法描述
+     * @param name  方法名
+     * @param desc  方法描述
      * @return 找到的方法信息
      */
     private ClassInfo.MethodInfo findMethod(String owner, String name, String desc) {

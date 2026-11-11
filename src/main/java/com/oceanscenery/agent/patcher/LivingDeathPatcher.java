@@ -126,6 +126,9 @@ public final class LivingDeathPatcher {
             return false;
         }
 
+        // 进入分析前移除旧的类信息
+        invalidateDeathCaches(classNode.name);
+
         //类的所有方法
         Map<MethodKey, MethodNode> methods = new LinkedHashMap<>();
         for (MethodNode method : classNode.methods) {
@@ -143,8 +146,23 @@ public final class LivingDeathPatcher {
             }
         }
         //获取调用图
-        Map<MethodKey, Set<MethodKey>> callers = collectClassCallers(classNode);
-        discoverDeathClosure(classNode, methods, contexts);
+
+        //如果没有die或tickDeath方法，且不写入deathTime，那就是无死亡方法
+        boolean hasDeathRoot = !contexts.isEmpty();
+        boolean hasDeathTimeWrite = hasDeathTimeWrite(classNode);
+
+        if (!hasDeathRoot && !hasDeathTimeWrite) {
+            //无死亡方法
+            return false;
+        }
+
+        //检查是否有死亡方法的调用
+        Map<MethodKey, Set<MethodKey>> callers = hasDeathRoot ?
+            collectClassCallers(classNode) : Map.of();
+
+        if (hasDeathRoot) {
+            discoverDeathClosure(classNode, methods, contexts);
+        }
 
         boolean changed = false;
         for (MethodNode method : classNode.methods) {
@@ -219,6 +237,10 @@ public final class LivingDeathPatcher {
                 contexts.size(),
                 changed
             );
+        }
+        if (changed) {
+            // 当前类的字节码已变化，旧 ClassInfo 不能继续复用，移除缓存
+            invalidateDeathCaches(classNode.name);
         }
         return changed;
     }
@@ -457,6 +479,17 @@ public final class LivingDeathPatcher {
     private DeathPathTracer tracer(ClassLoader loader) {
         synchronized (this.tracers) {
             return this.tracers.computeIfAbsent(loader, DeathPathTracer::new);
+        }
+    }
+
+    /**
+     * 当前类的字节码变化后，失效这个类的 tracer 缓存。
+     */
+    private void invalidateDeathCaches(String internalName) {
+        synchronized (this.tracers) {
+            for (DeathPathTracer tracer : this.tracers.values()) {
+                tracer.invalidate(internalName);
+            }
         }
     }
 
@@ -855,6 +888,21 @@ public final class LivingDeathPatcher {
     private static boolean isDie(MethodNode method) {
         return MethodConst.DIE.compareWith(method)
             && (method.access & Opcodes.ACC_STATIC) == 0;
+    }
+
+    private static boolean hasDeathTimeWrite(ClassNode classNode) {
+        for (MethodNode method : classNode.methods) {
+            for (AbstractInsnNode insn : method.instructions) {
+                if (insn instanceof FieldInsnNode field
+                    && insn.getOpcode() == Opcodes.PUTFIELD
+                    && "I".equals(field.desc)
+                    && (DEATH_TIME_NAME.equals(field.name)
+                    || DEATH_TIME_SRG_NAME.equals(field.name))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public static final class InnerAnalyzer extends Analyzer<BasicValue> {
