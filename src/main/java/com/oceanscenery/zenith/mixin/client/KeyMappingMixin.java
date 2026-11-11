@@ -36,6 +36,7 @@ public abstract class KeyMappingMixin {
             if (self == Minecraft.getInstance().options.keyUse) {
                 if (Minecraft.getInstance().cameraEntity instanceof Player player) {
                     if (InHandItemUtil.matchHoldZenith(player)) {
+                        this.setClickCount(0);
                         cir.setReturnValue(false);
                     }
                 }
