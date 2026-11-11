@@ -2,15 +2,16 @@ package com.oceanscenery.zenith.client;
 
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.client.gui.GhostConfigScreen;
-import com.oceanscenery.zenith.server.packet.ToggleZenithSlotOpenStatePacket;
 import com.oceanscenery.zenith.event.CapabilitiesHandler;
 import com.oceanscenery.zenith.mixin.accessor.KeyMappingAccessor;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.registry.ZenithKeyMappings;
 import com.oceanscenery.zenith.server.ZenithNetworkHandler;
 import com.oceanscenery.zenith.server.packet.ToggleZenithBlacklistPacket;
+import com.oceanscenery.zenith.server.packet.ToggleZenithSlotOpenStatePacket;
 import com.oceanscenery.zenith.server.packet.ZenithPacket;
 import com.oceanscenery.zenith.server.packet.ZenithUpdatePickedEntityQuestPacket;
+import com.oceanscenery.zenith.util.InHandItemUtil;
 import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithSlot;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -77,11 +78,12 @@ public class ClientSendPackets {
 
         LocalPlayer player = Minecraft.getInstance().player;
         KeyMapping right = Minecraft.getInstance().options.keyUse;
+        if (player == null) {
+            return;
+        }
         if (((KeyMappingAccessor) right).getIsDown()) {
             IZenithSlot slot;
-            if (player != null && (player.getMainHandItem().is(ZenithItems.ZENITH.get())
-                || player.getOffhandItem().is(ZenithItems.ZENITH.get()))
-                || ((slot = CapabilitiesHandler.getSlot(player)) != null && slot.open())) {
+            if (InHandItemUtil.matchHoldZenith(player)) {
                 ZenithNetworkHandler.playToServer(new ZenithPacket(player.getId(), 0, 0));
             }
         }

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.event.CapabilitiesHandler;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.util.InHandItemUtil;
 import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithSlot;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -37,10 +38,7 @@ public class RenderEntityTip {
         if (player == null) {
             return;
         }
-        boolean slotValid = Optional.ofNullable(CapabilitiesHandler.getSlot(player)).filter(IZenithSlot::open).isPresent();
-        if (!player.getMainHandItem().is(ZenithItems.ZENITH.get())
-            && !player.getOffhandItem().is(ZenithItems.ZENITH.get())
-            && !slotValid) {
+        if (!InHandItemUtil.matchHoldZenith(player)) {
             return;
         }
 

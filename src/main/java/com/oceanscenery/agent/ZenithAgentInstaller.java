@@ -59,7 +59,8 @@ public final class ZenithAgentInstaller {
             } catch (Throwable t2) {
                 TheZenithMod.LOGGER.error("[ZenithAgent] in-process loadAgent failed", t2);
                 try {
-                    loadAgentViaJmx(agentFile);
+                    //loadAgentViaJmx(agentFile);
+                    throw new RuntimeException("Banned this way of loading Agent");
                 } catch (Throwable t3) {
                     TheZenithMod.LOGGER.error("[ZenithAgent] failed to load agent by all means.");
                 }
@@ -148,6 +149,7 @@ public final class ZenithAgentInstaller {
         loadAgent.invoke(path);
     }
 
+    /*
     private static void loadAgentViaJmx(Path agentJar) throws Throwable {
         if (ModuleLayer.boot().findModule("jdk.management").isEmpty()) {
             throw new IllegalStateException("jdk.management未加载");
@@ -175,4 +177,5 @@ public final class ZenithAgentInstaller {
             throw new RuntimeException("jmx加载agent失败");
         }
     }
+    */
 }
