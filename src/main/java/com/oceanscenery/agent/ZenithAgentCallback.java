@@ -155,7 +155,7 @@ public final class ZenithAgentCallback {
                     return null;
                 }
 
-                ClassWriter writer = new ClassWriter(reader, 0);
+                ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
                 node.accept(writer);
                 if (PATCHED.add(className)) {
                     TheZenithMod.LOGGER.info("[ZenithAgent] patched {} (post-mixin)", className);

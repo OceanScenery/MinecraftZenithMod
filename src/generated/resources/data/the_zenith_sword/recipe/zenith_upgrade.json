@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "a": "minecraft:gold_block",
+    "b": "minecraft:nether_star",
+    "c": "minecraft:netherite_ingot",
+    "d": "the_zenith_sword:zenith",
+    "e": "minecraft:diamond",
+    "f": "minecraft:echo_shard"
+  },
+  "pattern": [
+    "aba",
+    "cde",
+    "afa"
+  ],
+  "result": {
+    "id": "the_zenith_sword:zenith_upgrade"
+  }
+}
