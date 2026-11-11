@@ -51,9 +51,12 @@ public final class DeathPathTracer {
     //追踪一个类某个方法中是否存在间接收尾的方法
     public TraceResult trace(ClassNode owner, MethodNode method) {
         //从类节点加载类信息
-        ClassInfo currentClass = ClassInfo.fromClassNode(owner);
-        //存储运行时类信息
-        this.runtimeClasses.put(owner.name, currentClass);
+        ClassInfo currentClass = runtimeClasses.get(owner.name);
+        if (currentClass == null) {
+            currentClass = ClassInfo.fromClassNode(owner);
+            //存储运行时类信息
+            runtimeClasses.put(owner.name, currentClass);
+        }
         //用来收集目标（如果某个调用能够收尾）的集合，目前为空
         Set<AbstractInsnNode> goals = Collections.newSetFromMap(new IdentityHashMap<>());
         //获取方法的控制流
@@ -309,6 +312,14 @@ public final class DeathPathTracer {
     public void clearCache() {
         this.classCache.clear();
         this.runtimeClasses.clear();
+    }
+
+    /**
+     * 类字节码发生变化后，只移除这个类的分析缓存。
+     */
+    public void invalidate(String internalName) {
+        this.runtimeClasses.remove(internalName);
+        this.classCache.remove(internalName);
     }
 
     /**

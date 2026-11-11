@@ -78,17 +78,30 @@ public final class ZenithAgentCallback {
         int failed = 0;
         int sinceCacheClear = 0;
         try {
+            List<Class<?>> retransforms = new ArrayList<>();
             for (Class<?> clazz : pending) {
                 try {
-                    instrumentation.retransformClasses(clazz);
-                    transformed++;
+                    retransforms.add(clazz);
+                    if (retransforms.size() >= 10) {
+                        instrumentation.retransformClasses(retransforms.toArray(Class[]::new));
+                        transformed += retransforms.size();
+                        retransforms.clear();
+                    }
                 } catch (Exception exception) {
-                    failed++;
-                    TheZenithMod.LOGGER.error(
-                        "[ZenithAgent] retransform failed for {}, continuing with remaining classes",
-                        clazz.getName(),
-                        exception
-                    );
+                    for (Class<?> c : retransforms) {
+                        try {
+                            instrumentation.retransformClasses(c);
+                            transformed++;
+                        } catch (Exception e) {
+                            failed++;
+                            TheZenithMod.LOGGER.error(
+                                "[ZenithAgent] retransform failed for {}, continuing with remaining classes",
+                                c.getName(),
+                                e
+                            );
+                        }
+                    }
+                    retransforms.clear();
                 }
                 sinceCacheClear++;
                 boolean heapPressure = sinceCacheClear >= CACHE_PRESSURE_CLEAR_INTERVAL && heapUsageRatio() >= CACHE_CLEAR_HEAP_RATIO;
@@ -98,6 +111,29 @@ public final class ZenithAgentCallback {
                 }
                 if (heapPressure) {
                     LivingClassFinder.clearCaches();
+                }
+            }
+            // Flush the final batch when the pending count is not a multiple of 10.
+            if (!retransforms.isEmpty()) {
+                try {
+                    instrumentation.retransformClasses(retransforms.toArray(Class[]::new));
+                    transformed += retransforms.size();
+                } catch (Exception exception) {
+                    for (Class<?> c : retransforms) {
+                        try {
+                            instrumentation.retransformClasses(c);
+                            transformed++;
+                        } catch (Exception e) {
+                            failed++;
+                            TheZenithMod.LOGGER.error(
+                                "[ZenithAgent] retransform failed for {}, continuing with remaining classes",
+                                c.getName(),
+                                e
+                            );
+                        }
+                    }
+                } finally {
+                    retransforms.clear();
                 }
             }
         } finally {

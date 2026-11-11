@@ -2,6 +2,7 @@ package com.oceanscenery.zenith;
 
 import com.mojang.logging.LogUtils;
 import com.oceanscenery.agent.ZenithAgentCallback;
+import com.oceanscenery.agent.ZenithAgentInstaller;
 import com.oceanscenery.zenith.registry.*;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -25,6 +26,7 @@ public class TheZenithMod {
 
     public TheZenithMod(IEventBus modEventBus, ModContainer modContainer) {
         ZenithAgentCallback.preload();
+        ZenithAgentInstaller.install();
         ZenithDataComponents.DATA_COMPONENTS.register(modEventBus);
         modContainer.registerConfig(ModConfig.Type.SERVER, ZenithConfigs.CONFIG);
         ZenithItems.ITEMS.register(modEventBus);
