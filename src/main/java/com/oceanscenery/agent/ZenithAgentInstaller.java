@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
+@SuppressWarnings("deprecation")
 public final class ZenithAgentInstaller {
     private static final String AGENT_RESOURCE = "/zenith_agent.jar";
     private static final String SELF_ATTACH_PROPERTY = "jdk.attach.allowAttachSelf";
