@@ -1,0 +1,35 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "get_zenith_for_zenith_upgrade": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "the_zenith_sword:zenith"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_zenith_sword:zenith_upgrade"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "get_zenith_for_zenith_upgrade",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_zenith_sword:zenith_upgrade"
+    ]
+  },
+  "sends_telemetry_event": false
+}

@@ -153,7 +153,6 @@ public final class LivingDeathPatcher {
                 continue;
             }
 
-            int originalMaxStack = method.maxStack;
             MethodKey methodKey = MethodKey.of(method);
             //获取当前方法的上下文
             Set<DeathContext> methodContexts = contexts.get(methodKey);
@@ -162,9 +161,6 @@ public final class LivingDeathPatcher {
             boolean rootDie = isDie(method);
             //判断是否为死亡方法所调用的方法
             boolean deathMethod = methodContexts != null;
-            if (deathMethod) {
-                method.maxStack = originalMaxStack + 4;
-            }
 
             //先去处理deathTime的写入
             boolean local = beforeModifyDeathTime(method);
@@ -188,9 +184,6 @@ public final class LivingDeathPatcher {
                             method.desc,
                             methodContexts
                         );
-                    }
-                    if (!deathMethod) {
-                        method.maxStack = originalMaxStack;
                     }
                     continue;
                 }
@@ -216,13 +209,7 @@ public final class LivingDeathPatcher {
             }
 
             if (local) {
-                //成功插入，所以要更新一下最大栈深度
-                if (!deathMethod) {
-                    method.maxStack = originalMaxStack + 4;
-                }
                 changed = true;
-            } else if (deathMethod) {
-                method.maxStack = originalMaxStack;
             }
         }
         if (PATCH_LOG && contexts.size() > 1) {
@@ -549,6 +536,7 @@ public final class LivingDeathPatcher {
         if (match == null) {
             return false;
         }
+        method.maxStack += 4;
         //内部的分析类，用于获取控制流图
         InnerAnalyzer analyzer = new InnerAnalyzer();
         try {
