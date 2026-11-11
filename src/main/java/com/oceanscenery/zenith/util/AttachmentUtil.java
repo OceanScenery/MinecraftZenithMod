@@ -210,6 +210,14 @@ public class AttachmentUtil {
         return player.getData(ZenithAttachments.ZENITH_SLOT);
     }
 
+    public static boolean hasSlotOpen(Player player) {
+        if (player == null) {
+            return false;
+        }
+        return player.getExistingData(ZenithAttachments.ZENITH_SLOT)
+            .filter(ZenithSlot::open).isPresent();
+    }
+
     public static void validateSlot(Player player) {
         var origin = player.getData(ZenithAttachments.ZENITH_SLOT);
         player.setData(
