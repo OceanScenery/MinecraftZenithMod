@@ -108,7 +108,6 @@ public class LivingHurtPatcher {
         patch.add(new VarInsnNode(Opcodes.FSTORE, 3));
 
         method.instructions.insertBefore(ins, patch);
-        method.maxStack += 3;
         return true;
     }
 
@@ -169,7 +168,6 @@ public class LivingHurtPatcher {
             ));
             method.instructions.insertBefore(mins, patch);
         }
-        method.maxStack += 2;
         if (PATCH_LOG) {
             TheZenithMod.LOGGER.info(
                 "[ZenithAgent] patched actuallyHurt body {} with {} health write hook(s)",
