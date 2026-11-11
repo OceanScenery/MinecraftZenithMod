@@ -1,12 +1,12 @@
 package com.oceanscenery.zenith.mixin.client;
 
 import com.oceanscenery.zenith.registry.ZenithConfigs;
-import com.oceanscenery.zenith.registry.ZenithItems;
-import com.oceanscenery.zenith.util.AttachmentUtil;
+import com.oceanscenery.zenith.util.InHandItemUtil;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,40 +14,34 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = KeyMapping.class, priority = 114514)
 public abstract class KeyMappingMixin {
+    @Unique
+    private boolean zenith$isDown = false;
+    @Unique
+    private boolean zenith$consumeClick = false;
+
     @Accessor(value = "clickCount")
     abstract void setClickCount(int value);
 
-    @Inject(method = "isDown", at = @At("HEAD"), cancellable = true)
-    public void onIsDown(CallbackInfoReturnable<Boolean> cir) {
-        if (!ZenithConfigs.CLIENT_CONFIG.isLoaded() || !ZenithConfigs.ZENITH_CLIENT_CONFIG.BLOCK_INTERACTION.get()) {
+    @Inject(method = "consumeClick", at = @At("HEAD"), cancellable = true)
+    public void onConsumeClick(CallbackInfoReturnable<Boolean> cir) {
+        if (zenith$consumeClick) {
             return;
         }
-        KeyMapping self = (KeyMapping) (Object) this;
-        if (self == Minecraft.getInstance().options.keyUse) {
-            if (Minecraft.getInstance().getCameraEntity() instanceof Player player) {
-                if (player.getMainHandItem().is(ZenithItems.ZENITH.get())
-                    || player.getOffhandItem().is(ZenithItems.ZENITH.get())
-                    || AttachmentUtil.getSlot(player).open()) {
+        try {
+            zenith$consumeClick = true;
+            if (!ZenithConfigs.CLIENT_CONFIG.isLoaded() || !ZenithConfigs.ZENITH_CLIENT_CONFIG.BLOCK_INTERACTION.get()) {
+                return;
+            }
+            KeyMapping self = (KeyMapping) (Object) this;
+            Minecraft minecraft = Minecraft.getInstance();
+            if (self == minecraft.options.keyUse && minecraft.player != null) {
+                if (InHandItemUtil.matchHoldZenith(minecraft.player)) {
+                    this.setClickCount(0);
                     cir.setReturnValue(false);
                 }
             }
-        }
-    }
-
-    @Inject(method = "consumeClick", at = @At("HEAD"), cancellable = true)
-    public void onConsumeClick(CallbackInfoReturnable<Boolean> cir) {
-        if (!ZenithConfigs.CLIENT_CONFIG.isLoaded() || !ZenithConfigs.ZENITH_CLIENT_CONFIG.BLOCK_INTERACTION.get()) {
-            return;
-        }
-        KeyMapping self = (KeyMapping) (Object) this;
-        Minecraft minecraft = Minecraft.getInstance();
-        if (self == minecraft.options.keyUse && minecraft.player != null) {
-            if (minecraft.player.getMainHandItem().is(ZenithItems.ZENITH.get())
-                || minecraft.player.getOffhandItem().is(ZenithItems.ZENITH.get())
-                || AttachmentUtil.getSlot(minecraft.player).open()) {
-                this.setClickCount(0);
-                cir.setReturnValue(false);
-            }
+        } finally {
+            zenith$consumeClick = false;
         }
     }
 }

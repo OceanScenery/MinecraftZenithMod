@@ -8,6 +8,7 @@
     "LivingEntityMixin",
     "accessor.ChunkMapAccessor",
     "accessor.EntityAccessor",
+    "accessor.EntityEquipmentAccessor",
     "accessor.EntityLookupAccessor",
     "accessor.EntitySectionAccessor",
     "accessor.EntitySectionStorageAccessor",
