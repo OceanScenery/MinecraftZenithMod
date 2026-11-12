@@ -15,8 +15,11 @@ public final class RenderZenithTrail {
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        if (!ZenithProjectileRenderer.usesStagedTrails()) {
+            return;
+        }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
-            ZenithProjectileRenderer.beginTrailFrame();
+            ZenithProjectileRenderer.discardPendingTrails();
             return;
         }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {

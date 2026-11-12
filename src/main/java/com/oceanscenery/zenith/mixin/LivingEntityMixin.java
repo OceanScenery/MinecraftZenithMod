@@ -35,11 +35,11 @@ public abstract class LivingEntityMixin implements IZenithLivingEntityExtension 
 
         if (open) {
             if (attribute.equals(Attributes.ATTACK_DAMAGE)) {
-                return ConfigUtil.defaultDamage();
+                return ConfigUtil.defaultDamage() + original;
             }
 
             if (attribute.equals(Attributes.ATTACK_SPEED)) {
-                return ConfigUtil.attackSpeed(true);
+                return Math.max(ConfigUtil.attackSpeed(true), original);
             }
         }
         return original;
