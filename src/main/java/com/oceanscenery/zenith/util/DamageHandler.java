@@ -231,7 +231,7 @@ public class DamageHandler {
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
         boolean shouldCheck = false;
-        if (data.get(healthId) > 0f) {
+        if (data.get(healthId) > 0f || livingVictim.getHealth() > 0f) {
             shouldCheck = true;
         }
 
