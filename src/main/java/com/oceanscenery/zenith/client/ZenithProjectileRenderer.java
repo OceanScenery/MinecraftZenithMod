@@ -1,7 +1,14 @@
 package com.oceanscenery.zenith.client;
 
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
@@ -10,11 +17,14 @@ import com.oceanscenery.zenith.util.PosUtil;
 import com.oceanscenery.zenith.util.Quaternion;
 import com.oceanscenery.zenith.util.Vector3;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -29,6 +39,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -37,6 +48,7 @@ import java.util.List;
 
 public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, ZenithProjectileRenderState> {
     private static final Identifier WHITE_TEXTURE = Identifier.fromNamespaceAndPath("neoforge", "textures/white.png");
+    private static RenderType additiveHalo;
     private static boolean trailRenderingDisabled;
     private static boolean swordRenderingDisabled;
     private static final double[] BANDS = {-2.0, -1.15, -0.42, 0, 0.42, 1.15, 2.0};
@@ -229,6 +241,26 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             "Zenith projectile sword rendering failed. Sword models are disabled for this client session.", failure);
     }
 
+    static void registerHaloPipeline(RegisterRenderPipelinesEvent event) {
+        try {
+            RenderPipeline pipeline = RenderPipeline.builder(RenderPipelines.MATRICES_FOG_SNIPPET)
+                .withLocation(TheZenithMod.loc("pipeline/projectile_trail_halo"))
+                .withVertexShader("core/rendertype_lightning")
+                .withFragmentShader("core/rendertype_lightning")
+                .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING))
+                .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES)
+                .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+                .build();
+            RenderType halo = RenderType.create("zenith_projectile_trail_halo",
+                RenderSetup.builder(pipeline).createRenderSetup());
+            event.registerPipeline(pipeline);
+            additiveHalo = halo;
+        } catch (RuntimeException | LinkageError failure) {
+            additiveHalo = null;
+            TheZenithMod.LOGGER.error("Zenith additive trail halo could not be registered. Using the vanilla emissive material.", failure);
+        }
+    }
+
     private void submitTrail(ZenithProjectileRenderState state, PoseStack poses, SubmitNodeCollector collector
         , CameraRenderState camera) {
         double progressAngle = state.progressAngle;
@@ -250,7 +282,6 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         double pixelScale = state.pixelScale;
         Vector3f right = new Vector3f(1, 0, 0).rotate(camera.orientation);
         Vector3f up = new Vector3f(0, 1, 0).rotate(camera.orientation);
-        // Each collector owns its pose and trail samples until it draws this submission.
         GlowPoint[] points = new GlowPoint[segments + 1];
         double growth = smoothStep(Math.min(1, progressAngle / 0.20));
         for (int i = 0; i <= segments; i++) {
@@ -261,20 +292,23 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             points[i] = point;
         }
 
-        // Draw the unlit core first, then add the halo in the same translucent entity phase.
-        collector.submitCustomGeometry(poses, RenderTypes.eyes(WHITE_TEXTURE),
-            (pose, consumer) -> drawTrail(points, segments, right, up, time, phase, pose, consumer, false));
-        collector.order(1).submitCustomGeometry(poses, RenderTypes.dragonRays(),
-            (pose, consumer) -> drawTrail(points, segments, right, up, time, phase, pose, consumer, true));
+        RenderType coreType = RenderTypes.eyes(WHITE_TEXTURE);
+        RenderType haloType = additiveHalo;
+        boolean additive = haloType != null;
+        collector.submitCustomGeometry(poses, coreType,
+            (pose, consumer) -> drawTrail(points, segments, right, up, time, phase, pose, consumer, false, false));
+        collector.order(1).submitCustomGeometry(poses, additive ? haloType : coreType,
+            (pose, consumer) -> drawTrail(points, segments, right, up, time, phase, pose, consumer, true, additive));
     }
 
     private static void drawTrail(GlowPoint[] points, int segments, Vector3f right, Vector3f up,
-                                  double time, double phase, PoseStack.Pose pose, VertexConsumer consumer, boolean halo) {
+                                  double time, double phase, PoseStack.Pose pose, VertexConsumer consumer,
+                                  boolean halo, boolean triangles) {
         if (trailRenderingDisabled) {
             return;
         }
         try {
-            TrailQuads vertices = new TrailQuads(consumer, pose, halo);
+            TrailQuads vertices = new TrailQuads(consumer, pose, triangles);
             if (halo) {
                 emitHalo(points, segments, right, up, time, phase, vertices);
             } else {
@@ -451,7 +485,7 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
     private static final class TrailQuads {
         private final VertexConsumer consumer;
         private final Matrix4f pose;
-        private final boolean halo;
+        private final boolean triangles;
         private final Vector3f normal;
         private final Vector3f[] positions = {new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()};
         private final int[] colors = new int[4];
@@ -459,11 +493,11 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         private final Vector3f secondEdge = new Vector3f();
         private int count;
 
-        private TrailQuads(VertexConsumer consumer, PoseStack.Pose pose, boolean halo) {
+        private TrailQuads(VertexConsumer consumer, PoseStack.Pose pose, boolean triangles) {
             this.consumer = consumer;
             this.pose = pose.pose();
-            this.halo = halo;
-            this.normal = halo ? null : pose.transformNormal(0, 1, 0, new Vector3f());
+            this.triangles = triangles;
+            this.normal = triangles ? null : pose.transformNormal(0, 1, 0, new Vector3f());
         }
 
         private void add(double x, double y, double z, float r, float g, float b, float alpha) {
@@ -474,11 +508,9 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             }
             count = 0;
 
-            // Both materials cull back faces. Face each strip toward the camera
-            // to keep the trail visible from either side.
             float firstFacing = facing(1, 2);
             float secondFacing = facing(2, 3);
-            if (halo) {
+            if (triangles) {
                 writeTriangle(1, 2, firstFacing);
                 writeTriangle(2, 3, secondFacing);
             } else {
@@ -508,7 +540,7 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         private void write(int index) {
             Vector3f position = positions[index];
             VertexConsumer vertex = consumer.addVertex(position.x, position.y, position.z).setColor(colors[index]);
-            if (!halo) {
+            if (!triangles) {
                 vertex.setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY)
                     .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(normal.x, normal.y, normal.z);
             }
