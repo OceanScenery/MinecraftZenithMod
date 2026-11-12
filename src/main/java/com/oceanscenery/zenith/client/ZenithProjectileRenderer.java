@@ -21,6 +21,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -28,6 +29,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -35,7 +37,7 @@ import java.util.List;
 
 public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, ZenithProjectileRenderState> {
     private static final Identifier WHITE_TEXTURE = Identifier.fromNamespaceAndPath("neoforge", "textures/white.png");
-    private static boolean entityTrailsDisabled;
+    private static boolean trailRenderingDisabled;
     private static boolean swordRenderingDisabled;
     private static final double[] BANDS = {-2.0, -1.15, -0.42, 0, 0.42, 1.15, 2.0};
     private static final float[] BAND_ALPHA = {0, 0.08F, 0.22F, 0.28F, 0.22F, 0.08F, 0};
@@ -90,9 +92,6 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
     private final PoseStack swordPoses = new PoseStack();
     private final ItemStack[] renderItems = new ItemStack[COLORS.length];
     private final Orbit orbit = new Orbit();
-    private final GlowPoint[] trailPoints = createTrailPoints(MAX_TRAIL_SEGMENTS + 1);
-    private final Vector3f cameraRight = new Vector3f();
-    private final Vector3f cameraUp = new Vector3f();
 
     public ZenithProjectileRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -199,8 +198,12 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
                 }
             }
 
-            if (state.progressAngle > 0 && !entityTrailsDisabled) {
-                renderTrail(state, poses, collector, camera);
+            if (state.progressAngle > 0 && !trailRenderingDisabled) {
+                try {
+                    submitTrail(state, poses, collector, camera);
+                } catch (RuntimeException | LinkageError failure) {
+                    disableTrailRendering(failure);
+                }
             }
         } finally {
             poses.popPose();
@@ -222,31 +225,12 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
 
     private static void disableSwordRendering(Throwable failure) {
         swordRenderingDisabled = true;
-        RenderZenithTrail.switchToEntityRendering(
+        TheZenithMod.LOGGER.error(
             "Zenith projectile sword rendering failed. Sword models are disabled for this client session.", failure);
     }
 
-    private void renderTrail(ZenithProjectileRenderState state, PoseStack poses, SubmitNodeCollector collector,
-                             CameraRenderState camera) {
-        if (RenderZenithTrail.isCollecting()) {
-            try {
-                submitTrail(state, poses, collector, camera, true);
-                return;
-            } catch (RuntimeException | LinkageError failure) {
-                RenderZenithTrail.switchToEntityRendering("Zenith staged trail submission failed.", failure);
-            }
-        }
-        if (RenderZenithTrail.usesEntityRendering()) {
-            try {
-                submitTrail(state, poses, collector, camera, false);
-            } catch (RuntimeException | LinkageError failure) {
-                disableEntityTrails(failure);
-            }
-        }
-    }
-
     private void submitTrail(ZenithProjectileRenderState state, PoseStack poses, SubmitNodeCollector collector
-        , CameraRenderState camera, boolean staged) {
+        , CameraRenderState camera) {
         double progressAngle = state.progressAngle;
         double totalAngle = state.trailAngle;
         int[] color = COLORS[state.swordType];
@@ -264,73 +248,68 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             viewZ -= state.reference[1].z();
         }
         double pixelScale = state.pixelScale;
-        Vector3f right = staged ? cameraRight : new Vector3f();
-        Vector3f up = staged ? cameraUp : new Vector3f();
-        right.set(1, 0, 0).rotate(camera.orientation);
-        up.set(0, 1, 0).rotate(camera.orientation);
-        GlowPoint[] points = staged ? trailPoints : createTrailPoints(segments + 1);
+        Vector3f right = new Vector3f(1, 0, 0).rotate(camera.orientation);
+        Vector3f up = new Vector3f(0, 1, 0).rotate(camera.orientation);
+        // Each collector owns its pose and trail samples until it draws this submission.
+        GlowPoint[] points = new GlowPoint[segments + 1];
         double growth = smoothStep(Math.min(1, progressAngle / 0.20));
         for (int i = 0; i <= segments; i++) {
             double age = (double) i / segments;
-            sampleGlow(points[i], Math.max(0, progressAngle - span * age), age,
+            GlowPoint point = new GlowPoint();
+            sampleGlow(point, Math.max(0, progressAngle - span * age), age,
                 widthScale, growth, time, phase, color, viewX, viewY, viewZ, pixelScale);
+            points[i] = point;
         }
 
-        if (staged) {
-            PoseStack.Pose pose = poses.last();
-            TrailVertex core = stagedVertices(RenderZenithTrail.coreVertices(), pose);
-            TrailVertex halo = stagedVertices(RenderZenithTrail.haloVertices(), pose);
-            emitTrail(points, segments, right, up, time, phase, core, halo);
-        } else {
-            collector.submitCustomGeometry(poses, RenderTypes.entityTranslucentEmissive(WHITE_TEXTURE, false),
-                (pose, consumer) -> renderEntityTrail(points, segments, right, up, time, phase, pose, consumer));
-        }
+        // Draw the unlit core first, then add the halo in the same translucent entity phase.
+        collector.submitCustomGeometry(poses, RenderTypes.eyes(WHITE_TEXTURE),
+            (pose, consumer) -> drawTrail(points, segments, right, up, time, phase, pose, consumer, false));
+        collector.order(1).submitCustomGeometry(poses, RenderTypes.dragonRays(),
+            (pose, consumer) -> drawTrail(points, segments, right, up, time, phase, pose, consumer, true));
     }
 
-    private static void renderEntityTrail(GlowPoint[] points, int segments, Vector3f right, Vector3f up,
-                                          double time, double phase, PoseStack.Pose pose, VertexConsumer consumer) {
-        if (entityTrailsDisabled) {
+    private static void drawTrail(GlowPoint[] points, int segments, Vector3f right, Vector3f up,
+                                  double time, double phase, PoseStack.Pose pose, VertexConsumer consumer, boolean halo) {
+        if (trailRenderingDisabled) {
             return;
         }
         try {
-            TrailVertex vertices = entityVertices(consumer, pose);
-            emitTrail(points, segments, right, up, time, phase, vertices, vertices);
+            TrailQuads vertices = new TrailQuads(consumer, pose, halo);
+            if (halo) {
+                emitHalo(points, segments, right, up, time, phase, vertices);
+            } else {
+                emitCore(points, segments, vertices);
+            }
         } catch (RuntimeException | LinkageError failure) {
-            disableEntityTrails(failure);
+            disableTrailRendering(failure);
         }
     }
 
-    private static void disableEntityTrails(Throwable failure) {
-        entityTrailsDisabled = true;
-        TheZenithMod.LOGGER.error("Disabled Zenith projectile trails after entity rendering failed", failure);
+    private static void disableTrailRendering(Throwable failure) {
+        trailRenderingDisabled = true;
+        TheZenithMod.LOGGER.error("Zenith projectile trail rendering failed. Trails are disabled for this client session.", failure);
     }
 
-    private static void emitTrail(GlowPoint[] points, int segments, Vector3f right, Vector3f up,
-                                  double time, double phase, TrailVertex core, TrailVertex halo) {
+    private static void emitCore(GlowPoint[] points, int segments, TrailQuads vertices) {
         for (int i = 1; i <= segments; i++) {
-            ribbon(core, points[i - 1], points[i], false, 1, true);
-            ribbon(core, points[i - 1], points[i], true, 0.60F, true);
+            ribbon(vertices, points[i - 1], points[i], false, 1, true);
+            ribbon(vertices, points[i - 1], points[i], true, 0.60F, true);
         }
+    }
 
+    private static void emitHalo(GlowPoint[] points, int segments, Vector3f right, Vector3f up,
+                                 double time, double phase, TrailQuads vertices) {
         int glintStride = Math.max(1, (segments + 7) / 8);
         for (int i = 1; i <= segments; i++) {
             GlowPoint current = points[i - 1], next = points[i];
             double age = (double) i / segments;
-            ribbon(halo, current, next, false, 1, false);
-            ribbon(halo, current, next, true, 0.45F, false);
+            ribbon(vertices, current, next, false, 1, false);
+            ribbon(vertices, current, next, true, 0.45F, false);
             if (i % glintStride == 0 && age < 0.9) {
                 double pulse = Math.pow(Math.max(0, Math.sin(time * 0.24 - age * 19 + phase * 6.28)), 6);
-                glint(halo, next, right, up, next.haloWidth * (0.18 + pulse * 0.40), (float) pulse);
+                glint(vertices, next, right, up, next.haloWidth * (0.18 + pulse * 0.40), (float) pulse);
             }
         }
-    }
-
-    private static GlowPoint[] createTrailPoints(int count) {
-        GlowPoint[] points = new GlowPoint[count];
-        for (int i = 0; i < points.length; i++) {
-            points[i] = new GlowPoint();
-        }
-        return points;
     }
 
     private static double distanceWidthScale(double distance) {
@@ -411,7 +390,7 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             * (0.96 + 0.04 * pulse));
     }
 
-    private static void ribbon(TrailVertex vertex, GlowPoint near,
+    private static void ribbon(TrailQuads vertex, GlowPoint near,
                                GlowPoint far, boolean cross, float opacity, boolean core) {
         int bandCount = core ? CORE_BANDS.length : BANDS.length;
         for (int band = 0; band < bandCount - 1; band++) {
@@ -423,7 +402,7 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         }
     }
 
-    private static void bandVertex(TrailVertex vertex, GlowPoint point,
+    private static void bandVertex(TrailQuads vertex, GlowPoint point,
                                    int band, boolean cross, float opacity, boolean core) {
         double extent = (core ? CORE_BANDS[band] * point.width : BANDS[band] * point.haloWidth)
             * (cross ? 0.65 : 1);
@@ -443,7 +422,7 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             point.b + (1 - point.b) * white, alpha * opacity);
     }
 
-    private static void glint(TrailVertex vertex, GlowPoint point, Vector3f right, Vector3f up,
+    private static void glint(TrailQuads vertex, GlowPoint point, Vector3f right, Vector3f up,
                               double size, float pulse) {
         double cameraDistance = Math.sqrt(point.cameraX * point.cameraX
             + point.cameraY * point.cameraY + point.cameraZ * point.cameraZ);
@@ -469,21 +448,71 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         }
     }
 
-    private static TrailVertex stagedVertices(VertexConsumer consumer, PoseStack.Pose pose) {
-        return (x, y, z, r, g, b, alpha) -> consumer.addVertex(pose, (float) x, (float) y, (float) z)
-            .setColor(r, g, b, alpha);
-    }
+    private static final class TrailQuads {
+        private final VertexConsumer consumer;
+        private final Matrix4f pose;
+        private final boolean halo;
+        private final Vector3f normal;
+        private final Vector3f[] positions = {new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()};
+        private final int[] colors = new int[4];
+        private final Vector3f firstEdge = new Vector3f();
+        private final Vector3f secondEdge = new Vector3f();
+        private int count;
 
-    private static TrailVertex entityVertices(VertexConsumer consumer, PoseStack.Pose pose) {
-        Vector3f normal = pose.transformNormal(0, 1, 0, new Vector3f());
-        return (x, y, z, r, g, b, alpha) -> consumer.addVertex(pose, (float) x, (float) y, (float) z)
-            .setColor(r, g, b, alpha).setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY)
-            .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(normal.x, normal.y, normal.z);
-    }
+        private TrailQuads(VertexConsumer consumer, PoseStack.Pose pose, boolean halo) {
+            this.consumer = consumer;
+            this.pose = pose.pose();
+            this.halo = halo;
+            this.normal = halo ? null : pose.transformNormal(0, 1, 0, new Vector3f());
+        }
 
-    @FunctionalInterface
-    private interface TrailVertex {
-        void add(double x, double y, double z, float r, float g, float b, float alpha);
+        private void add(double x, double y, double z, float r, float g, float b, float alpha) {
+            pose.transformPosition((float) x, (float) y, (float) z, positions[count]);
+            colors[count] = ARGB.colorFromFloat(alpha, r, g, b);
+            if (++count < positions.length) {
+                return;
+            }
+            count = 0;
+
+            // Both materials cull back faces. Face each strip toward the camera
+            // to keep the trail visible from either side.
+            float firstFacing = facing(1, 2);
+            float secondFacing = facing(2, 3);
+            if (halo) {
+                writeTriangle(1, 2, firstFacing);
+                writeTriangle(2, 3, secondFacing);
+            } else {
+                boolean reverse = firstFacing + secondFacing > 0;
+                write(0);
+                write(reverse ? 3 : 1);
+                write(2);
+                write(reverse ? 1 : 3);
+            }
+        }
+
+        private float facing(int second, int third) {
+            Vector3f first = positions[0];
+            return positions[second].sub(first, firstEdge)
+                .cross(positions[third].sub(first, secondEdge)).dot(first);
+        }
+
+        private void writeTriangle(int second, int third, float facing) {
+            if (facing == 0) {
+                return;
+            }
+            write(0);
+            write(facing > 0 ? third : second);
+            write(facing > 0 ? second : third);
+        }
+
+        private void write(int index) {
+            Vector3f position = positions[index];
+            VertexConsumer vertex = consumer.addVertex(position.x, position.y, position.z).setColor(colors[index]);
+            if (!halo) {
+                vertex.setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY)
+                    .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(normal.x, normal.y, normal.z);
+            }
+        }
     }
 
     private static final class GlowPoint {
