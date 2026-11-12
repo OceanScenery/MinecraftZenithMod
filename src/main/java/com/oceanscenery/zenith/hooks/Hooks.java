@@ -23,7 +23,6 @@ import net.minecraft.world.entity.player.Player;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 public final class Hooks {
@@ -35,20 +34,9 @@ public final class Hooks {
 
     private static boolean flag = true;
 
-    private static final Predicate<Entity> DIE_WHITELIST = entity -> {
-        String id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
-        if (id.startsWith("block_factorys_bosses:")) {
-            return true;
-        }
-        return false;
-    };
-
     private static final Function<Entity, Optional<Integer>> SPECIAL_TIME = entity -> {
         String id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
         if (id.equals("minecraft:ender_dragon")) {
-            return Optional.of(200);
-        }
-        if (id.startsWith("block_factorys_bosses:")) {
             return Optional.of(200);
         }
         if (id.contains("apollyon") && id.contains("goety")) {
@@ -216,7 +204,7 @@ public final class Hooks {
         if (!shouldDoDeathAct(self)) {
             return false;
         }
-        if (minDeathTime <= 0 && !DIE_WHITELIST.test(living)) {
+        if (minDeathTime <= 0) {
             return true;
         }
         int finalMinDeathTime = SPECIAL_TIME.apply(living).orElse(minDeathTime);
