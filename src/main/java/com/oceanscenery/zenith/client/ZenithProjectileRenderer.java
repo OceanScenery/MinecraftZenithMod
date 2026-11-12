@@ -2,7 +2,10 @@ package com.oceanscenery.zenith.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.renderpearl.api.pipeline.BlendFunction;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
@@ -237,10 +240,11 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
 
     static void registerHaloPipeline(RegisterRenderPipelinesEvent event) {
         try {
-            var dragonRays = RenderPipelines.DRAGON_RAYS;
-            var pipeline = dragonRays.toBuilder()
+            RenderPipeline pipeline = RenderPipeline.builder(RenderPipelines.MATRICES_FOG_SNIPPET)
                 .withLocation(TheZenithMod.loc("pipeline/projectile_trail_halo"))
-                .withDepthStencilState(new DepthStencilState(dragonRays.getDepthStencilState().depthTest(), false))
+                .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING))
+                .withDepthStencilState(new DepthStencilState(
+                    RenderPipelines.DRAGON_RAYS.getDepthStencilState().depthTest(), false))
                 .build();
             RenderType halo = RenderType.create("zenith_projectile_trail_halo",
                 RenderSetup.builder(pipeline).setOitPipelines(RenderPipelines.OIT_DRAGON_RAYS).createRenderSetup());
