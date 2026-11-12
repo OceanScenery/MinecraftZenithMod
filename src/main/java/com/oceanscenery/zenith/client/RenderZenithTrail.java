@@ -4,7 +4,6 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexSorting;
-import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.pipeline.BlendFunction;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
@@ -29,13 +28,13 @@ import org.joml.Matrix4f;
 
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.function.Supplier;
 
 @EventBusSubscriber(modid = TheZenithMod.MOD_ID, value = Dist.CLIENT)
 public final class RenderZenithTrail {
-    private static final RenderType CORE_TYPE = createType("prismatic_trail_core", BlendFunction.TRANSLUCENT, true);
-    private static final RenderType HALO_TYPE = createType("prismatic_trail_halo", BlendFunction.LIGHTNING, false);
     private static final Matrix4f MODEL_VIEW = new Matrix4f();
 
+    private static boolean useEntityRendering;
     private static StagedVertexBuffer geometry;
     private static StagedVertexBuffer.Draw core, halo;
     private static GpuTexture depthBeforeClouds;
@@ -46,18 +45,26 @@ public final class RenderZenithTrail {
 
     @SubscribeEvent
     public static void registerPipelines(RegisterRenderPipelinesEvent event) {
-        event.registerPipeline(CORE_TYPE.pipeline());
-        event.registerPipeline(HALO_TYPE.pipeline());
+        runStaged("Zenith trail pipeline registration failed.", () -> {
+            event.registerPipeline(StagedTypes.CORE.pipeline());
+            event.registerPipeline(StagedTypes.HALO.pipeline());
+        });
     }
 
     @SubscribeEvent
     public static void captureModelView(FrameGraphSetupEvent event) {
-        MODEL_VIEW.set(RenderSystem.getModelViewMatrixCopy());
-        capturedFrom = null;
+        runStaged("Zenith staged trail frame setup failed.", () -> {
+            MODEL_VIEW.set(RenderSystem.getModelViewMatrixCopy());
+            capturedFrom = null;
+        });
     }
 
     static boolean isCollecting() {
-        return RenderSystem.isRenderingLevel;
+        return !useEntityRendering && RenderSystem.isRenderingLevel;
+    }
+
+    static boolean usesEntityRendering() {
+        return useEntityRendering;
     }
 
     static VertexConsumer coreVertices() {
@@ -65,25 +72,65 @@ public final class RenderZenithTrail {
             geometry = new StagedVertexBuffer(() -> "Zenith trail", 32768);
         }
         if (core == null) {
-            core = geometry.appendDraw(CORE_TYPE.format(), CORE_TYPE.primitiveTopology(), VertexSorting.DISTANCE_TO_ORIGIN);
+            core = geometry.appendDraw(StagedTypes.CORE.format(), StagedTypes.CORE.primitiveTopology(), VertexSorting.DISTANCE_TO_ORIGIN);
         }
         return geometry.getVertexBuilder(core);
     }
 
     static VertexConsumer haloVertices() {
         if (halo == null) {
-            halo = geometry.appendDraw(HALO_TYPE.format(), HALO_TYPE.primitiveTopology());
+            halo = geometry.appendDraw(StagedTypes.HALO.format(), StagedTypes.HALO.primitiveTopology());
         }
         return geometry.getVertexBuilder(halo);
     }
 
     public static boolean hasPendingTrails() {
-        return core != null;
+        return !useEntityRendering && core != null;
     }
 
-    public static RenderPass resumeClassicPassWithDepthSnapshot() {
-        RenderTarget main = mainTarget();
-        GpuTexture depth = main.getDepthTexture();
+    public static RenderPass resumeClassicPassWithDepthSnapshot(RenderPass original, Supplier<RenderTarget> target) {
+        if (!hasPendingTrails()) {
+            return original;
+        }
+        GpuTexture depth;
+        GpuTextureView colorAttachment;
+        GpuTextureView depthAttachment;
+        try {
+            RenderTarget main = target.get();
+            depth = main.getDepthTexture();
+            colorAttachment = main.getColorTextureView();
+            depthAttachment = main.getDepthTextureView();
+        } catch (RuntimeException | LinkageError failure) {
+            switchToEntityRendering("Zenith could not read the classic transparency targets.", failure);
+            return original;
+        }
+        if (depth == null || colorAttachment == null || depthAttachment == null) {
+            return original;
+        }
+
+        // The encoder cannot copy a texture while the main render pass is open.
+        try {
+            original.close();
+            captureDepth(depth);
+        } catch (RuntimeException | LinkageError failure) {
+            switchToEntityRendering("Zenith pre-cloud depth capture failed.", failure);
+        }
+        try {
+            return openClassicPass(colorAttachment, depthAttachment);
+        } catch (RuntimeException | LinkageError failure) {
+            switchToEntityRendering("Zenith could not resume the classic transparency pass.", failure);
+            try {
+                return openClassicPass(colorAttachment, depthAttachment);
+            } catch (RuntimeException | LinkageError retryFailure) {
+                if (retryFailure != failure) {
+                    failure.addSuppressed(retryFailure);
+                }
+                throw failure;
+            }
+        }
+    }
+
+    private static void captureDepth(GpuTexture depth) {
         int width = depth.getWidth(0), height = depth.getHeight(0);
         if (depthBeforeClouds == null || depthBeforeClouds.getWidth(0) != width
             || depthBeforeClouds.getHeight(0) != height || depthBeforeClouds.getFormat() != depth.getFormat()) {
@@ -94,16 +141,25 @@ public final class RenderZenithTrail {
                 depth.getFormat(), width, height, 1, 1);
             depthView = device.createTextureView(depthBeforeClouds);
         }
-        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-        encoder.copyTextureToTexture(depth, depthBeforeClouds, 0, 0, 0, 0, 0, width, height);
+        RenderSystem.getDevice().createCommandEncoder()
+            .copyTextureToTexture(depth, depthBeforeClouds, 0, 0, 0, 0, 0, width, height);
         capturedFrom = depth;
-        RenderPass continuation = encoder.createRenderPass(() -> "Main: clouds and weather",
-            main.getColorTextureView(), Optional.empty(), main.getDepthTextureView(), OptionalDouble.empty());
+    }
+
+    private static RenderPass openClassicPass(GpuTextureView color, GpuTextureView depth) {
+        RenderPass continuation = RenderSystem.getDevice().createCommandEncoder()
+            .createRenderPass(() -> "Main: clouds and weather", color, Optional.empty(), depth, OptionalDouble.empty());
         try {
             RenderSystem.bindDefaultUniforms(continuation);
             return continuation;
         } catch (RuntimeException | Error failure) {
-            continuation.close();
+            try {
+                continuation.close();
+            } catch (RuntimeException | LinkageError cleanupFailure) {
+                if (!cleanupFailure.equals(failure)) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
             throw failure;
         }
     }
@@ -113,7 +169,10 @@ public final class RenderZenithTrail {
         if (!hasPendingTrails()) {
             return;
         }
+        runStaged("Zenith staged trail draw failed.", RenderZenithTrail::drawFrame);
+    }
 
+    private static void drawFrame() {
         RenderTarget main = mainTarget();
         GpuTextureView depth = capturedFrom != null && capturedFrom == main.getDepthTexture()
             ? depthView : main.getDepthTextureView();
@@ -123,37 +182,72 @@ public final class RenderZenithTrail {
             modelView.set(MODEL_VIEW);
             geometry.upload();
             var coreDraw = geometry.getExecuteInfo(core);
-            var haloDraw = geometry.getExecuteInfo(halo);
-            if (coreDraw == null && haloDraw == null) {
-                return;
-            }
-            var preparedCore = CORE_TYPE.prepare();
-            var preparedHalo = HALO_TYPE.prepare();
-            try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                () -> "Zenith trails", main.getColorTextureView(), Optional.empty(), depth, OptionalDouble.empty())) {
-                if (coreDraw != null) {
-                    preparedCore.drawFromBuffer(coreDraw, pass);
-                }
-                if (haloDraw != null) {
-                    preparedHalo.drawFromBuffer(haloDraw, pass);
-                }
+            var haloDraw = halo == null ? null : geometry.getExecuteInfo(halo);
+            if (coreDraw != null || haloDraw != null) {
+                drawBatches(main, depth, coreDraw, haloDraw);
             }
         } finally {
             modelView.popMatrix();
-            core = halo = null;
-            capturedFrom = null;
-            geometry.endFrame();
+        }
+        geometry.endFrame();
+        core = halo = null;
+        capturedFrom = null;
+    }
+
+    private static void drawBatches(RenderTarget main, GpuTextureView depth,
+                                    StagedVertexBuffer.ExecuteInfo coreDraw, StagedVertexBuffer.ExecuteInfo haloDraw) {
+        var preparedCore = coreDraw == null ? null : StagedTypes.CORE.prepare();
+        var preparedHalo = haloDraw == null ? null : StagedTypes.HALO.prepare();
+        try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+            () -> "Zenith trails", main.getColorTextureView(), Optional.empty(), depth, OptionalDouble.empty())) {
+            if (preparedCore != null) {
+                preparedCore.drawFromBuffer(coreDraw, pass);
+            }
+            if (preparedHalo != null) {
+                preparedHalo.drawFromBuffer(haloDraw, pass);
+            }
         }
     }
 
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        runStaged("Zenith staged trail resource release failed.", RenderZenithTrail::releaseResources);
+    }
+
+    private static void runStaged(String message, Runnable action) {
+        if (useEntityRendering) {
+            return;
+        }
+        try {
+            action.run();
+        } catch (RuntimeException | LinkageError failure) {
+            switchToEntityRendering(message, failure);
+        }
+    }
+
+    public static void switchToEntityRendering(String message, Throwable failure) {
+        if (useEntityRendering) {
+            TheZenithMod.LOGGER.error(message, failure);
+            return;
+        }
+        useEntityRendering = true;
+        try {
+            releaseResources();
+        } catch (RuntimeException | LinkageError cleanupFailure) {
+            if (cleanupFailure != failure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+        }
+        TheZenithMod.LOGGER.error(
+            "{} Using normal entity rendering for Zenith trails for this client session.", message, failure);
+    }
+
+    private static void releaseResources() {
         core = halo = null;
-        capturedFrom = null;
-        releaseDepth();
-        if (geometry != null) {
-            geometry.close();
-            geometry = null;
+        StagedVertexBuffer oldGeometry = geometry;
+        geometry = null;
+        try (oldGeometry) {
+            releaseDepth();
         }
     }
 
@@ -162,14 +256,18 @@ public final class RenderZenithTrail {
     }
 
     private static void releaseDepth() {
-        if (depthView != null) {
-            depthView.close();
-            depthView = null;
+        GpuTexture oldDepth = depthBeforeClouds;
+        GpuTextureView oldView = depthView;
+        depthBeforeClouds = null;
+        depthView = null;
+        capturedFrom = null;
+        try (oldDepth; oldView) {
         }
-        if (depthBeforeClouds != null) {
-            depthBeforeClouds.close();
-            depthBeforeClouds = null;
-        }
+    }
+
+    private static final class StagedTypes {
+        private static final RenderType CORE = createType("prismatic_trail_core", BlendFunction.TRANSLUCENT, true);
+        private static final RenderType HALO = createType("prismatic_trail_halo", BlendFunction.LIGHTNING, false);
     }
 
     private static RenderType createType(String name, BlendFunction blend, boolean sort) {

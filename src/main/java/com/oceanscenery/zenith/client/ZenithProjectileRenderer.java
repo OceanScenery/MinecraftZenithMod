@@ -2,6 +2,7 @@ package com.oceanscenery.zenith.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithItems;
@@ -14,10 +15,12 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -31,6 +34,9 @@ import org.joml.Vector3f;
 import java.util.List;
 
 public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile, ZenithProjectileRenderState> {
+    private static final Identifier WHITE_TEXTURE = Identifier.fromNamespaceAndPath("neoforge", "textures/white.png");
+    private static boolean entityTrailsDisabled;
+    private static boolean swordRenderingDisabled;
     private static final double[] BANDS = {-2.0, -1.15, -0.42, 0, 0.42, 1.15, 2.0};
     private static final float[] BAND_ALPHA = {0, 0.08F, 0.22F, 0.28F, 0.22F, 0.08F, 0};
     private static final float[] BAND_WHITE = {0, 0, 0.02F, 0.08F, 0.02F, 0, 0};
@@ -81,9 +87,10 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
     };
 
     private final ItemModelResolver resolver;
+    private final PoseStack swordPoses = new PoseStack();
     private final ItemStack[] renderItems = new ItemStack[COLORS.length];
     private final Orbit orbit = new Orbit();
-    private final GlowPoint[] trailPoints = createTrailPoints();
+    private final GlowPoint[] trailPoints = createTrailPoints(MAX_TRAIL_SEGMENTS + 1);
     private final Vector3f cameraRight = new Vector3f();
     private final Vector3f cameraUp = new Vector3f();
 
@@ -142,14 +149,20 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         double fov = Math.toRadians(minecraft.options.fov().get());
         state.pixelScale = 3 * Math.tan(fov / 2) / Math.max(1, minecraft.getWindow().getHeight());
 
-        ItemStack stack = renderItems[type];
-        if (stack == null) {
-            CustomModelData model = new CustomModelData(List.of((float) type), List.of(), List.of(), List.of());
-            stack = new ItemStack(ZenithItems.ZENITH, 1,
-                DataComponentPatch.builder().set(DataComponents.CUSTOM_MODEL_DATA, model).build());
-            renderItems[type] = stack;
+        if (!swordRenderingDisabled) {
+            try {
+                ItemStack stack = renderItems[type];
+                if (stack == null) {
+                    CustomModelData model = new CustomModelData(List.of((float) type), List.of(), List.of(), List.of());
+                    stack = new ItemStack(ZenithItems.ZENITH, 1,
+                        DataComponentPatch.builder().set(DataComponents.CUSTOM_MODEL_DATA, model).build());
+                    renderItems[type] = stack;
+                }
+                resolver.updateForNonLiving(state.itemState, stack, ItemDisplayContext.NONE, entity);
+            } catch (RuntimeException | LinkageError failure) {
+                disableSwordRendering(failure);
+            }
         }
-        resolver.updateForNonLiving(state.itemState, stack, ItemDisplayContext.NONE, entity);
         state.ready = true;
     }
 
@@ -178,29 +191,62 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
                 poses.translate(-shift.x(), -shift.y(), -shift.z());
             }
 
-            poses.pushPose();
-            try {
-                poses.translate(swordX, swordY, swordZ);
-                poses.rotate(Quaternion.rotate(state.normal, -PosUtil.getPolar(state.progressAngle, state.distance)).toQuaternionf());
-                poses.rotate(state.fixed[2]);
-                poses.rotate(state.fixed[1]);
-                poses.rotate(state.fixed[0]);
-                poses.rotate(Q2);
-                poses.rotate(Q1);
-                state.itemState.submit(poses, collector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
-            } finally {
-                poses.popPose();
+            if (!swordRenderingDisabled) {
+                try {
+                    submitSword(state, poses.last(), collector, swordX, swordY, swordZ);
+                } catch (RuntimeException | LinkageError failure) {
+                    disableSwordRendering(failure);
+                }
             }
 
-            if (state.progressAngle > 0 && RenderZenithTrail.isCollecting()) {
-                renderTrail(state, poses.last(), camera);
+            if (state.progressAngle > 0 && !entityTrailsDisabled) {
+                renderTrail(state, poses, collector, camera);
             }
         } finally {
             poses.popPose();
         }
     }
 
-    private void renderTrail(ZenithProjectileRenderState state, PoseStack.Pose pose, CameraRenderState camera) {
+    private void submitSword(ZenithProjectileRenderState state, PoseStack.Pose pose
+        , SubmitNodeCollector collector, double x, double y, double z) {
+        swordPoses.last().set(pose);
+        swordPoses.translate(x, y, z);
+        swordPoses.rotate(Quaternion.rotate(state.normal, -PosUtil.getPolar(state.progressAngle, state.distance)).toQuaternionf());
+        swordPoses.rotate(state.fixed[2]);
+        swordPoses.rotate(state.fixed[1]);
+        swordPoses.rotate(state.fixed[0]);
+        swordPoses.rotate(Q2);
+        swordPoses.rotate(Q1);
+        state.itemState.submit(swordPoses, collector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
+    }
+
+    private static void disableSwordRendering(Throwable failure) {
+        swordRenderingDisabled = true;
+        RenderZenithTrail.switchToEntityRendering(
+            "Zenith projectile sword rendering failed. Sword models are disabled for this client session.", failure);
+    }
+
+    private void renderTrail(ZenithProjectileRenderState state, PoseStack poses, SubmitNodeCollector collector,
+                             CameraRenderState camera) {
+        if (RenderZenithTrail.isCollecting()) {
+            try {
+                submitTrail(state, poses, collector, camera, true);
+                return;
+            } catch (RuntimeException | LinkageError failure) {
+                RenderZenithTrail.switchToEntityRendering("Zenith staged trail submission failed.", failure);
+            }
+        }
+        if (RenderZenithTrail.usesEntityRendering()) {
+            try {
+                submitTrail(state, poses, collector, camera, false);
+            } catch (RuntimeException | LinkageError failure) {
+                disableEntityTrails(failure);
+            }
+        }
+    }
+
+    private void submitTrail(ZenithProjectileRenderState state, PoseStack poses, SubmitNodeCollector collector
+        , CameraRenderState camera, boolean staged) {
         double progressAngle = state.progressAngle;
         double totalAngle = state.trailAngle;
         int[] color = COLORS[state.swordType];
@@ -218,37 +264,71 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             viewZ -= state.reference[1].z();
         }
         double pixelScale = state.pixelScale;
-        cameraRight.set(1, 0, 0).rotate(camera.orientation);
-        cameraUp.set(0, 1, 0).rotate(camera.orientation);
+        Vector3f right = staged ? cameraRight : new Vector3f();
+        Vector3f up = staged ? cameraUp : new Vector3f();
+        right.set(1, 0, 0).rotate(camera.orientation);
+        up.set(0, 1, 0).rotate(camera.orientation);
+        GlowPoint[] points = staged ? trailPoints : createTrailPoints(segments + 1);
         double growth = smoothStep(Math.min(1, progressAngle / 0.20));
         for (int i = 0; i <= segments; i++) {
             double age = (double) i / segments;
-            sampleGlow(trailPoints[i], Math.max(0, progressAngle - span * age), age,
+            sampleGlow(points[i], Math.max(0, progressAngle - span * age), age,
                 widthScale, growth, time, phase, color, viewX, viewY, viewZ, pixelScale);
         }
 
-        VertexConsumer core = RenderZenithTrail.coreVertices();
-        for (int i = 1; i <= segments; i++) {
-            ribbon(core, pose, trailPoints[i - 1], trailPoints[i], false, 1, true);
-            ribbon(core, pose, trailPoints[i - 1], trailPoints[i], true, 0.60F, true);
+        if (staged) {
+            PoseStack.Pose pose = poses.last();
+            emitCore(points, segments, stagedVertices(RenderZenithTrail.coreVertices(), pose));
+            emitHalo(points, segments, right, up, time, phase, stagedVertices(RenderZenithTrail.haloVertices(), pose));
+        } else {
+            collector.submitCustomGeometry(poses, RenderTypes.entityTranslucentEmissive(WHITE_TEXTURE),
+                (pose, consumer) -> renderEntityTrail(points, segments, right, up, time, phase, pose, consumer));
         }
+    }
 
-        VertexConsumer halo = RenderZenithTrail.haloVertices();
+    private static void renderEntityTrail(GlowPoint[] points, int segments, Vector3f right, Vector3f up,
+                                          double time, double phase, PoseStack.Pose pose, VertexConsumer consumer) {
+        if (entityTrailsDisabled) {
+            return;
+        }
+        try {
+            TrailVertex vertices = entityVertices(consumer, pose);
+            emitCore(points, segments, vertices);
+            emitHalo(points, segments, right, up, time, phase, vertices);
+        } catch (RuntimeException | LinkageError failure) {
+            disableEntityTrails(failure);
+        }
+    }
+
+    private static void disableEntityTrails(Throwable failure) {
+        entityTrailsDisabled = true;
+        TheZenithMod.LOGGER.error("Disabled Zenith projectile trails after entity rendering failed", failure);
+    }
+
+    private static void emitCore(GlowPoint[] points, int segments, TrailVertex core) {
+        for (int i = 1; i <= segments; i++) {
+            ribbon(core, points[i - 1], points[i], false, 1, true);
+            ribbon(core, points[i - 1], points[i], true, 0.60F, true);
+        }
+    }
+
+    private static void emitHalo(GlowPoint[] points, int segments, Vector3f right, Vector3f up,
+                                 double time, double phase, TrailVertex halo) {
         int glintStride = Math.max(1, (segments + 7) / 8);
         for (int i = 1; i <= segments; i++) {
-            GlowPoint current = trailPoints[i - 1], next = trailPoints[i];
+            GlowPoint current = points[i - 1], next = points[i];
             double age = (double) i / segments;
-            ribbon(halo, pose, current, next, false, 1, false);
-            ribbon(halo, pose, current, next, true, 0.45F, false);
+            ribbon(halo, current, next, false, 1, false);
+            ribbon(halo, current, next, true, 0.45F, false);
             if (i % glintStride == 0 && age < 0.9) {
                 double pulse = Math.pow(Math.max(0, Math.sin(time * 0.24 - age * 19 + phase * 6.28)), 6);
-                glint(halo, pose, next, next.haloWidth * (0.18 + pulse * 0.40), (float) pulse);
+                glint(halo, next, right, up, next.haloWidth * (0.18 + pulse * 0.40), (float) pulse);
             }
         }
     }
 
-    private static GlowPoint[] createTrailPoints() {
-        GlowPoint[] points = new GlowPoint[MAX_TRAIL_SEGMENTS + 1];
+    private static GlowPoint[] createTrailPoints(int count) {
+        GlowPoint[] points = new GlowPoint[count];
         for (int i = 0; i < points.length; i++) {
             points[i] = new GlowPoint();
         }
@@ -333,19 +413,19 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             * (0.96 + 0.04 * pulse));
     }
 
-    private static void ribbon(VertexConsumer vertex, PoseStack.Pose pose, GlowPoint near,
+    private static void ribbon(TrailVertex vertex, GlowPoint near,
                                GlowPoint far, boolean cross, float opacity, boolean core) {
         int bandCount = core ? CORE_BANDS.length : BANDS.length;
         for (int band = 0; band < bandCount - 1; band++) {
             float bandOpacity = core ? opacity : opacity * (float) haloBandFade(near, far, cross, band);
-            bandVertex(vertex, pose, far, band, cross, bandOpacity, core);
-            bandVertex(vertex, pose, far, band + 1, cross, bandOpacity, core);
-            bandVertex(vertex, pose, near, band + 1, cross, bandOpacity, core);
-            bandVertex(vertex, pose, near, band, cross, bandOpacity, core);
+            bandVertex(vertex, far, band, cross, bandOpacity, core);
+            bandVertex(vertex, far, band + 1, cross, bandOpacity, core);
+            bandVertex(vertex, near, band + 1, cross, bandOpacity, core);
+            bandVertex(vertex, near, band, cross, bandOpacity, core);
         }
     }
 
-    private static void bandVertex(VertexConsumer vertex, PoseStack.Pose pose, GlowPoint point,
+    private static void bandVertex(TrailVertex vertex, GlowPoint point,
                                    int band, boolean cross, float opacity, boolean core) {
         double extent = (core ? CORE_BANDS[band] * point.width : BANDS[band] * point.haloWidth)
             * (cross ? 0.65 : 1);
@@ -360,13 +440,13 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             double z = point.cameraZ + az * extent;
             alpha *= (float) cameraFade(Math.sqrt(x * x + y * y + z * z));
         }
-        glowVertex(vertex, pose, point.x + ax * extent, point.y + ay * extent, point.z + az * extent,
+        vertex.add(point.x + ax * extent, point.y + ay * extent, point.z + az * extent,
             point.r + (1 - point.r) * white, point.g + (1 - point.g) * white,
             point.b + (1 - point.b) * white, alpha * opacity);
     }
 
-    private void glint(VertexConsumer vertex, PoseStack.Pose pose, GlowPoint point,
-                       double size, float pulse) {
+    private static void glint(TrailVertex vertex, GlowPoint point, Vector3f right, Vector3f up,
+                              double size, float pulse) {
         double cameraDistance = Math.sqrt(point.cameraX * point.cameraX
             + point.cameraY * point.cameraY + point.cameraZ * point.cameraZ);
         pulse *= (float) cameraFade(Math.max(0, cameraDistance - size));
@@ -374,26 +454,38 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
             return;
         }
         for (int i = 0; i < 4; i++) {
-            double ax = i == 0 ? cameraRight.x : i == 1 ? cameraUp.x : i == 2 ? -cameraRight.x : -cameraUp.x;
-            double ay = i == 0 ? cameraRight.y : i == 1 ? cameraUp.y : i == 2 ? -cameraRight.y : -cameraUp.y;
-            double az = i == 0 ? cameraRight.z : i == 1 ? cameraUp.z : i == 2 ? -cameraRight.z : -cameraUp.z;
+            double ax = i == 0 ? right.x : i == 1 ? up.x : i == 2 ? -right.x : -up.x;
+            double ay = i == 0 ? right.y : i == 1 ? up.y : i == 2 ? -right.y : -up.y;
+            double az = i == 0 ? right.z : i == 1 ? up.z : i == 2 ? -right.z : -up.z;
             int j = (i + 1) % 4;
-            double bx = j == 0 ? cameraRight.x : j == 1 ? cameraUp.x : j == 2 ? -cameraRight.x : -cameraUp.x;
-            double by = j == 0 ? cameraRight.y : j == 1 ? cameraUp.y : j == 2 ? -cameraRight.y : -cameraUp.y;
-            double bz = j == 0 ? cameraRight.z : j == 1 ? cameraUp.z : j == 2 ? -cameraRight.z : -cameraUp.z;
-            glowVertex(vertex, pose, point.x, point.y, point.z, 1, 1, 1, point.alpha * pulse);
-            glowVertex(vertex, pose, point.x + ax * size, point.y + ay * size, point.z + az * size,
+            double bx = j == 0 ? right.x : j == 1 ? up.x : j == 2 ? -right.x : -up.x;
+            double by = j == 0 ? right.y : j == 1 ? up.y : j == 2 ? -right.y : -up.y;
+            double bz = j == 0 ? right.z : j == 1 ? up.z : j == 2 ? -right.z : -up.z;
+            vertex.add(point.x, point.y, point.z, 1, 1, 1, point.alpha * pulse);
+            vertex.add(point.x + ax * size, point.y + ay * size, point.z + az * size,
                 point.r, point.g, point.b, 0);
-            glowVertex(vertex, pose, point.x + bx * size, point.y + by * size, point.z + bz * size,
+            vertex.add(point.x + bx * size, point.y + by * size, point.z + bz * size,
                 point.r, point.g, point.b, 0);
-            glowVertex(vertex, pose, point.x + bx * size, point.y + by * size, point.z + bz * size,
+            vertex.add(point.x + bx * size, point.y + by * size, point.z + bz * size,
                 point.r, point.g, point.b, 0);
         }
     }
 
-    private static void glowVertex(VertexConsumer vertex, PoseStack.Pose pose,
-                                   double x, double y, double z, float r, float g, float b, float alpha) {
-        vertex.addVertex(pose, (float) x, (float) y, (float) z).setColor(r, g, b, alpha);
+    private static TrailVertex stagedVertices(VertexConsumer consumer, PoseStack.Pose pose) {
+        return (x, y, z, r, g, b, alpha) -> consumer.addVertex(pose, (float) x, (float) y, (float) z)
+            .setColor(r, g, b, alpha);
+    }
+
+    private static TrailVertex entityVertices(VertexConsumer consumer, PoseStack.Pose pose) {
+        Vector3f normal = pose.transformNormal(0, 1, 0, new Vector3f());
+        return (x, y, z, r, g, b, alpha) -> consumer.addVertex(pose, (float) x, (float) y, (float) z)
+            .setColor(r, g, b, alpha).setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY)
+            .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(normal.x, normal.y, normal.z);
+    }
+
+    @FunctionalInterface
+    private interface TrailVertex {
+        void add(double x, double y, double z, float r, float g, float b, float alpha);
     }
 
     private static final class GlowPoint {

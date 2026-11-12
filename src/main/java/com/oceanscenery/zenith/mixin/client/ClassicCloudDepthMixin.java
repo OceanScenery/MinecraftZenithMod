@@ -7,9 +7,12 @@ import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.oceanscenery.zenith.client.RenderZenithTrail;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher.PreparedFrame;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,6 +21,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LevelRenderer.class)
 public abstract class ClassicCloudDepthMixin {
+    @Shadow
+    @Final
+    private LevelTargetBundle targets;
+
     @Unique
     private RenderPass zenith$cloudContinuation;
 
@@ -27,9 +34,14 @@ public abstract class ClassicCloudDepthMixin {
         try {
             original.call(chunkSectionsToRender, featureFrame, renderPass);
         } finally {
-            if (zenith$cloudContinuation != null) {
-                zenith$cloudContinuation.close();
-                zenith$cloudContinuation = null;
+            RenderPass continuation = zenith$cloudContinuation;
+            zenith$cloudContinuation = null;
+            if (continuation != null) {
+                try {
+                    continuation.close();
+                } catch (RuntimeException | LinkageError failure) {
+                    RenderZenithTrail.switchToEntityRendering("Zenith could not close the resumed cloud pass.", failure);
+                }
             }
         }
     }
@@ -45,8 +57,10 @@ public abstract class ClassicCloudDepthMixin {
         if (!shouldRenderClouds || !RenderZenithTrail.hasPendingTrails()) {
             return;
         }
-        pass.close();
-        zenith$cloudContinuation = RenderZenithTrail.resumeClassicPassWithDepthSnapshot();
-        activePass.set(zenith$cloudContinuation);
+        RenderPass continuation = RenderZenithTrail.resumeClassicPassWithDepthSnapshot(pass, () -> targets.main.get());
+        if (continuation != pass) {
+            zenith$cloudContinuation = continuation;
+            activePass.set(continuation);
+        }
     }
 }
