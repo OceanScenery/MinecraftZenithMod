@@ -27,10 +27,9 @@ import org.joml.Matrix4fStack;
 @EventBusSubscriber(modid = TheZenithMod.MOD_ID, value = Dist.CLIENT)
 public final class RenderZenithTrail {
     private static final int BUFFER_SIZE = 32768;
-    private static final RenderType CORE_TYPE = createType("prismatic_trail_core", BlendFunction.TRANSLUCENT, true);
-    private static final RenderType HALO_TYPE = createType("prismatic_trail_halo", BlendFunction.LIGHTNING, false);
     private static final Matrix4f MODEL_VIEW = new Matrix4f();
 
+    private static boolean useEntityRendering;
     private static ByteBufferBuilder coreStorage, haloStorage;
     private static BufferBuilder core, halo;
     private static GpuTexture depthBeforeClouds;
@@ -44,20 +43,28 @@ public final class RenderZenithTrail {
 
     @SubscribeEvent
     public static void registerPipelines(RegisterRenderPipelinesEvent event) {
-        event.registerPipeline(CORE_TYPE.pipeline());
-        event.registerPipeline(HALO_TYPE.pipeline());
+        runStaged("Zenith trail pipeline registration failed.", () -> {
+            event.registerPipeline(StagedTypes.CORE.pipeline());
+            event.registerPipeline(StagedTypes.HALO.pipeline());
+        });
     }
 
     @SubscribeEvent
     public static void beginFrame(FrameGraphSetupEvent event) {
-        discardFrame();
-        MODEL_VIEW.set(RenderSystem.getModelViewMatrix());
-        collecting = true;
-        cloudsShareMainDepth = event.getTargetBundle().clouds == null;
+        runStaged("Zenith staged trail frame setup failed.", () -> {
+            discardFrame();
+            MODEL_VIEW.set(RenderSystem.getModelViewMatrix());
+            cloudsShareMainDepth = event.getTargetBundle().clouds == null;
+            collecting = true;
+        });
     }
 
     static boolean isCollecting() {
-        return collecting;
+        return !useEntityRendering && collecting;
+    }
+
+    static boolean usesEntityRendering() {
+        return useEntityRendering;
     }
 
     static VertexConsumer coreVertices() {
@@ -65,7 +72,7 @@ public final class RenderZenithTrail {
             if (coreStorage == null) {
                 coreStorage = new ByteBufferBuilder(BUFFER_SIZE);
             }
-            core = new BufferBuilder(coreStorage, CORE_TYPE.mode(), CORE_TYPE.format());
+            core = new BufferBuilder(coreStorage, StagedTypes.CORE.mode(), StagedTypes.CORE.format());
         }
         return core;
     }
@@ -75,16 +82,21 @@ public final class RenderZenithTrail {
             if (haloStorage == null) {
                 haloStorage = new ByteBufferBuilder(BUFFER_SIZE);
             }
-            halo = new BufferBuilder(haloStorage, HALO_TYPE.mode(), HALO_TYPE.format());
+            halo = new BufferBuilder(haloStorage, StagedTypes.HALO.mode(), StagedTypes.HALO.format());
         }
         return halo;
     }
 
     @SubscribeEvent
     public static void captureDepthBeforeClouds(RenderLevelStageEvent.AfterTranslucentParticles event) {
+        if (isCollecting() && cloudsShareMainDepth && core != null) {
+            runStaged("Zenith pre-cloud depth capture failed.", () -> captureDepth(event));
+        }
+    }
+
+    private static void captureDepth(RenderLevelStageEvent.AfterTranslucentParticles event) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (!collecting || !cloudsShareMainDepth || core == null
-            || minecraft.gameRenderer.getGameRenderState().optionsRenderState.cloudStatus == CloudStatus.OFF
+        if (minecraft.gameRenderer.getGameRenderState().optionsRenderState.cloudStatus == CloudStatus.OFF
             || ARGB.alpha(event.getLevelRenderState().cloudColor) == 0) {
             return;
         }
@@ -111,6 +123,10 @@ public final class RenderZenithTrail {
 
     @SubscribeEvent
     public static void drawAfterLevel(RenderLevelStageEvent.AfterLevel event) {
+        runStaged("Zenith staged trail draw failed.", RenderZenithTrail::drawFrame);
+    }
+
+    private static void drawFrame() {
         collecting = false;
         if (core == null && halo == null) {
             return;
@@ -126,14 +142,14 @@ public final class RenderZenithTrail {
             RenderSystem.outputColorTextureOverride = main.getColorTextureView();
             RenderSystem.outputDepthTextureOverride = capturedFrom != null && capturedFrom == main.getDepthTexture()
                 ? depthView : main.getDepthTextureView();
-            drawBatch(CORE_TYPE, coreStorage, core);
-            drawBatch(HALO_TYPE, haloStorage, halo);
+            drawBatch(StagedTypes.CORE, coreStorage, core);
+            drawBatch(StagedTypes.HALO, haloStorage, halo);
         } finally {
             RenderSystem.outputDepthTextureOverride = oldDepth;
             RenderSystem.outputColorTextureOverride = oldColor;
             modelView.popMatrix();
-            discardFrame();
         }
+        discardFrame();
     }
 
     private static void drawBatch(RenderType type, ByteBufferBuilder storage, BufferBuilder builder) {
@@ -151,46 +167,88 @@ public final class RenderZenithTrail {
     }
 
     private static void discardFrame() {
-        if (core != null) {
-            discardVertices(coreStorage);
+        boolean discardCore = core != null;
+        boolean discardHalo = halo != null;
+        resetFrame();
+        try {
+            if (discardCore) {
+                discardVertices(coreStorage);
+            }
+        } finally {
+            if (discardHalo) {
+                discardVertices(haloStorage);
+            }
         }
-        if (halo != null) {
-            discardVertices(haloStorage);
-        }
+    }
+
+    private static void resetFrame() {
         core = halo = null;
         capturedFrom = null;
         collecting = false;
+        cloudsShareMainDepth = false;
     }
 
     private static void discardVertices(ByteBufferBuilder storage) {
         try (ByteBufferBuilder.Result ignored = storage.build()) {
-        } catch (Exception ignored) {
         }
     }
 
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
-        discardFrame();
-        releaseDepth();
-        if (coreStorage != null) {
-            coreStorage.close();
-            coreStorage = null;
+        runStaged("Zenith staged trail resource release failed.", RenderZenithTrail::releaseResources);
+    }
+
+    private static void runStaged(String message, Runnable action) {
+        if (useEntityRendering) {
+            return;
         }
-        if (haloStorage != null) {
-            haloStorage.close();
-            haloStorage = null;
+        try {
+            action.run();
+        } catch (RuntimeException | LinkageError failure) {
+            switchToEntityRendering(message, failure);
+        }
+    }
+
+    static void switchToEntityRendering(String message, Throwable failure) {
+        if (useEntityRendering) {
+            TheZenithMod.LOGGER.error(message, failure);
+            return;
+        }
+        useEntityRendering = true;
+        try {
+            releaseResources();
+        } catch (RuntimeException | LinkageError cleanupFailure) {
+            if (cleanupFailure != failure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+        }
+        TheZenithMod.LOGGER.error(
+            "{} Using normal entity rendering for Zenith trails for this client session.", message, failure);
+    }
+
+    private static void releaseResources() {
+        resetFrame();
+        ByteBufferBuilder oldCore = coreStorage;
+        ByteBufferBuilder oldHalo = haloStorage;
+        coreStorage = haloStorage = null;
+        try (oldCore; oldHalo) {
+            releaseDepth();
         }
     }
 
     private static void releaseDepth() {
-        if (depthView != null) {
-            depthView.close();
-            depthView = null;
+        GpuTexture oldDepth = depthBeforeClouds;
+        GpuTextureView oldView = depthView;
+        depthBeforeClouds = null;
+        depthView = null;
+        capturedFrom = null;
+        try (oldDepth; oldView) {
         }
-        if (depthBeforeClouds != null) {
-            depthBeforeClouds.close();
-            depthBeforeClouds = null;
-        }
+    }
+
+    private static final class StagedTypes {
+        private static final RenderType CORE = createType("prismatic_trail_core", BlendFunction.TRANSLUCENT, true);
+        private static final RenderType HALO = createType("prismatic_trail_halo", BlendFunction.LIGHTNING, false);
     }
 
     private static RenderType createType(String name, BlendFunction blend, boolean sort) {
