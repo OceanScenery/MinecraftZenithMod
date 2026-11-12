@@ -30,7 +30,6 @@
     "accessor.ClientLevelAccessor",
     "accessor.KeyMappingAccessor",
     "client.ArmedEntityRenderStateMixin",
-    "client.ClassicCloudDepthMixin",
     "client.FirstPersonHandsAndItemsMixin",
     "client.KeyMappingMixin",
     "client.ToggleKeyMappingMixin"
