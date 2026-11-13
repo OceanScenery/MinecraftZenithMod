@@ -385,9 +385,8 @@ public final class LivingDeathPatcher {
         }
         MethodKey key = new MethodKey(name, desc);
         MethodNode target = methods.get(key);
-        if (target == null
-            || (target.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0
-            || (/*(target.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC)) == 0 && */!name.contains(MIXIN_EXTRAS_WRAPPED))) {
+        /*(target.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC)) == 0 && */
+        if (target == null || (target.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0) {
             //如果是不合适的目标，也不做处理
             return null;
         }
