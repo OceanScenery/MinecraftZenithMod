@@ -143,7 +143,7 @@ public final class Hooks {
         ACTIVE2.set(true);
         try {
             if (AttachmentUtil.hitByZenith(self)) {
-                if (self.getHealth() <= 0f) {
+                if (AttachmentUtil.getHealth(self).value() <= 0f) {
                     return true;
                 }
             }
