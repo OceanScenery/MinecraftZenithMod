@@ -145,7 +145,8 @@ public final class Hooks {
         ACTIVE2.set(true);
         try {
             if (CapabilitiesHandler.hitByZenith(self)) {
-                if (self.getHealth() <= 0f) {
+                IZenithHealthMark health;
+                if ((health = CapabilitiesHandler.getHealth(self)) != null && health.value() <= 0f) {
                     return true;
                 }
             }

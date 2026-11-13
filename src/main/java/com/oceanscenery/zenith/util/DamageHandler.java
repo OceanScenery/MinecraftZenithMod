@@ -231,7 +231,8 @@ public class DamageHandler {
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
         boolean shouldCheck = false;
-        if (data.get(healthId) > 0f || livingVictim.getHealth() > 0f) {
+        IZenithHealthMark healthMark = CapabilitiesHandler.getHealth(livingVictim);
+        if (data.get(healthId) > 0f || livingVictim.getHealth() > 0f || (healthMark != null && healthMark.value() > 0f)) {
             shouldCheck = true;
         }
 
@@ -320,7 +321,9 @@ public class DamageHandler {
         SynchedEntityData data = ((EntityAccessor) livingEntity).getRealEntityData();
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
-        if ((data.get(healthId) <= 0f || livingEntity.getHealth() <= 0f) && !livingEntity.isRemoved()) {
+        IZenithHealthMark healthMark = CapabilitiesHandler.getHealth(livingEntity);
+        if ((data.get(healthId) <= 0f || livingEntity.getHealth() <= 0f
+            || (healthMark != null && healthMark.value() <= 0f)) && !livingEntity.isRemoved()) {
             if (!((LivingEntityAccessor) livingEntity).callCheckTotemDeathProtection(source)) {
                 livingEntity.die(source);
                 ((LivingEntityAccessor) livingEntity).setDead(true);
