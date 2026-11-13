@@ -236,7 +236,8 @@ public class DamageHandler {
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
         boolean shouldCheck = false;
-        if (data.get(healthId) > 0f || livingVictim.getHealth() > 0f) {
+        if (data.get(healthId) > 0f || livingVictim.getHealth() > 0f
+            || AttachmentUtil.getHealth(livingVictim).value() > 0f) {
             shouldCheck = true;
         }
 
@@ -287,8 +288,8 @@ public class DamageHandler {
         if (livingVictim instanceof ServerPlayer serverPlayer) {
             serverPlayer.gameEvent(GameEvent.ENTITY_DIE);
 
-            if ((Boolean)serverPlayer.level().getGameRules().get(GameRules.FORGIVE_DEAD_PLAYERS)) {
-                ((ServerPlayerAccessor)serverPlayer).zenith$tellNeutralMobsThatIDied();
+            if ((Boolean) serverPlayer.level().getGameRules().get(GameRules.FORGIVE_DEAD_PLAYERS)) {
+                ((ServerPlayerAccessor) serverPlayer).zenith$tellNeutralMobsThatIDied();
             }
 
             serverPlayer.level().getScoreboard().forAllObjectives(ObjectiveCriteria.DEATH_COUNT, serverPlayer, ScoreAccess::increment);
@@ -298,7 +299,7 @@ public class DamageHandler {
                 killer.awardKillScore(serverPlayer, source);
             }
 
-            serverPlayer.level().broadcastEntityEvent(serverPlayer, (byte)3);
+            serverPlayer.level().broadcastEntityEvent(serverPlayer, (byte) 3);
             serverPlayer.awardStat(Stats.DEATHS);
             serverPlayer.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_DEATH));
             serverPlayer.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_REST));
@@ -318,7 +319,8 @@ public class DamageHandler {
         SynchedEntityData data = ((EntityAccessor) livingEntity).getRealEntityData();
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
-        if ((data.get(healthId) <= 0f || livingEntity.getHealth() <= 0f) && !livingEntity.isRemoved()) {
+        if ((data.get(healthId) <= 0f || livingEntity.getHealth() <= 0f
+            || AttachmentUtil.getHealth(livingEntity).value() <= 0f) && !livingEntity.isRemoved()) {
             if (!((LivingEntityAccessor) livingEntity).callCheckTotemDeathProtection(source)) {
                 livingEntity.die(source);
                 ((LivingEntityAccessor) livingEntity).setDead(true);
