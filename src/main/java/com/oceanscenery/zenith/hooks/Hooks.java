@@ -41,6 +41,9 @@ public final class Hooks {
         if (id.equals("minecraft:ender_dragon")) {
             return Optional.of(200);
         }
+        if (id.startsWith("cataclysm:")) {
+            return Optional.of(200);
+        }
         if (id.contains("apollyon") && id.contains("goety")) {
             return Optional.of(560);
         }
