@@ -6,6 +6,7 @@
     "EntityMixin",
     "ItemEntityMixin",
     "LivingEntityMixin",
+    "MinecraftServerMixin",
     "accessor.ChunkMapAccessor",
     "accessor.EntityAccessor",
     "accessor.EntityEquipmentAccessor",
@@ -33,5 +34,6 @@
     "client.FirstPersonHandsAndItemsMixin",
     "client.KeyMappingMixin",
     "client.ToggleKeyMappingMixin"
-  ]
+  ],
+  "plugin": "com.oceanscenery.zenith.mixin.ZenithMixinPlugin"
 }
