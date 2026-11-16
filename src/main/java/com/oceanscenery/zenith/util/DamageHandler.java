@@ -1,5 +1,6 @@
 package com.oceanscenery.zenith.util;
 
+import com.oceanscenery.agent.ZenithAgentCallback;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.event.CapabilitiesHandler;
 import com.oceanscenery.zenith.mixin.accessor.EntityAccessor;
@@ -242,6 +243,10 @@ public class DamageHandler {
         }
         float postCheckedHealth = livingVictim.getHealth();
 
+        if (healthMismatch(livingVictim)) {
+            ZenithAgentCallback.onMismatch(livingVictim.getClass());
+        }
+
         ConfigUtil.redirectDamageAction(livingVictim, prevCheckedHealth, postCheckedHealth, damage, source);
 
         if (shouldCheck && livingVictim.level() instanceof ServerLevel serverLevel) {
@@ -331,5 +336,13 @@ public class DamageHandler {
                 CapabilitiesHandler.setHealth(livingEntity, Math.min(20f, livingEntity.getMaxHealth()));
             }
         }
+    }
+
+    private static boolean healthMismatch(LivingEntity living) {
+        IZenithHealthMark mark = CapabilitiesHandler.getHealth(living);
+        if (mark == null || !mark.valid(living)) {
+            return false;
+        }
+        return Float.compare(living.getHealth(), mark.value()) != 0;
     }
 }

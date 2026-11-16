@@ -3,19 +3,14 @@ package com.oceanscenery.agent;
 import com.oceanscenery.zenith.TheZenithMod;
 import sun.misc.Unsafe;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
 public final class ZenithAgentInstaller {
     private static final String AGENT_RESOURCE = "/zenith_agent.jar";
@@ -23,28 +18,51 @@ public final class ZenithAgentInstaller {
 
     private static final boolean FORCE_USE_LOAD_AGENT = Boolean.getBoolean("zenith.agent.config.force_load_agent_without_touch");
 
-    private static boolean attempted;
+    private static boolean failed = false;
+    private static boolean attempted = false;
+    private static boolean lateAttempted = false;
 
     private ZenithAgentInstaller() {
     }
 
+    private static class AgentJarHolder {
+        private static Path agentJar = null;
+
+        public static Path getAgentJar() {
+            if (agentJar != null) {
+                return agentJar;
+            } else {
+                try {
+                    agentJar = extractAgentJar();
+                    return agentJar;
+                } catch (Exception e) {
+                    agentJar = null;
+                    return null;
+                }
+            }
+        }
+    }
+
     public static synchronized void install() {
-        if (attempted) {
+        Path agentFile = null;
+        if (attempted || failed) {
             return;
         }
         attempted = true;
-        Path agentFile = null;
 
         try {
-            Path agentJar = extractAgentJar();
+            Path agentJar = AgentJarHolder.getAgentJar();
             agentFile = agentJar;
+            if (agentFile == null) {
+                return;
+            }
 
             if (FORCE_USE_LOAD_AGENT) {
                 throw new RuntimeException("调试选项");
             }
 
             allowSelfAttach();
-            attach(agentJar);
+            attach(agentJar, null);
 
             TheZenithMod.LOGGER.info("[ZenithAgent] process transformer to bytecode");
         } catch (Throwable t1) {
@@ -55,15 +73,43 @@ public final class ZenithAgentInstaller {
                     return;
                 }
 
-                loadAgentWithoutAttach(agentFile);
+                loadAgentWithoutAttach(agentFile, null);
             } catch (Throwable t2) {
                 TheZenithMod.LOGGER.error("[ZenithAgent] in-process loadAgent failed", t2);
                 try {
                     //loadAgentViaJmx(agentFile);
                     throw new RuntimeException("Banned this way of loading Agent");
                 } catch (Throwable t3) {
+                    failed = true;
                     TheZenithMod.LOGGER.error("[ZenithAgent] failed to load agent by all means.");
                 }
+            }
+        }
+    }
+
+    public static synchronized void installLateAgent() {
+        if (lateAttempted) {
+            return;
+        }
+        lateAttempted = true;
+
+        Path agentJar = AgentJarHolder.getAgentJar();
+        if (agentJar == null) {
+            TheZenithMod.LOGGER.error("[ZenithAgent] failed to load agent jar file for the late agent.");
+            return;
+        }
+
+        try {
+            allowSelfAttach();
+            attach(agentJar, ZenithAgentCallback.LATE_AGENT_ARGS);
+            TheZenithMod.LOGGER.info("[ZenithAgent] late agent attached");
+        } catch (Throwable t1) {
+            TheZenithMod.LOGGER.error("[ZenithAgent] failed to attach the late agent", t1);
+            try {
+                loadAgentWithoutAttach(agentJar, ZenithAgentCallback.LATE_AGENT_ARGS);
+                TheZenithMod.LOGGER.info("[ZenithAgent] late agent loaded in-process");
+            } catch (Throwable t2) {
+                TheZenithMod.LOGGER.error("[ZenithAgent] in-process late loadAgent failed", t2);
             }
         }
     }
@@ -98,15 +144,19 @@ public final class ZenithAgentInstaller {
         TheZenithMod.LOGGER.info("[ZenithAgent] 已通过 Unsafe 打开 ALLOW_ATTACH_SELF");
     }
 
-    private static void attach(Path agentJar) throws Exception {
+    private static void attach(Path agentJar, String options) throws Exception {
         Class<?> virtualMachine = Class.forName("com.sun.tools.attach.VirtualMachine");
         String pid = String.valueOf(ProcessHandle.current().pid());
 
-        TheZenithMod.LOGGER.info("[ZenithAgent] attaching agent to pid {}", pid);
+        TheZenithMod.LOGGER.info("[ZenithAgent] attaching agent to pid {} (options={})", pid, options);
         Object vm = virtualMachine.getMethod("attach", String.class).invoke(null, pid);
         try {
-            Method loadAgent = virtualMachine.getMethod("loadAgent", String.class);
-            loadAgent.invoke(vm, agentJar.toAbsolutePath().toString());
+            String path = agentJar.toAbsolutePath().toString();
+            if (options == null) {
+                virtualMachine.getMethod("loadAgent", String.class).invoke(vm, path);
+            } else {
+                virtualMachine.getMethod("loadAgent", String.class, String.class).invoke(vm, path, options);
+            }
         } finally {
             virtualMachine.getMethod("detach").invoke(vm);
         }
@@ -122,14 +172,14 @@ public final class ZenithAgentInstaller {
 
     private static MethodHandles.Lookup implLookup() throws Exception {
         Class<?> lookupClass = Class.forName("java.lang.invoke.MethodHandles$Lookup");
-        Field f = lookupClass.getDeclaredField("IMPL_LOOKUP");   // 这个字段没有被过滤
+        Field f = lookupClass.getDeclaredField("IMPL_LOOKUP");//这个字段没有被过滤
         Unsafe unsafe = getUnsafe();
         Object base = unsafe.staticFieldBase(f);
         long off = unsafe.staticFieldOffset(f);
         return (MethodHandles.Lookup) unsafe.getObject(base, off);
     }
 
-    private static void loadAgentWithoutAttach(Path agentJar) throws Throwable {
+    private static void loadAgentWithoutAttach(Path agentJar, String options) throws Throwable {
         String path = agentJar.toAbsolutePath().toString();
         MethodHandles.Lookup lookup = implLookup();
         ClassLoader system = ClassLoader.getSystemClassLoader();
@@ -144,9 +194,15 @@ public final class ZenithAgentInstaller {
         MethodHandle loadAgent = lookup.findStatic(
             Class.forName("sun.instrument.InstrumentationImpl"),
             "loadAgent",
-            MethodType.methodType(void.class, String.class)
+            options == null
+                ? MethodType.methodType(void.class, String.class)
+                : MethodType.methodType(void.class, String.class, String.class)
         );
-        loadAgent.invoke(path);
+        if (options == null) {
+            loadAgent.invoke(path);
+        } else {
+            loadAgent.invoke(path, options);
+        }
     }
 
     /*

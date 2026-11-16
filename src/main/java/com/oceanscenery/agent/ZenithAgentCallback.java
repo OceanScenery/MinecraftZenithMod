@@ -1,6 +1,7 @@
 package com.oceanscenery.agent;
 
 import com.oceanscenery.zenith.TheZenithMod;
+import net.minecraft.world.entity.LivingEntity;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
@@ -9,22 +10,42 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ZenithAgentCallback {
-    private static final Set<String> PATCHED = ConcurrentHashMap.newKeySet();
+    public static final String LATE_AGENT_ARGS = "late";
+
+    private static final int BATCH_SIZE = 8;
+    private static final int MAX_ATTEMPTS = 3;
+
     private static final boolean TRANSFORMER_PROBE =
         Boolean.getBoolean("zenith.debug.transformer.probe");
     private static final int CACHE_CLEAR_INTERVAL = 128;
     private static final int CACHE_PRESSURE_CLEAR_INTERVAL = 16;
     private static final double CACHE_CLEAR_HEAP_RATIO = 0.80d;
-
-    private static Instrumentation instrumentation; //参数
-    private static ZenithTransformer transformer; //字节码转换器
-    private static Set<String> targets = Set.of(); //目标类名集合
     private static final boolean loaded = true;
+
+    private enum State {
+        IDLE, EARLY, UPGRADING, LATE, FAILED
+    }
+
+    private static final Object LOCK = new Object(); //线程锁
+    private static final Patcher ACTIVE_PATCHER = new Patcher();
+    private static final Set<String> PATCHED = ConcurrentHashMap.newKeySet();
+
+    private static final Set<Class<?>> PENDING = ConcurrentHashMap.newKeySet();
+    private static final Set<Class<?>> RETRANSFORMED = ConcurrentHashMap.newKeySet();
+    private static final Map<Class<?>, Integer> ATTEMPTS = new ConcurrentHashMap<>();
+
+    private static volatile State state = State.IDLE;
+    private static volatile Instrumentation instrumentation;
+    private static volatile Set<String> targets = Set.of();
+    private static ZenithTransformer transformer;
 
     private ZenithAgentCallback() {
     }
@@ -34,27 +55,174 @@ public final class ZenithAgentCallback {
     }
 
     public static void agentCall(String args, Instrumentation inst) {
-        instrumentation = inst;
-        TheZenithMod.LOGGER.info("[Zenith] instrumentation acquired: retransform={} redefine={}",
-            inst.isRetransformClassesSupported(), inst.isRedefineClassesSupported());
+        if (LATE_AGENT_ARGS.equals(args)) {
+            installLateTransformer(inst);
+        } else {
+            installEarlyTransformer(inst);
+        }
+    }
 
-        try {
+    private static void installEarlyTransformer(Instrumentation inst) {
+        synchronized (LOCK) {
+            if (state != State.IDLE) {
+                return;
+            }
+            instrumentation = inst;
             targets = LivingClassFinder.findTargets();
             transformer = new ZenithTransformer(targets);
+            inst.addTransformer(ACTIVE_PATCHER, true);
+            TheZenithMod.LOGGER.info("[Zenith] instrumentation acquired: retransform={} redefine={}",
+                inst.isRetransformClassesSupported(), inst.isRedefineClassesSupported());
             TheZenithMod.LOGGER.info("[Zenith] post-mixin patching enabled for {} target classes", targets.size());
+        }
+        retransformLoaded();
+        synchronized (LOCK) {
+            if (state == State.IDLE) {
+                state = State.EARLY;
+            }
+        }
+    }
 
-            Patcher patcher = new Patcher();
-            inst.addTransformer(patcher, true);
-            retransformLoaded();
-        } catch (Exception exception) {
-            TheZenithMod.LOGGER.error("[Zenith] agent callback failed", exception);
-            throw new IllegalStateException("Zenith agent callback failed", exception);
+    private static void installLateTransformer(Instrumentation inst) {
+        synchronized (LOCK) {
+            if (state != State.UPGRADING) {
+                return;
+            }
+            Instrumentation previous = instrumentation;
+            if (previous != null) {
+                previous.removeTransformer(ACTIVE_PATCHER);
+            }
+            inst.addTransformer(ACTIVE_PATCHER, true);
+            instrumentation = inst;
+            state = State.LATE;
+        }
+        TheZenithMod.LOGGER.info("[ZenithAgent] transformer moved to the last attached agent");
+    }
+
+    private static void requestUpgrade() {
+        synchronized (LOCK) {
+            if (state != State.EARLY) {
+                return;
+            }
+            state = State.UPGRADING;
+        }
+
+        ZenithAgentInstaller.installLateAgent();
+
+        synchronized (LOCK) {
+            if (state == State.UPGRADING) {
+                state = State.FAILED;
+                PENDING.clear();
+                TheZenithMod.LOGGER.error(
+                    "[ZenithAgent] failed to move the transformer to the last agent, keeping the early one");
+            }
+        }
+    }
+
+    public static void onMismatch(Class<?> entityClass) {
+        if (entityClass == null) {
+            return;
+        }
+        if (state == State.EARLY) {
+            requestUpgrade();
+        }
+        if (state == State.LATE) {
+            PENDING.add(entityClass);
+        }
+    }
+
+    public static void tick() {
+        if (state != State.LATE || PENDING.isEmpty()) {
+            return;
+        }
+        Instrumentation inst = instrumentation;
+        if (inst == null) {
+            return;
+        }
+
+        Set<Class<?>> batch = new LinkedHashSet<>();
+        List<Class<?>> entities = new ArrayList<>();
+        Iterator<Class<?>> iterator = PENDING.iterator();
+        while (iterator.hasNext() && batch.size() < BATCH_SIZE) {
+            Class<?> entityClass = iterator.next();
+            iterator.remove();
+            entities.add(entityClass);
+            collectSuper(inst, entityClass, batch);
+        }
+        if (batch.isEmpty()) {
+            return;
+        }
+        if (!retransform(inst, batch)) {
+            for (Class<?> entityClass : entities) {
+                retryLater(entityClass);
+            }
+        }
+    }
+
+    private static void collectSuper(Instrumentation inst, Class<?> entityClass, Set<Class<?>> batch) {
+        Set<String> targetNames = targets;
+        for (Class<?> current = entityClass;
+             current != null && LivingEntity.class.isAssignableFrom(current);
+             current = current.getSuperclass()) {
+            if (batch.size() >= BATCH_SIZE) {
+                return;
+            }
+            String name = current.getName().replace('.', '/');
+            if (targetNames.contains(name)
+                && !RETRANSFORMED.contains(current)
+                && inst.isModifiableClass(current)) {
+                batch.add(current);
+            }
+            if (current == LivingEntity.class) {
+                return;
+            }
+        }
+    }
+
+    private static boolean retransform(Instrumentation inst, Set<Class<?>> batch) {
+        try {
+            inst.retransformClasses(batch.toArray(Class[]::new));
+            RETRANSFORMED.addAll(batch);
+            TheZenithMod.LOGGER.info(
+                "[ZenithAgent] reordered {} classes with the late transformer", batch.size());
+            return true;
+        } catch (Throwable throwable) {
+            TheZenithMod.LOGGER.warn(
+                "[ZenithAgent] batch retransform failed, retrying one by one", throwable);
+        }
+
+        boolean complete = true;
+        for (Class<?> clazz : batch) {
+            try {
+                inst.retransformClasses(clazz);
+                RETRANSFORMED.add(clazz);
+            } catch (Throwable failure) {
+                complete = false;
+                TheZenithMod.LOGGER.error("[ZenithAgent] failed to retransform {}", clazz.getName(), failure);
+            }
+        }
+        return complete;
+    }
+
+    private static void retryLater(Class<?> entityClass) {
+        int attempts = ATTEMPTS.merge(entityClass, 1, Integer::sum);
+        if (attempts < MAX_ATTEMPTS) {
+            PENDING.add(entityClass);
+        } else {
+            TheZenithMod.LOGGER.error(
+                "[ZenithAgent] give up reordering classes of {}", entityClass.getName());
         }
     }
 
     private static void retransformLoaded() {
+        Instrumentation inst = instrumentation;
+        Set<String> targetNames = targets;
+        if (inst == null) {
+            return;
+        }
+
         List<Class<?>> pending = new ArrayList<>();
-        for (Class<?> clazz : instrumentation.getAllLoadedClasses()) {
+        for (Class<?> clazz : inst.getAllLoadedClasses()) {
             if (clazz == null || clazz.isArray() || clazz.isPrimitive()) {
                 continue;
             }
@@ -63,7 +231,7 @@ public final class ZenithAgentCallback {
                 pending.add(clazz);
                 continue;
             }
-            if (!targets.contains(name) || !instrumentation.isModifiableClass(clazz)) {
+            if (!targetNames.contains(name) || !inst.isModifiableClass(clazz)) {
                 continue;
             }
             pending.add(clazz);
@@ -83,14 +251,14 @@ public final class ZenithAgentCallback {
                 try {
                     retransforms.add(clazz);
                     if (retransforms.size() >= 10) {
-                        instrumentation.retransformClasses(retransforms.toArray(Class[]::new));
+                        inst.retransformClasses(retransforms.toArray(Class[]::new));
                         transformed += 10;
                         retransforms.clear();
                     }
                 } catch (Exception exception) {
                     for (Class<?> c : retransforms) {
                         try {
-                            instrumentation.retransformClasses(c);
+                            inst.retransformClasses(c);
                             transformed++;
                         } catch (Exception e) {
                             failed++;
@@ -115,12 +283,12 @@ public final class ZenithAgentCallback {
             }
             if (!retransforms.isEmpty()) {
                 try {
-                    instrumentation.retransformClasses(retransforms.toArray(Class[]::new));
+                    inst.retransformClasses(retransforms.toArray(Class[]::new));
                     transformed += retransforms.size();
                 } catch (Exception exception) {
                     for (Class<?> c : retransforms) {
                         try {
-                            instrumentation.retransformClasses(c);
+                            inst.retransformClasses(c);
                             transformed++;
                         } catch (Exception e) {
                             failed++;
@@ -236,5 +404,4 @@ public final class ZenithAgentCallback {
             );
         }
     }
-
 }

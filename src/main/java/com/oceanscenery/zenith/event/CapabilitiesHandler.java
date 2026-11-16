@@ -114,12 +114,7 @@ public class CapabilitiesHandler {
         }
     }
 
-    @SubscribeEvent
     public static void serverTickCheck(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) {
-            return;
-        }
-
         boolean shouldCheck = false;
         for (ServerLevel serverLevel : event.getServer().getAllLevels()) {
             if (serverLevel.getGameTime() % 200 == 0) {
@@ -450,7 +445,7 @@ public class CapabilitiesHandler {
     }
 
     public static void setHitByZenith(Entity entity, Function<Boolean, Boolean> newValueGetter, long persist) {
-        setHitByZenith(entity, newValueGetter, entity.level().getGameTime(), persist);
+        setHitByZenith(entity, newValueGetter, entity.level().getGameTime() - 1, persist + 1);
     }
 
     public static void setHitByZenith(Entity entity, Function<Boolean, Boolean> newValue, long start, long persist) {

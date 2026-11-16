@@ -6,6 +6,7 @@
     "EntityMixin",
     "ItemEntityMixin",
     "LivingEntityMixin",
+    "MinecraftServerMixin",
     "accessor.ChunkMapAccessor",
     "accessor.EntityAccessor",
     "accessor.EntityLookupAccessor",
@@ -32,5 +33,6 @@
     "client.ItemInHandRendererMixin",
     "client.KeyMappingMixin"
   ],
-  "refmap": "the_zenith_sword.refmap.json"
+  "refmap": "the_zenith_sword.refmap.json",
+  "plugin": "com.oceanscenery.zenith.mixin.ZenithMixinPlugin"
 }
