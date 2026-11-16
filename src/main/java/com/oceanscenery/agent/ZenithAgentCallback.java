@@ -214,10 +214,6 @@ public final class ZenithAgentCallback {
         }
     }
 
-    // ------------------------------------------------------------------
-    // 首次全量 retransform
-    // ------------------------------------------------------------------
-
     private static void retransformLoaded() {
         Instrumentation inst = instrumentation;
         Set<String> targetNames = targets;
