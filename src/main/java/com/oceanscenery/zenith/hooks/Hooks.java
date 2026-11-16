@@ -32,8 +32,6 @@ public final class Hooks {
 
     private static final Pattern DRAGON_PATTERN = Pattern.compile("^iceandfire[^:]*:[^_]*_dragon$");
 
-    private static boolean flag = true;
-
     private static final Function<Entity, Optional<Integer>> SPECIAL_TIME = entity -> {
         String id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
         if (id.equals("minecraft:ender_dragon")) {
@@ -41,33 +39,6 @@ public final class Hooks {
         }
         if (id.startsWith("cataclysm:")) {
             return Optional.of(200);
-        }
-        if (id.contains("apollyon") && id.contains("goety")) {
-            return Optional.of(560);
-        }
-        if (id.equals("goety:apostle")) {
-            if (!flag) {
-                return Optional.of(200);
-            }
-            try {
-                Class<?> apostleClass = Class.forName("com.Polarice3.Goety.common.entities.boss.Apostle");
-
-                Method isInNether = apostleClass.getMethod("isInNether");
-                boolean inNether = (Boolean) isInNether.invoke(entity);
-
-                Method isApollyon = apostleClass.getMethod("allTitlesApostle_1_20_1$isApollyon");
-                boolean apollyon = Optional.of(isApollyon.invoke(entity))
-                    .filter(Boolean.TRUE::equals).isPresent();
-
-                if (apollyon && inNether) {
-                    return Optional.of(560);
-                }
-                return Optional.of(200);
-            } catch (Throwable t) {
-                TheZenithMod.LOGGER.warn("未识别到亚波伦");
-                flag = false;
-                return Optional.of(200);
-            }
         }
         if (DRAGON_PATTERN.matcher(id).matches()) {
             return Optional.of(12000);
@@ -200,6 +171,15 @@ public final class Hooks {
             .isPresent();
     }
 
+    public static boolean shouldAllSideDeath(Object mustEntity){
+        if (!(mustEntity instanceof LivingEntity living)) {
+            return false;
+        }
+        return AttachmentUtil.getExistingHealth(living)
+            .filter(h -> h.valid(living) && h.value() <= 0f)
+            .isPresent();
+    }
+
     private static boolean intervene(Object self, int minDeathTime) {
         if (!(self instanceof LivingEntity living)) {
             return false;
@@ -224,7 +204,7 @@ public final class Hooks {
 
     public static void onTickDeath(Object self) {
         if (self instanceof LivingEntity living) {
-            if (!shouldDoDeathAct(self)) {
+            if (!shouldAllSideDeath(self)) {
                 return;
             }
             if (AttachmentUtil.hitByZenith(living)) {
@@ -271,7 +251,7 @@ public final class Hooks {
         if (!(entity instanceof LivingEntity living)) {
             return origin;
         }
-        if (!shouldDoDeathAct(entity)) {
+        if (!shouldAllSideDeath(entity)) {
             return origin;
         }
         return Math.max(origin, living.deathTime);

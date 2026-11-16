@@ -14,7 +14,6 @@ import java.util.Iterator;
 
 @EventBusSubscriber(modid = TheZenithMod.MOD_ID)
 public class ServerEvents {
-    @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Pre event) {
         Iterator<ServerTickTask> iter = StaticCollections.taskList.iterator();
         while (iter.hasNext()) {
