@@ -1,11 +1,14 @@
 package com.oceanscenery.zenith.util;
 
+import com.oceanscenery.agent.ZenithAgentCallback;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.mixin.accessor.EntityAccessor;
 import com.oceanscenery.zenith.mixin.accessor.LivingEntityAccessor;
 import com.oceanscenery.zenith.mixin.accessor.PlayerAccessor;
 import com.oceanscenery.zenith.mixin.accessor.ServerPlayerAccessor;
 import com.oceanscenery.zenith.mod_class.ZenithDamageSource;
+import com.oceanscenery.zenith.mod_class.attachment.ZenithHealthMark;
+import com.oceanscenery.zenith.mod_class.attachment.ZenithHitMark;
 import com.oceanscenery.zenith.mod_class.data_component.AttackMode;
 import com.oceanscenery.zenith.mod_class.entity.ZenithProjectile;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
@@ -248,6 +251,10 @@ public class DamageHandler {
         AttachmentUtil.setHealth(livingVictim, health);
         float postCheckedHealth = livingVictim.getHealth();
 
+        if (healthMismatch(livingVictim)) {
+            ZenithAgentCallback.onMismatch(livingVictim.getClass());
+        }
+
         ConfigUtil.redirectDamageAction(livingVictim, prevCheckedHealth, postCheckedHealth, damage, source);
 
         if (shouldCheck && livingVictim.level() instanceof ServerLevel serverLevel) {
@@ -336,5 +343,13 @@ public class DamageHandler {
                 AttachmentUtil.setHealth(livingEntity, Math.min(20f, livingEntity.getMaxHealth()));
             }
         }
+    }
+
+    private static boolean healthMismatch(LivingEntity living) {
+        ZenithHealthMark mark = AttachmentUtil.getHealth(living);
+        if (!mark.valid(living)) {
+            return false;
+        }
+        return Float.compare(living.getHealth(), mark.value()) != 0;
     }
 }
