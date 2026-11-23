@@ -6,6 +6,7 @@
     "EntityMixin",
     "ItemEntityMixin",
     "LivingEntityMixin",
+    "LootPoolMixin",
     "MinecraftServerMixin",
     "accessor.ChunkMapAccessor",
     "accessor.EntityAccessor",
@@ -29,6 +30,8 @@
   "client": [
     "accessor.ClientLevelAccessor",
     "accessor.KeyMappingAccessor",
+    "client.ClientLevelTickMixin",
+    "client.EntityRenderDispatcherMixin",
     "client.ItemInHandLayerMixin",
     "client.ItemInHandRendererMixin",
     "client.KeyMappingMixin"

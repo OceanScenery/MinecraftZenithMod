@@ -4,7 +4,9 @@ import com.oceanscenery.zenith.TheZenithMod;
 import net.minecraft.world.entity.LivingEntity;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FrameNode;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
@@ -25,6 +27,7 @@ public final class ZenithAgentCallback {
 
     private static final boolean TRANSFORMER_PROBE =
         Boolean.getBoolean("zenith.debug.transformer.probe");
+    private static final boolean DEBUG = Boolean.getBoolean("zenith.debug.transformer.patch");
     private static final int CACHE_CLEAR_INTERVAL = 128;
     private static final int CACHE_PRESSURE_CLEAR_INTERVAL = 16;
     private static final double CACHE_CLEAR_HEAP_RATIO = 0.80d;
@@ -216,7 +219,6 @@ public final class ZenithAgentCallback {
 
     private static void retransformLoaded() {
         Instrumentation inst = instrumentation;
-        Set<String> targetNames = targets;
         if (inst == null) {
             return;
         }
@@ -227,11 +229,8 @@ public final class ZenithAgentCallback {
                 continue;
             }
             String name = clazz.getName().replace('.', '/');
-            if ("net/minecraft/world/entity/Entity".equals(name)) {
-                pending.add(clazz);
-                continue;
-            }
-            if (!targetNames.contains(name) || !inst.isModifiableClass(clazz)) {
+            if (!transformer.matches(name) || !inst.isModifiableClass(clazz)
+                || (ZenithTransformer.vanilla(name) && !net.minecraft.world.entity.Entity.class.isAssignableFrom(clazz))) {
                 continue;
             }
             pending.add(clazz);
@@ -255,12 +254,12 @@ public final class ZenithAgentCallback {
                         transformed += 10;
                         retransforms.clear();
                     }
-                } catch (Exception exception) {
+                } catch (Exception | LinkageError exception) {
                     for (Class<?> c : retransforms) {
                         try {
                             inst.retransformClasses(c);
                             transformed++;
-                        } catch (Exception e) {
+                        } catch (Exception | LinkageError e) {
                             failed++;
                             TheZenithMod.LOGGER.error(
                                 "[ZenithAgent] retransform failed for {}, continuing with remaining classes",
@@ -285,12 +284,12 @@ public final class ZenithAgentCallback {
                 try {
                     inst.retransformClasses(retransforms.toArray(Class[]::new));
                     transformed += retransforms.size();
-                } catch (Exception exception) {
+                } catch (Exception | LinkageError exception) {
                     for (Class<?> c : retransforms) {
                         try {
                             inst.retransformClasses(c);
                             transformed++;
-                        } catch (Exception e) {
+                        } catch (Exception | LinkageError e) {
                             failed++;
                             TheZenithMod.LOGGER.error(
                                 "[ZenithAgent] retransform failed for {}, continuing with remaining classes",
@@ -334,6 +333,23 @@ public final class ZenithAgentCallback {
         return (double) (runtime.totalMemory() - runtime.freeMemory()) / max;
     }
 
+    public static byte[] writePatchedClass(ClassReader reader, ClassNode node) {
+        // The JVM infers frames for pre-Java 6 classes, including legacy jsr/ret methods.
+        if ((node.version & 0xffff) < Opcodes.V1_6) {
+            for (var method : node.methods) {
+                var instructions = method.instructions.iterator();
+                while (instructions.hasNext()) {
+                    if (instructions.next() instanceof FrameNode) {
+                        instructions.remove();
+                    }
+                }
+            }
+        }
+        ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
+        node.accept(writer);
+        return writer.toByteArray();
+    }
+
     private static final class Patcher implements ClassFileTransformer {
         @Override
         public byte[] transform(Module module, ClassLoader loader
@@ -341,7 +357,7 @@ public final class ZenithAgentCallback {
             if (className == null || classBuffer == null || classBuffer.length == 0) {
                 return null;
             }
-            if (!targets.contains(className)) {
+            if (!transformer.matches(className)) {
                 return null;
             }
 
@@ -358,12 +374,11 @@ public final class ZenithAgentCallback {
                     return null;
                 }
 
-                ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
-                node.accept(writer);
-                if (PATCHED.add(className)) {
+                byte[] bytes = writePatchedClass(reader, node);
+                if (DEBUG && PATCHED.add(className)) {
                     TheZenithMod.LOGGER.info("[ZenithAgent] patched {} (post-mixin)", className);
                 }
-                return writer.toByteArray();
+                return bytes;
             } catch (Exception exception) {
                 TheZenithMod.LOGGER.error("[ZenithAgent] failed to modify {}", className, exception);
                 throw new IllegalStateException("Zenith failed to modify " + className, exception);

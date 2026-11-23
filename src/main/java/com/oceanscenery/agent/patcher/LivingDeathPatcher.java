@@ -166,7 +166,7 @@ public final class LivingDeathPatcher {
         boolean changed = false;
         for (MethodNode method : classNode.methods) {
             //遍历当前类的method
-            if ((method.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0) {
+            if (method.name.startsWith("<") || (method.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0) {
                 continue;
             }
 
@@ -890,12 +890,9 @@ public final class LivingDeathPatcher {
 
     private static boolean hasDeathTimeWrite(ClassNode classNode) {
         for (MethodNode method : classNode.methods) {
+            if (method.name.startsWith("<")) continue;
             for (AbstractInsnNode insn : method.instructions) {
-                if (insn instanceof FieldInsnNode field
-                    && insn.getOpcode() == Opcodes.PUTFIELD
-                    && "I".equals(field.desc)
-                    && (DEATH_TIME_NAME.equals(field.name)
-                    || DEATH_TIME_SRG_NAME.equals(field.name))) {
+                if (writeDeathTime(insn)) {
                     return true;
                 }
             }

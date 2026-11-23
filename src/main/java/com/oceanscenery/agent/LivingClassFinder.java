@@ -2,7 +2,10 @@ package com.oceanscenery.agent;
 
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.ModFileScanData;
+import org.objectweb.asm.ClassReader;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 public final class LivingClassFinder {
@@ -23,20 +26,33 @@ public final class LivingClassFinder {
         //这两个类肯定要处理
         result.add(LIVING_ENTITY);
         result.add(ENTITY);
+        Map<String, String> resolved = new HashMap<>(parents);
 
         for (String name : parents.keySet()) { //所有有父类的类名
             String current = name;
             Set<String> visited = new HashSet<>();
             while (current != null && visited.add(current)) {
-                //一路向2上寻找，如果找到了LivingEntity类，说明是其子类
+                //一路向上寻找，如果找到了LivingEntity类，说明是其子类
                 if (LIVING_ENTITY.equals(current)) {
-                    result.add(name);
+                    result.addAll(visited);
                     break;
                 }
-                current = parents.get(current);
+                if (!resolved.containsKey(current)) {
+                    resolved.put(current, readParent(current));
+                }
+                current = resolved.get(current);
             }
         }
         return result;
+    }
+
+    private static String readParent(String internalName) {
+        if (internalName.startsWith("java/")) return null;
+        try (InputStream input = LivingClassFinder.class.getClassLoader().getResourceAsStream(internalName + ".class")) {
+            return input == null ? null : new ClassReader(input).getSuperName();
+        } catch (IOException ignored) {
+            return null;
+        }
     }
 
     /**

@@ -153,7 +153,7 @@ public class CapabilitiesHandler {
         if (entity == null) {
             return;
         }
-        if (((EntityAccessor) entity).zenith$getRemovalReason() != null || IZenithEntityExtension.of(entity).zenith$removed()) {
+        if (((EntityAccessor) entity).zenith$getRemovalReason() != null || IZenithEntityExtension.of(entity).zenith$isAllReturn()) {
             entity.invalidateCaps();
         }
     }
@@ -424,6 +424,8 @@ public class CapabilitiesHandler {
             }
         } catch (NullPointerException e) {
             TheZenithMod.LOGGER.error("A damageSource that should have none-null attacker has null attacker", e);
+        } finally {
+            checkRemoved(livingVictim);
         }
     }
 
@@ -441,7 +443,7 @@ public class CapabilitiesHandler {
     }
 
     public static void setHitByZenith(Entity entity, Function<Boolean, Boolean> newValueGetter) {
-        setHitByZenith(entity, newValueGetter, 20);
+        setHitByZenith(entity, newValueGetter, 200);
     }
 
     public static void setHitByZenith(Entity entity, Function<Boolean, Boolean> newValueGetter, long persist) {

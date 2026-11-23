@@ -1,6 +1,7 @@
 package com.oceanscenery.zenith.client;
 
 import com.oceanscenery.zenith.TheZenithMod;
+import com.oceanscenery.zenith.mixin_extension.IZenithEntityExtension;
 import com.oceanscenery.zenith.client.packet.SyncZenithMarkPacket;
 import com.oceanscenery.zenith.client.packet.SyncZenithSlotPacket;
 import com.oceanscenery.zenith.event.CapabilitiesHandler;
@@ -43,15 +44,18 @@ public final class ZenithClientPacketHandler {
     }
 
     public static void handleZenithMarkPacket(SyncZenithMarkPacket packet) {
-        if (packet.type() != 0 && packet.type() != 1) {
+        if (packet.type() != 0 && packet.type() != 1 && packet.type() != SyncZenithMarkPacket.FORCED_REMOVAL) {
             return;
         }
 
-        String key = (packet.type() == 0 ? KEY_MARK_HIT : KEY_MARK_HEALTH) + packet.entityUuid();
+        String key = (packet.type() == SyncZenithMarkPacket.FORCED_REMOVAL ? "forcedRemoval:"
+            : packet.type() == 0 ? KEY_MARK_HIT : KEY_MARK_HEALTH) + packet.entityUuid();
         if (tryApplyMark(packet)) {
             return;
         }
-        PendingSync.enqueue(key, PendingSync.DEFAULT_DROP_TIME, level -> tryApplyMark(packet));
+        long lifetime = packet.type() == SyncZenithMarkPacket.FORCED_REMOVAL
+            ? PendingSync.SHORT_DROP_TIME : PendingSync.DEFAULT_DROP_TIME;
+        PendingSync.enqueue(key, lifetime, level -> tryApplyMark(packet));
     }
 
     public static void handleEntityInfPacket(int entityId, boolean inList) {
@@ -83,7 +87,6 @@ public final class ZenithClientPacketHandler {
 
         slot.setDistance(packet.distance());
         slot.setMode(packet.mode());
-        // 先置 valid 再设置 open：IZenithSlot#toggle 内部要求 valid 为 true 才会生效
         slot.setValid(packet.valid());
         slot.toggle(current -> packet.open());
         return true;
@@ -140,6 +143,17 @@ public final class ZenithClientPacketHandler {
     }
 
     private static boolean apply(Entity entity, SyncZenithMarkPacket packet) {
+        if (packet.type() == SyncZenithMarkPacket.FORCED_REMOVAL) {
+            var state = IZenithEntityExtension.of(entity);
+            if (!state.zenith$isAllReturn()) {
+                try {
+                    ((ClientLevel) entity.level()).removeEntity(entity.getId(), Entity.RemovalReason.DISCARDED);
+                } finally {
+                    state.zenith$setAllReturn(true);
+                }
+            }
+            return true;
+        }
         if (packet.type() == 0) {
             IZenithHitMark cap = CapabilitiesHandler.getHitMark(entity);
             if (cap == null) {

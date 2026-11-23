@@ -3,15 +3,19 @@ package com.oceanscenery.zenith.util;
 import com.oceanscenery.agent.ZenithAgentCallback;
 import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.event.CapabilitiesHandler;
+import com.oceanscenery.zenith.event.ServerTickTask;
 import com.oceanscenery.zenith.mixin.accessor.EntityAccessor;
 import com.oceanscenery.zenith.mixin.accessor.LivingEntityAccessor;
 import com.oceanscenery.zenith.mixin.accessor.PlayerAccessor;
 import com.oceanscenery.zenith.mixin.accessor.ServerPlayerAccessor;
+import com.oceanscenery.zenith.mixin_extension.IZenithEntityExtension;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
 import com.oceanscenery.zenith.registry.ZenithItems;
+import com.oceanscenery.zenith.server.ZenithNetworkHandler;
 import com.oceanscenery.zenith.zenith_class.ZenithDamageSource;
 import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithHealthMark;
 import com.oceanscenery.zenith.zenith_class.entity.ZenithProjectile;
+import com.oceanscenery.zenith.zenith_class.saved_data.RemovedEntitiesData;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -41,7 +45,7 @@ public class DamageHandler {
     private static final ThreadLocal<Boolean> inMethod = ThreadLocal.withInitial(() -> false);
 
     public static final AttackFilter DEFAULT_FILTER = (attacker, victim, weapon) -> {
-        if (weapon == null) {
+        if (weapon == null || IZenithEntityExtension.of(victim).zenith$isAllReturn()) {
             return false;
         }
         if (weapon.is(ZenithItems.ZENITH.get())) {
@@ -163,6 +167,8 @@ public class DamageHandler {
 
                 if (realDamage < expectedDamage) {
                     setHealthAndHurt(currVictim, currRecord.initialHealth - expectedDamage, source);
+                } else {
+                    setHealthAndHurt(currVictim, currVictim.getHealth() - 0.1f, source);
                 }
             }
 
@@ -243,7 +249,7 @@ public class DamageHandler {
         }
         float postCheckedHealth = livingVictim.getHealth();
 
-        if (healthMismatch(livingVictim)) {
+        if (stateMismatch(livingVictim)) {
             ZenithAgentCallback.onMismatch(livingVictim.getClass());
         }
 
@@ -256,16 +262,60 @@ public class DamageHandler {
 
     public static void decideDeath(LivingEntity livingVictim, float prevCheckedHealth, float postCheckedHealth, float damage, DamageSource source) {
         if (postCheckedHealth >= prevCheckedHealth && !livingVictim.isDeadOrDying()) {
-            deathProcess(livingVictim, source);
+            StaticCollections.taskList.add(
+                new ServerTickTask(30, () -> deathProcess(livingVictim, source))
+            );
         } else if (livingVictim.isDeadOrDying() || livingVictim.getHealth() <= 0f) {
-            deathProcess(livingVictim, source);
+            StaticCollections.taskList.add(
+                new ServerTickTask(30, () -> deathProcess(livingVictim, source))
+            );
         }
     }
 
     public static void deathProcess(LivingEntity livingVictim, DamageSource source) {
+        var state = IZenithEntityExtension.of(livingVictim);
+        if (state.zenith$inRemoval() || state.zenith$isAllReturn()
+            || !(livingVictim.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        state.zenith$setInRemoval(true);
+        try {
+            if (!(livingVictim instanceof Player)
+                && !RemovedEntitiesData.record(level, state.zenith$rawId())) {
+                return;
+            }
+
+            try {
+                finishDeath(livingVictim, source);
+            } finally {
+                finishRemoval(livingVictim);
+            }
+        } finally {
+            state.zenith$setInRemoval(false);
+        }
+    }
+
+    private static void finishRemoval(LivingEntity victim) {
+        if (victim instanceof Player) {
+            EntityUtil.remove(victim);
+            return;
+        }
+        try {
+            ZenithNetworkHandler.syncForcedRemoval(victim);
+        } finally {
+            try {
+                EntityUtil.remove(victim);
+            } finally {
+                IZenithEntityExtension.of(victim).zenith$setAllReturn(true);
+            }
+        }
+    }
+
+    private static void finishDeath(LivingEntity livingVictim, DamageSource source) {
         if (livingVictim.level() instanceof ServerLevel serverLevel) {
             if (!(livingVictim instanceof ServerPlayer sp) || !sp.isSpectator()) {
-                ((LivingEntityAccessor) livingVictim).callDropAllDeathLoot(source);
+                ForcedLoot.drop(livingVictim, source);
             }
         }
 
@@ -319,10 +369,12 @@ public class DamageHandler {
             );
         }
 
-        EntityUtil.remove(livingVictim);
     }
 
     public static void checkDeath(LivingEntity livingEntity, ServerLevel serverLevel, DamageSource source) {
+        if (IZenithEntityExtension.of(livingEntity).zenith$isAllReturn()) {
+            return;
+        }
         SynchedEntityData data = ((EntityAccessor) livingEntity).getRealEntityData();
         EntityDataAccessor<Float> healthId = LivingEntityAccessor.getHealthId();
 
@@ -338,11 +390,17 @@ public class DamageHandler {
         }
     }
 
-    private static boolean healthMismatch(LivingEntity living) {
+    private static boolean stateMismatch(LivingEntity living) {
         IZenithHealthMark mark = CapabilitiesHandler.getHealth(living);
-        if (mark == null || !mark.valid(living)) {
-            return false;
+        if (mark != null && mark.valid(living)) {
+            if (Float.compare(living.getHealth(), mark.value()) != 0) {
+                return true;
+            }
+            float real = mark.value();
+            if (real <= 0f && (living.isAlive() || !living.isDeadOrDying())) {
+                return true;
+            }
         }
-        return Float.compare(living.getHealth(), mark.value()) != 0;
+        return false;
     }
 }

@@ -7,6 +7,7 @@ import com.oceanscenery.zenith.event.CapabilitiesHandler;
 import com.oceanscenery.zenith.mixin_extension.IZenithLivingEntityExtension;
 import com.oceanscenery.zenith.registry.ZenithDamageTypes;
 import com.oceanscenery.zenith.util.ConfigUtil;
+import com.oceanscenery.zenith.util.ForcedLoot;
 import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithSlot;
 import net.minecraft.core.Holder;
 import net.minecraft.world.damagesource.DamageSource;
@@ -17,6 +18,8 @@ import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = LivingEntity.class, priority = 150000)
 public abstract class LivingEntityMixin implements IZenithLivingEntityExtension {
@@ -24,6 +27,11 @@ public abstract class LivingEntityMixin implements IZenithLivingEntityExtension 
     private int zenith$deathTime = 0;
     @Unique
     private boolean zenith$dead = false;
+
+    @Inject(method = "dropAllDeathLoot", at = @At("HEAD"))
+    private void zenith$enterLoot(DamageSource source, CallbackInfo ci) {
+        ForcedLoot.enteringBase((LivingEntity) (Object) this);
+    }
 
     @WrapWithCondition(
         method = "hurt",

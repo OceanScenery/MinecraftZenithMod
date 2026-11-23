@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 public record SyncZenithMarkPacket(
     int entityId, UUID entityUuid, int type, long startTime, long endTime, boolean flag,
     float value) implements IZenithPacket {
+    public static final int FORCED_REMOVAL = 2;
     public SyncZenithMarkPacket(FriendlyByteBuf buf) {
         this(
             buf.readInt(),

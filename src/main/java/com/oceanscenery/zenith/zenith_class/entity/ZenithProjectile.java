@@ -93,14 +93,15 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
     @Override
     public @Nullable Entity getOwner() {
-        if (this.cachedOwner != null && !this.cachedOwner.isRemoved()) {
+        UUID uuid = this.getOwnerUUID();
+        if (this.cachedOwner != null && !this.cachedOwner.isRemoved()
+            && this.cachedOwner.getUUID().equals(uuid)) {
             return this.cachedOwner;
-        } else if (this.getOwnerUUID() != null) {
-            this.cachedOwner = LevelUtil.getEntity(this.level(), this.getOwnerUUID());
-            return this.cachedOwner;
-        } else {
-            return null;
         }
+        if (uuid == null) return null;
+        Entity byId = this.level().getEntity(this.getOwnerID());
+        this.cachedOwner = byId != null && uuid.equals(byId.getUUID()) ? byId : LevelUtil.getEntity(this.level(), uuid);
+        return this.cachedOwner;
     }
 
     public void setOwner(Entity owner) {
@@ -196,7 +197,7 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     }
 
     public int getLocalProgress() {
-        return this.local_progress;
+        return Math.max(this.local_progress, this.getProgress());
     }
 
     public float getDamage() {
@@ -245,22 +246,19 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.getOwner() == null) {
-            this.discard();
-            return;
-        }
         Entity owner = this.getOwner();
         if (owner == null) {
-            if (!this.level().isClientSide()) {
+            // Spawn and entity metadata can arrive on different client ticks.
+            if (!this.level().isClientSide() || this.tickCount > STAGE_COUNT) {
                 this.discard();
             }
             return;
         }
         int realId = owner.getId();
-        if (this.getOwnerID() != realId) {
+        if (!this.level().isClientSide() && this.getOwnerID() != realId) {
             this.setOwnerID(realId);
         }
-        Vector3 pos = PosUtil.calPos(this.getDistance(), this.getProgress(), this.getAngle());
+        Vector3 pos = PosUtil.calPos(this.getDistance(), this.getLocalProgress(), this.getAngle());
         Vector3[] reference = this.getReference();
         Vector3[] world = Vector3.WORLD;
 
@@ -289,18 +287,16 @@ public class ZenithProjectile extends Entity implements TraceableEntity {
 
         last_pos = realPos;
 
-        this.setProgress(this.getProgress() + 1);
-        if (this.getProgress() > STAGE_COUNT) {
+        if (this.level().isClientSide()) {
+            this.local_progress = Math.max(this.local_progress + 1, this.getProgress());
+        } else {
+            this.setProgress(this.getProgress() + 1);
+        }
+        if (this.getLocalProgress() > STAGE_COUNT) {
             if (!this.to_remove) {
                 this.to_remove = true;
             }
             this.discard();
-        }
-        if (this.level().isClientSide()) {
-            if (this.local_progress == -1) {
-                this.local_progress = this.getProgress();
-            }
-            this.local_progress++;
         }
     }
 

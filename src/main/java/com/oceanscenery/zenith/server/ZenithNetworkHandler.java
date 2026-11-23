@@ -1,6 +1,7 @@
 package com.oceanscenery.zenith.server;
 
 import com.oceanscenery.zenith.TheZenithMod;
+import com.oceanscenery.zenith.mixin_extension.IZenithEntityExtension;
 import com.oceanscenery.zenith.client.packet.SyncZenithMarkPacket;
 import com.oceanscenery.zenith.client.packet.SyncZenithSlotPacket;
 import com.oceanscenery.zenith.server.packet.ToggleZenithSlotOpenStatePacket;
@@ -181,6 +182,10 @@ public class ZenithNetworkHandler {
      * 把entity的两种标记信息发给玩家
      */
     public static void sendSnapshot(ServerPlayer player, Entity entity) {
+        if (IZenithEntityExtension.of(entity).zenith$isAllReturn()) {
+            playToClient(forcedRemovalPacket(entity), player);
+            return;
+        }
         SyncZenithMarkPacket hit = createHitPacketFrom(entity);
         SyncZenithMarkPacket health = createHealthPacketFrom(entity);
 
@@ -190,6 +195,16 @@ public class ZenithNetworkHandler {
         if (health != null) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), health);
         }
+    }
+
+    private static SyncZenithMarkPacket forcedRemovalPacket(Entity entity) {
+        return new SyncZenithMarkPacket(entity.getId(), entity.getUUID(), SyncZenithMarkPacket.FORCED_REMOVAL,
+            0L, 0L, true, 0f);
+    }
+
+    public static void syncForcedRemoval(Entity entity) {
+        // A client may retain the boss even when the original tracker has stopped tracking it.
+        CHANNEL.send(PacketDistributor.DIMENSION.with(() -> entity.level().dimension()), forcedRemovalPacket(entity));
     }
 
     /**

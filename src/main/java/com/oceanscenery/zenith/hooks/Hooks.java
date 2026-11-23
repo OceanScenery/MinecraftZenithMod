@@ -273,67 +273,6 @@ public final class Hooks {
         return Math.max(origin, living.deathTime);
     }
 
-    public static void onRemoveEnd(Object mustEntity, Object reason) {
-        try {
-            if (mustEntity instanceof Entity entity && CapabilitiesHandler.hitByZenith(entity)) {
-                if (entity instanceof Player || entity.level().isClientSide()) {
-                    return;
-                }
-                if (entity instanceof ZenithProjectile) {
-                    return;
-                }
-                if (((EntityAccessor) entity).zenith$getRemovalReason() != null || IZenithEntityExtension.of(entity).zenith$removed()) {
-                    return;
-                }
-                if (!entity.level().isClientSide()) {
-                    Entity.RemovalReason real = null;
-                    if (reason instanceof Entity.RemovalReason reason1) {
-                        real = reason1;
-                    }
-                    if (reason instanceof String name) {
-                        if (name.equals("killed")) {
-                            if (!(entity instanceof LivingEntity livingEntity) || livingEntity.isDeadOrDying()) {
-                                real = Entity.RemovalReason.KILLED;
-                            }
-                        }
-                        if (name.equals("discarded")) {
-                            real = Entity.RemovalReason.DISCARDED;
-                        }
-                    }
-                    if (((EntityAccessor) entity).zenith$getRemovalReason() == null && real != null) {
-                        IZenithEntityExtension.of(entity).zenith$remove();
-                        ((EntityAccessor) entity).zenith$setRemovalReason(real);
-                        if (real.shouldDestroy()) {
-                            entity.stopRiding();
-                        }
-                        entity.getPassengers().forEach(Entity::stopRiding);
-                        ((EntityAccessor) entity).zenith$getLevelCallback().onRemove(real);
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            TheZenithMod.LOGGER.error("Found an Throwable when removing an entity", t);
-        }
-    }
-
-    public static boolean modifyIsRemoved(boolean origin, Object mustEntity) {
-        if (mustEntity instanceof Entity entity) {
-            if (entity.level().isClientSide()) {
-                return origin;
-            }
-            if (entity instanceof ZenithProjectile) {
-                return origin;
-            }
-            if (IZenithEntityExtension.of(entity).zenith$removed()) {
-                if (((EntityAccessor) entity).zenith$getRemovalReason() == null) {
-                    ((EntityAccessor) entity).zenith$setRemovalReason(Entity.RemovalReason.KILLED);
-                }
-                return true;
-            }
-        }
-        return origin;
-    }
-
     public static boolean shouldIgnoreKnockBack(DamageSource source, Object entity) {
         if (!(entity instanceof Entity)) {
             return false;

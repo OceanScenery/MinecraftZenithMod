@@ -2,7 +2,6 @@ package com.oceanscenery.zenith.util;
 
 import com.oceanscenery.zenith.event.CapabilitiesHandler;
 import com.oceanscenery.zenith.registry.ZenithConfigs;
-import com.oceanscenery.zenith.zenith_class.config.InvalidDamageAction;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.fml.ModList;
@@ -58,18 +57,25 @@ public class ConfigUtil {
         return ZenithConfigs.ZENITH_CONFIG.enable_terra_damage_modifier.get();
     }
 
-    public static InvalidDamageAction invalidAction() {
-        return ZenithConfigs.ZENITH_CONFIG.invalid_damage_action.get();
+    public static boolean forceRemoval() {
+        return ZenithConfigs.ZENITH_CONFIG.forceRemoval.get();
+    }
+
+    public static void rethrowUnlessRemove(RuntimeException failure) {
+        try {
+            if (ZenithConfigs.CONFIG.isLoaded() && forceRemoval()) {
+                return;
+            }
+        } catch (IllegalStateException | NullPointerException ignored) {
+        }
+        throw failure;
     }
 
     public static void redirectDamageAction(LivingEntity livingVictim, float prevCheckedHealth, float postCheckedHealth, float damage, DamageSource source) {
-        switch (ZenithConfigs.ZENITH_CONFIG.invalid_damage_action.get()) {
-            case REMOVE ->
-                DamageHandler.decideDeath(livingVictim, prevCheckedHealth, postCheckedHealth, damage, source);
-            case DELAYED ->
-                CapabilitiesHandler.addDamageMark(livingVictim, prevCheckedHealth, postCheckedHealth, damage, source);
-            default -> {
-            }
+        if (forceRemoval()) {
+            DamageHandler.decideDeath(livingVictim, prevCheckedHealth, postCheckedHealth, damage, source);
+        } else {
+            CapabilitiesHandler.addDamageMark(livingVictim, prevCheckedHealth, postCheckedHealth, damage, source);
         }
     }
 }

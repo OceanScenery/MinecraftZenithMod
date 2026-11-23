@@ -9,6 +9,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.protocol.game.ClientboundBossEventPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerCombatKillPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.server.level.ServerBossEvent;
@@ -86,6 +87,11 @@ public class EntityUtil {
 
             commonRemove(entity, Entity.RemovalReason.KILLED);
 
+            try {
+                clearBossBars(entity);
+            } catch (Throwable t) {
+            }
+
             ServerLevel serverLevel = (ServerLevel) entity.level();
             try {
                 var manager = ((ServerLevelAccessor) serverLevel).zenith$getEntityManager();
@@ -162,11 +168,6 @@ public class EntityUtil {
                 }
             } catch (Throwable t) {
             }
-
-            try {
-                clearBossBars(entity);
-            } catch (Throwable t) {
-            }
         } catch (Throwable t) {
             TheZenithMod.LOGGER.error("Failed to force remove entity.", t);
         }
@@ -202,6 +203,11 @@ public class EntityUtil {
                 if (!BossEvent.class.isAssignableFrom(field.getType())) {
                     continue;
                 }
+                if (entity.level() instanceof ServerLevel serverLevel) {
+                    for (ServerPlayer player : serverLevel.players()) {
+                        entity.stopSeenByPlayer(player);
+                    }
+                }
 
                 try {
                     field.setAccessible(true);
@@ -209,6 +215,13 @@ public class EntityUtil {
                     if (value instanceof ServerBossEvent event) {
                         event.removeAllPlayers();
                         event.setVisible(false);
+                    } else {
+                        var packet = ClientboundBossEventPacket.createRemovePacket(((BossEvent) value).getId());
+                        if (entity.level() instanceof ServerLevel serverLevel) {
+                            for (ServerPlayer player : serverLevel.players()) {
+                                player.connection.send(packet);
+                            }
+                        }
                     }
                 } catch (Throwable t) {
                     TheZenithMod.LOGGER.info("caught an exception when scanning boss bar.", t);

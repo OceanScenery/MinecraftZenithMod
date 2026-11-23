@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -16,7 +17,7 @@ public final class RenderZenithTrail {
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
-            ZenithProjectileRenderer.discardPendingTrails();
+            ZenithProjectileRenderer.beginStagedWindow();
             return;
         }
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
@@ -27,6 +28,13 @@ public final class RenderZenithTrail {
             return;
         }
         ZenithProjectileRenderer.drawTrailsAfterLevel();
+    }
+
+    @SubscribeEvent
+    public static void onFrameEnd(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            ZenithProjectileRenderer.finishStagedWindow();
+        }
     }
 
     @SubscribeEvent

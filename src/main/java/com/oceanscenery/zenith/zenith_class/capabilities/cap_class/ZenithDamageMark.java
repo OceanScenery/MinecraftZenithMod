@@ -3,7 +3,6 @@ package com.oceanscenery.zenith.zenith_class.capabilities.cap_class;
 import com.oceanscenery.zenith.registry.ZenithCapabilities;
 import com.oceanscenery.zenith.util.ConfigUtil;
 import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithDamageMark;
-import com.oceanscenery.zenith.zenith_class.config.InvalidDamageAction;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.Capability;
@@ -28,7 +27,7 @@ public class ZenithDamageMark implements IZenithDamageMark {
 
     @Override
     public HashMap<UUID, Float> getMap() {
-        if (ConfigUtil.invalidAction() != InvalidDamageAction.DELAYED) {
+        if (ConfigUtil.forceRemoval()) {
             this.map.clear();
         }
         return this.map;

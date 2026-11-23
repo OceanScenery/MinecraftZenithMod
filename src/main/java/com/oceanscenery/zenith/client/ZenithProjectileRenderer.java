@@ -30,11 +30,12 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GL30;
 
 public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProjectile> {
     private static final ResourceLocation WHITE_TEXTURE = ResourceLocation.fromNamespaceAndPath("forge", "textures/white.png");
     private static boolean useEntityTrails;
+    private static boolean stagedWindowOpen;
+    private static boolean stagedTrailsPending;
     private static boolean entityTrailsDisabled;
     private static boolean swordRenderingDisabled;
     private static final double[] BANDS = {-2.0, -1.15, -0.42, 0, 0.42, 1.15, 2.0};
@@ -97,7 +98,7 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         }
         int progress = Math.min(entity.getLocalProgress(), ZenithProjectile.STAGE_COUNT + 1);
         if (progress > ZenithProjectile.STAGE_COUNT
-            || !(entity.level().getEntity(entity.getOwnerID()) instanceof LivingEntity owner)) {
+            || !(entity.getOwner() instanceof LivingEntity owner)) {
             return;
         }
 
@@ -165,7 +166,6 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
     private void renderSword(ZenithProjectile entity, int swordType, double progressAngle, double distance
         , Quaternion[] fixed, Vector3 normal
         , double x, double y, double z, PoseStack.Pose pose, MultiBufferSource buffers) {
-        // ItemRenderer may throw with its own pose still on the stack.
         swordPoses.last().pose().set(pose.pose());
         swordPoses.last().normal().set(pose.normal());
         swordPoses.translate(x, y, z);
@@ -190,10 +190,12 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
 
     private void renderTrail(ZenithProjectile entity, float partialTick, double progressAngle, double totalAngle
         , int[] color, Vec3 eye, Minecraft minecraft, PoseStack.Pose pose, MultiBufferSource buffers) {
-        if (!useEntityTrails) {
+        if (!useEntityTrails && stagedWindowOpen) {
             try {
-                submitTrail(entity, partialTick, progressAngle, totalAngle, color, eye, minecraft, pose, buffers, true);
-                return;
+                if (GlStateManager.getBoundFramebuffer() == minecraft.getMainRenderTarget().frameBufferId) {
+                    submitTrail(entity, partialTick, progressAngle, totalAngle, color, eye, minecraft, pose, buffers, true);
+                    return;
+                }
             } catch (RuntimeException | LinkageError failure) {
                 switchToEntityTrails("Zenith staged trail submission failed.", failure);
             }
@@ -428,8 +430,21 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         private float r, g, b, alpha, coreAlpha;
     }
 
+    static void beginStagedWindow() {
+        finishStagedWindow();
+        stagedWindowOpen = !useEntityTrails;
+    }
+
+    static void finishStagedWindow() {
+        if (stagedWindowOpen && !useEntityTrails && stagedTrailsPending) {
+            switchToEntityTrails("Zenith trail vertices were submitted but AFTER_LEVEL did not consume them.", null);
+        }
+        stagedWindowOpen = false;
+    }
+
     static void drawTrailsAfterLevel() {
-        if (!useEntityTrails) {
+        stagedWindowOpen = false;
+        if (stagedTrailsPending && !useEntityTrails) {
             try {
                 DeferredTrails.draw();
             } catch (RuntimeException | LinkageError failure) {
@@ -439,7 +454,8 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
     }
 
     static void discardPendingTrails() {
-        if (!useEntityTrails) {
+        stagedWindowOpen = false;
+        if (stagedTrailsPending && !useEntityTrails) {
             try {
                 DeferredTrails.discard();
             } catch (RuntimeException | LinkageError failure) {
@@ -457,7 +473,9 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         try {
             DeferredTrails.discard();
         } catch (RuntimeException | LinkageError cleanupFailure) {
-            if (cleanupFailure != failure) {
+            if (failure == null) {
+                failure = cleanupFailure;
+            } else if (cleanupFailure != failure) {
                 failure.addSuppressed(cleanupFailure);
             }
         }
@@ -471,44 +489,44 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         private static final BufferBuilder CORE_BUFFER = new BufferBuilder(32768);
         private static final BufferBuilder HALO_BUFFER = new BufferBuilder(32768);
         private static final Matrix4f modelViewAtSubmission = new Matrix4f();
-        private static boolean pending;
+        private static final Matrix4f projectionAtSubmission = new Matrix4f();
+        private static VertexSorting sortingAtSubmission;
 
         private static void beginSubmission() {
-            if (!pending) {
+            if (!stagedTrailsPending) {
                 modelViewAtSubmission.set(RenderSystem.getModelViewStack().last().pose());
+                projectionAtSubmission.set(RenderSystem.getProjectionMatrix());
+                sortingAtSubmission = RenderSystem.getVertexSorting();
                 CORE_BUFFER.begin(CORE_TYPE.mode(), CORE_TYPE.format());
                 HALO_BUFFER.begin(TRAIL_TYPE.mode(), TRAIL_TYPE.format());
-                pending = true;
+                stagedTrailsPending = true;
             }
         }
 
         private static void draw() {
-            if (!pending) {
+            PoseStack modelView = RenderSystem.getModelViewStack();
+            if (GlStateManager.getBoundFramebuffer() != Minecraft.getInstance().getMainRenderTarget().frameBufferId) {
+                switchToEntityTrails("Zenith staged draw no longer has the entity pass render target.", null);
                 return;
             }
-            PoseStack modelView = RenderSystem.getModelViewStack();
-            int framebuffer = GlStateManager.getBoundFramebuffer();
-            int mainFramebuffer = Minecraft.getInstance().getMainRenderTarget().frameBufferId;
+            Matrix4f previousProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
+            VertexSorting previousSorting = RenderSystem.getVertexSorting();
             modelView.pushPose();
             try {
                 modelView.setIdentity();
                 modelView.mulPoseMatrix(modelViewAtSubmission);
                 RenderSystem.applyModelViewMatrix();
-                if (framebuffer != mainFramebuffer) {
-                    GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, mainFramebuffer);
-                }
-                CORE_BUFFER.setQuadSorting(RenderSystem.getVertexSorting());
+                RenderSystem.setProjectionMatrix(projectionAtSubmission, sortingAtSubmission);
+                CORE_BUFFER.setQuadSorting(sortingAtSubmission);
                 drawBatch(CORE_TYPE, CORE_BUFFER);
                 drawBatch(TRAIL_TYPE, HALO_BUFFER);
-                pending = false;
+                stagedTrailsPending = false;
             } finally {
                 modelView.popPose();
                 try {
                     RenderSystem.applyModelViewMatrix();
                 } finally {
-                    if (framebuffer != mainFramebuffer) {
-                        GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, framebuffer);
-                    }
+                    RenderSystem.setProjectionMatrix(previousProjection, previousSorting);
                 }
             }
         }
@@ -523,7 +541,7 @@ public final class ZenithProjectileRenderer extends EntityRenderer<ZenithProject
         }
 
         private static void discard() {
-            pending = false;
+            stagedTrailsPending = false;
             try {
                 discard(CORE_BUFFER);
             } finally {
