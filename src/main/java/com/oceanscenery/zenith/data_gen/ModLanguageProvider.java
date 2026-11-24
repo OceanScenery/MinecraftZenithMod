@@ -44,7 +44,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.percentage_damage_factor","百分比伤害");
             add("the_zenith_sword.configuration.percentage_damage_factor.tooltip","设置天顶剑造成伤害时附带敌方最大生命值伤害的比例");
             add("the_zenith_sword.configuration.invalid_damage_action","强制移除敌人");
-            add("the_zenith_sword.configuration.invalid_damage_action.tooltip",ZenithConfig.FORCE_REMOVAL_DESCRIPTION);
+            add("the_zenith_sword.configuration.invalid_damage_action.tooltip",ZenithConfig.FORCE_REMOVAL_DESCRIPTION_CH);
             add("the_zenith_sword.configuration.disable_knockback.tooltip","是否禁用击退");
             add("the_zenith_sword.configuration.render_offset.tooltip","将剑的轨迹在第一人称下的渲染向下偏移一格,以凸显轨道的弧形");
             add("the_zenith_sword.configuration.trail_angle","剑轨角度");
@@ -120,7 +120,7 @@ public class ModLanguageProvider extends LanguageProvider {
             add("the_zenith_sword.configuration.percentage_damage_factor","zenith percentage damage");
             add("the_zenith_sword.configuration.percentage_damage_factor.tooltip","this value determines the percentage of the enemy’s maximum health dealt as bonus damage on attacks.");
             add("the_zenith_sword.configuration.invalid_damage_action","Force enemy removal");
-            add("the_zenith_sword.configuration.invalid_damage_action.tooltip","If true, the Zenith Sword aggressively removes enemies and generates loot when their health reaches 0 or an attack deals no effective damage. This may be unstable or cause loot to drop multiple times. Turn this option off if you encounter problems.");
+            add("the_zenith_sword.configuration.invalid_damage_action.tooltip",ZenithConfig.FORCE_REMOVAL_DESCRIPTION_EN);
             add("the_zenith_sword.configuration.render","render settings");
             add("the_zenith_sword.configuration.render_offset","trail offset(1 block down)");
             add("the_zenith_sword.configuration.trail_angle","trail_angle");
@@ -182,7 +182,6 @@ public class ModLanguageProvider extends LanguageProvider {
             add("screen.the_zenith_sword.ghost_config.mode.1", "Attackable Entities");
             add("screen.the_zenith_sword.ghost_config.mode.2", "All Entities");
             add("screen.the_zenith_sword.ghost_config.hint", "Click a button to change the value, Esc to close");
-            // Login hint: sent line by line every time the player joins
             add("message.the_zenith_sword.login.header", "§6===== Zenith Sword Guide =====");
             add("message.the_zenith_sword.login.key.toggle_slot", "§e%s §7— Draw / sheathe the Ghost Zenith Sword (default key, rebindable in Options > Controls)");
             add("message.the_zenith_sword.login.key.ghost_config", "§e%s §7— Open the Ghost Zenith Sword settings (targeting range / attack mode)");

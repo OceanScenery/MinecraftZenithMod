@@ -12,22 +12,28 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = TheZenithMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ZenithCapabilities {
     public static final Capability<IZenithIdMark> ZENITH_ID_MARK = CapabilityManager.get(
-        new CapabilityToken<>() {}
+        new CapabilityToken<>() {
+        }
     );
     public static final Capability<IZenithUuidMark> ZENITH_UUID_MARK = CapabilityManager.get(
-        new CapabilityToken<>() {}
+        new CapabilityToken<>() {
+        }
     );
     public static final Capability<IZenithHitMark> HIT_BY_ZENITH_MARK = CapabilityManager.get(
-        new CapabilityToken<>() {}
+        new CapabilityToken<>() {
+        }
     );
     public static final Capability<IZenithHealthMark> ZENITH_HEALTH_MARK = CapabilityManager.get(
-        new CapabilityToken<>() {}
+        new CapabilityToken<>() {
+        }
     );
     public static final Capability<IZenithDamageMark> ZENITH_DAMAGE_MARK = CapabilityManager.get(
-        new CapabilityToken<>() {}
+        new CapabilityToken<>() {
+        }
     );
     public static final Capability<IZenithSlot> ZENITH_SLOT = CapabilityManager.get(
-        new CapabilityToken<>() {}
+        new CapabilityToken<>() {
+        }
     );
 
     @SubscribeEvent

@@ -4,14 +4,10 @@ import com.oceanscenery.zenith.TheZenithMod;
 import com.oceanscenery.zenith.util.PosUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.syncher.EntityDataSerializer;
-import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Optional;
-import java.util.UUID;
 
 public class ZenithEntityDataSerializers {
     public static final DeferredRegister<EntityDataSerializer<?>> ENTITY_DATA_SERIALIZERS = DeferredRegister.create(

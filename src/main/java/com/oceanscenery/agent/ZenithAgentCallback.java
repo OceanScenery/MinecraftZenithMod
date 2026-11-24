@@ -224,7 +224,7 @@ public final class ZenithAgentCallback {
                 continue;
             }
             String name = clazz.getName().replace('.', '/');
-            if (!transformer.matches(name) || !inst.isModifiableClass(clazz)
+            if (!transformer.matches(name, clazz.getModule(), clazz.getClassLoader()) || !inst.isModifiableClass(clazz)
                 || (ZenithTransformer.vanilla(name) && !net.minecraft.world.entity.Entity.class.isAssignableFrom(clazz))) {
                 continue;
             }
@@ -329,7 +329,7 @@ public final class ZenithAgentCallback {
     }
 
     public static byte[] writePatchedClass(ClassReader reader, ClassNode node) {
-        // The JVM infers frames for pre-Java 6 classes, including legacy jsr/ret methods.
+        //移除java6以下遗留类的栈信息
         if ((node.version & 0xffff) < Opcodes.V1_6) {
             for (var method : node.methods) {
                 var instructions = method.instructions.iterator();
@@ -352,7 +352,7 @@ public final class ZenithAgentCallback {
             if (className == null || classBuffer == null || classBuffer.length == 0) {
                 return null;
             }
-            if (!transformer.matches(className)) {
+            if (!transformer.matches(className, module, loader)) {
                 return null;
             }
 

@@ -1,5 +1,6 @@
 package com.oceanscenery.agent.patcher;
 
+import com.oceanscenery.agent.LivingClassFinder;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
@@ -23,11 +24,11 @@ public final class LivingTotalPatcher {
 
     //用于保存一个类的父类，实现的接口以及声明的方法
     //methods为methodName->access的映射
-    private record Header(String parent, List<String> interfaces, Map<String, Integer> methods) {
+    private record Header(String parent, List<String> interfaces, Map<String, Integer> methods, boolean isInterface) {
     }
 
     //特殊实例，用于表明没有成功读取有效的类信息
-    private static final Header MISSING = new Header(null, List.of(), Map.of());
+    private static final Header MISSING = new Header(null, List.of(), Map.of(), false);
     private static final Map<ClassLoader, Map<String, Header>> HEADERS = new WeakHashMap<>();
 
     private LivingTotalPatcher() {
@@ -57,8 +58,8 @@ public final class LivingTotalPatcher {
                 for (MethodNode m : node.methods) {
                     methods.put(m.name + m.desc, m.access);
                 }
-                return new Header(node.superName, List.copyOf(node.interfaces), methods);
-            } catch (IOException e) {
+                return new Header(node.superName, List.copyOf(node.interfaces), methods, (node.access & ACC_INTERFACE) != 0);
+            } catch (IOException | IllegalArgumentException e) {
                 return MISSING;
             }
         });
@@ -76,6 +77,41 @@ public final class LivingTotalPatcher {
         for (String n = parent; n != null && !"java/lang/Object".equals(n); n = header(n, loader).parent) {
             if (ENTITY.equals(n)) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查一个类是否可能为Entity对象
+     * @param declared 类的内部名
+     * @param owner 类文件
+     * @param loader 类加载器
+     * @return 结果
+     */
+    private static boolean mayBeEntityArgument(String declared, ClassNode owner, ClassLoader loader) {
+        if (LivingClassFinder.isEntitySupertype(declared)) {
+            //如果是Entity的父类
+            return true;
+        }
+        for (String name = declared; name != null && !"java/lang/Object".equals(name); ) {
+            if (ENTITY.equals(name)) {
+                return true;
+            }
+            if (owner.name.equals(name)) {
+                if ((owner.access & ACC_INTERFACE) != 0) {
+                    //实体子类可以实现任何有可能的接口
+                    return true;
+                }
+                name = owner.superName;
+            } else {
+                Header info = header(name, loader);
+                if (info == MISSING || info.isInterface) {
+                    //不确定或者是接口就返回true
+                    return true;
+                }
+                //父类
+                name = info.parent;
             }
         }
         return false;
@@ -168,16 +204,21 @@ public final class LivingTotalPatcher {
         "isDeadOrDying()Z", "m_21224_()Z", "isRemoved()Z", "m_213877_()Z"
     );
 
+    public static boolean guardManagerArguments(ClassNode owner) {
+        return guardManagerArguments(owner, LivingTotalPatcher.class.getClassLoader());
+    }
+
+    public static boolean guardManagerArguments(ClassNode owner, ClassLoader loader) {
+        return transform(owner, loader, false, false, true);
+    }
+
     public static boolean transform(ClassNode owner, ClassLoader loader, boolean vanilla, boolean entity) {
         return transform(owner, loader, vanilla, entity, false);
     }
 
-    public static boolean guardManagerArguments(ClassNode owner) {
-        return transform(owner, null, false, false, true);
-    }
-
     private static boolean transform(ClassNode owner, ClassLoader loader, boolean vanilla, boolean entity, boolean argumentsOnly) {
         boolean changed = false;
+        Map<String, Boolean> entityArguments = new HashMap<>();
         for (MethodNode m : owner.methods) {
             //不改变构造方法和类初始化方法
             if (m.name.startsWith("<") || (m.access & (ACC_ABSTRACT | ACC_NATIVE)) != 0 || m.instructions.size() == 0) {
@@ -222,8 +263,8 @@ public final class LivingTotalPatcher {
             if (!vanilla) {
                 int slot = instance ? 1 : 0;
                 for (Type arg : args) {
-                    if (arg.getSort() == Type.OBJECT) {
-                        //如果有类对象就需要进行合法性检查
+                    if (arg.getSort() == Type.OBJECT && entityArguments.computeIfAbsent(arg.getInternalName(),
+                        name -> mayBeEntityArgument(name, owner, loader))) {
                         branchIfMarked(head, slot, fallback);
                         usesFallback = true;
                     }
@@ -236,7 +277,9 @@ public final class LivingTotalPatcher {
                 usesFallback |= !callSuper;
             }
             //把语句插在开头
-            if (argumentsOnly && !usesFallback) continue;
+            if (argumentsOnly && !usesFallback) {
+                continue;
+            }
             m.instructions.insert(head);
 
             if (callSuper) {

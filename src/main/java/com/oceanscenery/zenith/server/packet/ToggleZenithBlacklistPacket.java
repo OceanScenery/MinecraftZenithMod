@@ -6,12 +6,12 @@ import com.oceanscenery.zenith.server.ZenithNetworkHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public record ToggleZenithBlacklistPacket(int playerId, int entityId, boolean shifted) implements IZenithPacket {
+public record ToggleZenithBlacklistPacket(int playerId, int entityId,
+                                          boolean shifted) implements IZenithPacket {
     public static final double MAX_HANDLE_DISTANCE = 10d;
 
     public ToggleZenithBlacklistPacket(FriendlyByteBuf buf) {

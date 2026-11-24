@@ -3,19 +3,9 @@ package com.oceanscenery.zenith.util;
 import com.oceanscenery.zenith.registry.ZenithCapabilities;
 import com.oceanscenery.zenith.registry.ZenithItems;
 import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithSlot;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 public class ItemUtil {
     public static void checkExist(CompoundTag tag) {

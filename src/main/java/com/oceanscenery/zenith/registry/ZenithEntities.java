@@ -9,17 +9,17 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class ZenithEntities {
-    public static final DeferredRegister<EntityType<?>> ENTITIES=DeferredRegister.create(
-            ForgeRegistries.ENTITY_TYPES,
-            TheZenithMod.MOD_ID
+    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(
+        ForgeRegistries.ENTITY_TYPES,
+        TheZenithMod.MOD_ID
     );
 
-    public static final RegistryObject<EntityType<ZenithProjectile>> ZENITH_PROJECTILE=ENTITIES.register(
-            "zenith_projectile",
-            ()->EntityType.Builder.<ZenithProjectile>of(
-                            ZenithProjectile::new,
-                            MobCategory.MISC
-                    ).setUpdateInterval(1).clientTrackingRange(60).sized(0f,0f)
-                    .fireImmune().build("zenith_projectile")
+    public static final RegistryObject<EntityType<ZenithProjectile>> ZENITH_PROJECTILE = ENTITIES.register(
+        "zenith_projectile",
+        () -> EntityType.Builder.<ZenithProjectile>of(
+                ZenithProjectile::new,
+                MobCategory.MISC
+            ).setUpdateInterval(1).clientTrackingRange(60).sized(0f, 0f)
+            .fireImmune().build("zenith_projectile")
     );
 }

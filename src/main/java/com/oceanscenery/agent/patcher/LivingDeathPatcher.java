@@ -104,7 +104,6 @@ public final class LivingDeathPatcher {
     //目标的名称
     private final Set<String> targetNames;
 
-    //
     private final Map<ClassLoader, DeathPathTracer> tracers = new IdentityHashMap<>();
 
     //通过方法的名字和描述构建一个唯一的key
@@ -120,7 +119,9 @@ public final class LivingDeathPatcher {
 
     public static boolean hasDeathCode(ClassNode node) {
         for (MethodNode method : node.methods) {
-            if (isDie(method) || isTickDeath(method)) return true;
+            if (isDie(method) || isTickDeath(method)) {
+                return true;
+            }
         }
         return hasDeathTimeWrite(node);
     }
@@ -600,19 +601,30 @@ public final class LivingDeathPatcher {
             predecessors.computeIfAbsent(to, key -> new ArrayList<>()).add(from);
         }
 
+        //可达语句
         Set<AbstractInsnNode> canReach = predecessorsOf(goals, predecessors);
         Set<AbstractInsnNode> unsafe = newIdentitySet();
         List<AbstractInsnNode> branches = new ArrayList<>();
         for (AbstractInsnNode node : insns) {
-            if (requiresPrecondition(node)) unsafe.add(node);
-            if (isBranch(node) && !analyzer.guards.contains(node)) branches.add(node);
+            if (requiresPrecondition(node)) {
+                //常用的不安全操作
+                unsafe.add(node);
+            }
+            if (isBranch(node) && !analyzer.guards.contains(node)) {
+                //如果没有被排除就假如
+                branches.add(node);
+            }
         }
+        //向前遍历找到不安全语句的可达语句
         Set<AbstractInsnNode> leadsToUnsafe = predecessorsOf(unsafe, predecessors);
         boolean changed = false;
         for (AbstractInsnNode branch : branches) {
-            if (alreadyHooked(branch)) continue;
+            if (alreadyHooked(branch)) {
+                continue;
+            }
 
             AbstractInsnNode chosen = null;
+            //用于标识一个跳转的跳转与否是否影响死亡分支的走向
             boolean canMissGoal = false;
             for (AbstractInsnNode successor : successorsOf(insns, branch)) {
                 if (!canReach.contains(successor)) {
@@ -621,9 +633,8 @@ public final class LivingDeathPatcher {
                     chosen = successor;
                 }
             }
-            // A helper or a compound predicate can conceal the original check. Even then,
-            // never force entry onto a path that can reach a cast or another guarded access.
             if (chosen != null && canMissGoal && !leadsToUnsafe.contains(chosen)) {
+                //选中且有可能错过且不会走到可能导致危险的分支
                 changed |= instrument(method, branch, chosen, minDeathTime);
             }
         }
@@ -648,17 +659,35 @@ public final class LivingDeathPatcher {
         return canReach;
     }
 
+    /**
+     * 用于判定一个操作是否为常见的需要前提的指令
+     * @param node 指令语句
+     * @return 如果需要前提,则返回true
+     */
     private static boolean requiresPrecondition(AbstractInsnNode node) {
         int op = node.getOpcode();
         if (op == Opcodes.CHECKCAST || (op >= Opcodes.IALOAD && op <= Opcodes.SALOAD)
             || (op >= Opcodes.IASTORE && op <= Opcodes.SASTORE)
-            || op == Opcodes.IDIV || op == Opcodes.LDIV || op == Opcodes.IREM || op == Opcodes.LREM) return true;
-        if (!(node instanceof MethodInsnNode call)) return false;
-        if (call.owner.equals("java/lang/Class") && call.name.equals("cast")) return true;
-        if (!call.owner.startsWith("java/util/")) return false;
+            || op == Opcodes.IDIV || op == Opcodes.LDIV || op == Opcodes.IREM || op == Opcodes.LREM) {
+            //强转,读写
+            return true;
+        }
+        if (!(node instanceof MethodInsnNode call)) {
+            //方法调用一般无害
+            return false;
+        }
+        if (call.owner.equals("java/lang/Class") && call.name.equals("cast")) {
+            //另一种强转
+            return true;
+        }
+        if (!call.owner.startsWith("java/util/")) {
+            return false;
+        }
         if (call.owner.startsWith("java/util/Optional")) {
+            //Optional的危险方法
             return call.name.equals("orElseThrow") || call.name.startsWith("get");
         }
+        //迭代器，或者get(i)之类的调用
         return call.name.equals("next") || call.name.equals("previous")
             || (call.name.equals("get") && call.desc.startsWith("(I)"));
     }
@@ -903,7 +932,9 @@ public final class LivingDeathPatcher {
 
     private static boolean hasDeathTimeWrite(ClassNode classNode) {
         for (MethodNode method : classNode.methods) {
-            if (method.name.startsWith("<")) continue;
+            if (method.name.startsWith("<")) {
+                continue;
+            }
             for (AbstractInsnNode insn : method.instructions) {
                 if (writeDeathTime(insn)) {
                     return true;
@@ -945,10 +976,9 @@ public final class LivingDeathPatcher {
         }
     }
 
-    /** BasicInterpreter normally collapses booleans into INT. Keep safety predicates distinct so
-     * local loads, stack copies and merges cannot turn them back into forceable death conditions. */
     private static final class GuardInterpreter extends BasicInterpreter {
-        private static final BasicValue PREDICATE = new BasicValue(Type.BOOLEAN_TYPE);
+        private static final BasicValue PREDICATE = new BasicValue(Type.BOOLEAN_TYPE); //一个被标记的布尔类型,用于防止因强转或者值的存在性而走错分支导致的异常
+        //常用的容器判空方法
         private static final Set<String> COLLECTION_TESTS = Set.of("isPresent", "isEmpty", "hasNext", "hasPrevious", "size");
         final Set<AbstractInsnNode> guards = newIdentitySet();
 
@@ -959,17 +989,29 @@ public final class LivingDeathPatcher {
         @Override
         public BasicValue unaryOperation(AbstractInsnNode insn, BasicValue value) throws AnalyzerException {
             int op = insn.getOpcode();
-            if (REF1.contains(op) || (value == PREDICATE && isBranch(insn))) guards.add(insn);
+            if (REF1.contains(op) || (value == PREDICATE && isBranch(insn))) {
+                //用于判空的语句不能修改
+                guards.add(insn);
+            }
             BasicValue result = super.unaryOperation(insn, value);
-            if (op == Opcodes.INSTANCEOF || op == Opcodes.ARRAYLENGTH) return PREDICATE;
+            if (op == Opcodes.INSTANCEOF || op == Opcodes.ARRAYLENGTH) {
+                //这两个判定条件返回的值需要标记
+                return PREDICATE;
+            }
+            //操作书被标记且产生int值就打标记
             return value == PREDICATE && result == BasicValue.INT_VALUE ? PREDICATE : result;
         }
 
         @Override
         public BasicValue binaryOperation(AbstractInsnNode insn, BasicValue left, BasicValue right) throws AnalyzerException {
+            //二元操作是否涉及标记的数
             boolean guarded = left == PREDICATE || right == PREDICATE;
-            if (REF2.contains(insn.getOpcode()) || (guarded && isBranch(insn))) guards.add(insn);
+            if (REF2.contains(insn.getOpcode()) || (guarded && isBranch(insn))) {
+                //引用比较或是涉及标记值的跳转语句不修改
+                guards.add(insn);
+            }
             BasicValue result = super.binaryOperation(insn, left, right);
+            //标准与一元操作一致
             return guarded && result == BasicValue.INT_VALUE ? PREDICATE : result;
         }
 
@@ -977,6 +1019,7 @@ public final class LivingDeathPatcher {
         public BasicValue naryOperation(AbstractInsnNode insn, List<? extends BasicValue> values) throws AnalyzerException {
             BasicValue result = super.naryOperation(insn, values);
             if (result == BasicValue.INT_VALUE && insn instanceof MethodInsnNode call) {
+                //让常见的判定操作不会被修改并为值打上标记
                 if (call.owner.equals("java/lang/Class") && (call.name.equals("isInstance") || call.name.equals("isAssignableFrom"))
                     || call.owner.equals("java/util/Objects") && (call.name.equals("nonNull") || call.name.equals("isNull"))
                     || call.owner.startsWith("java/util/") && COLLECTION_TESTS.contains(call.name)) {
@@ -989,6 +1032,7 @@ public final class LivingDeathPatcher {
         @Override
         public BasicValue merge(BasicValue a, BasicValue b) {
             if (a == PREDICATE && b == BasicValue.INT_VALUE || b == PREDICATE && a == BasicValue.INT_VALUE) {
+                //传递标记
                 return PREDICATE;
             }
             return super.merge(a, b);

@@ -11,6 +11,30 @@ import java.util.*;
 public final class LivingClassFinder {
     public static final String LIVING_ENTITY = "net/minecraft/world/entity/LivingEntity";
     public static final String ENTITY = "net/minecraft/world/entity/Entity";
+    //找到所有Entity类的父类
+    private static final Set<String> ENTITY_SUPERTYPES = entitySupertypes();
+
+    private static Set<String> entitySupertypes() {
+        Set<String> names = new HashSet<>();
+        Deque<Class<?>> pending = new ArrayDeque<>();
+        pending.add(net.minecraft.world.entity.Entity.class);
+        while (!pending.isEmpty()) {
+            //加入Entity父类及所有的实现接口
+            Class<?> type = pending.removeFirst();
+            if (!names.add(type.getName().replace('.', '/'))) {
+                continue;
+            }
+            if (type.getSuperclass() != null) {
+                pending.add(type.getSuperclass());
+            }
+            Collections.addAll(pending, type.getInterfaces());
+        }
+        return Set.copyOf(names);
+    }
+
+    public static boolean isEntitySupertype(String internalName) {
+        return ENTITY_SUPERTYPES.contains(internalName);
+    }
 
     private static volatile Map<String, String> parents;
     private static volatile Map<String, List<String>> children;
@@ -29,7 +53,9 @@ public final class LivingClassFinder {
         Map<String, String> resolved = new HashMap<>(parents);
         Set<String> visited = new HashSet<>();
         for (String name : parents.keySet()) {
-            if (result.contains(name) || nonLiving.contains(name)) continue;
+            if (result.contains(name) || nonLiving.contains(name)) {
+                continue;
+            }
             visited.clear();
             String current = name;
             while (current != null && !result.contains(current) && !nonLiving.contains(current) && visited.add(current)) {
@@ -38,15 +64,20 @@ public final class LivingClassFinder {
                 }
                 current = resolved.get(current);
             }
-            if (current != null && result.contains(current)) result.addAll(visited);
-            else nonLiving.addAll(visited);
+            if (current != null && result.contains(current)) {
+                result.addAll(visited);
+            } else {
+                nonLiving.addAll(visited);
+            }
         }
         result.add(ENTITY);
         return result;
     }
 
     private static String readParent(String internalName) {
-        if (internalName.startsWith("java/")) return null;
+        if (internalName.startsWith("java/")) {
+            return null;
+        }
         try (InputStream input = LivingClassFinder.class.getClassLoader().getResourceAsStream(internalName + ".class")) {
             return input == null ? null : new ClassReader(input).getSuperName();
         } catch (IOException ignored) {

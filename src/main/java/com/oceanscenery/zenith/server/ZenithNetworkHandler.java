@@ -1,15 +1,14 @@
 package com.oceanscenery.zenith.server;
 
 import com.oceanscenery.zenith.TheZenithMod;
-import com.oceanscenery.zenith.mixin_extension.IZenithEntityExtension;
 import com.oceanscenery.zenith.client.packet.SyncZenithMarkPacket;
 import com.oceanscenery.zenith.client.packet.SyncZenithSlotPacket;
-import com.oceanscenery.zenith.server.packet.ToggleZenithSlotOpenStatePacket;
 import com.oceanscenery.zenith.client.packet.ZenithSendPickedEntityInfPacket;
 import com.oceanscenery.zenith.event.CapabilitiesHandler;
+import com.oceanscenery.zenith.mixin_extension.IZenithEntityExtension;
 import com.oceanscenery.zenith.server.packet.*;
-import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithHitMark;
 import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithHealthMark;
+import com.oceanscenery.zenith.zenith_class.capabilities.cap_interface.IZenithHitMark;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;

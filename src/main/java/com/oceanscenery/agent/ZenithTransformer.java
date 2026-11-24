@@ -15,6 +15,18 @@ import java.util.Set;
 
 public final class ZenithTransformer {
     private static final Set<String> EXCLUDED_MOD_IDS = Set.of("minecraft", "forge", "the_zenith_sword");
+    //下面的类是不应该被转换的
+    private static final String[] EXCLUDED_PACKAGES = {
+        "java/", "javax/", "jdk/", "sun/", "com/sun/",
+        "cpw/mods/", "net/minecraftforge/", "org/spongepowered/asm/", "org/spongepowered/tools/",
+        "com/llamalad7/mixinextras/", "org/objectweb/asm/", "it/unimi/dsi/fastutil/",
+        "org/openjdk/nashorn/", "org/antlr/", "org/apache/maven/artifact/", "net/jodah/typetools/",
+        "net/minecrell/terminalconsole/", "org/jline/", "joptsimple/",
+        "org/apache/logging/log4j/", "org/slf4j/", "com/mojang/logging/", "com/electronwill/nightconfig/",
+        "io/netty/", "org/lwjgl/", "org/joml/",
+        "com/google/common/", "com/google/gson/", "com/mojang/brigadier/", "com/mojang/datafixers/",
+        "com/mojang/serialization/", "com/oceanscenery/zenith/", "com/oceanscenery/agent/"
+    };
     public static final String ENTITY = "net/minecraft/world/entity/Entity";
     public static final String HOOKS = "com/oceanscenery/zenith/hooks/Hooks";
     public static final String DAMAGE_SOURCE = "net/minecraft/world/damagesource/DamageSource";
@@ -68,14 +80,23 @@ public final class ZenithTransformer {
         return vanilla(internalName) || modClasses.contains(internalName);
     }
 
+    boolean matches(String internalName, Module module, ClassLoader loader) {
+        if (loader == null || loader == ClassLoader.getPlatformClassLoader()) return false;
+        // Some JDK tools are defined by the application loader, outside java.* packages.
+        String moduleName = module == null ? null : module.getName();
+        if (moduleName != null && (moduleName.startsWith("java.") || moduleName.startsWith("jdk."))) return false;
+        return matches(internalName);
+    }
+
     static boolean vanilla(String name) {
         return name.startsWith("net/minecraft/");
     }
 
-    private static boolean excluded(String name) {
-        return name.startsWith("net/minecraftforge/") || name.startsWith("it/unimi/dsi/fastutil/")
-            || name.startsWith("com/oceanscenery/zenith/") || name.startsWith("com/oceanscenery/agent/")
-            || name.startsWith("cpw/mods/") || name.startsWith("java/lang");
+    static boolean excluded(String name) {
+        for (String prefix : EXCLUDED_PACKAGES) {
+            if (name.startsWith(prefix)) return true;
+        }
+        return false;
     }
 
     public boolean patch(ClassNode classNode, String targetName, ClassLoader loader) {
