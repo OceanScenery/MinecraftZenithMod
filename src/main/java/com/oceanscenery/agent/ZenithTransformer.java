@@ -75,7 +75,7 @@ public final class ZenithTransformer {
     private static boolean excluded(String name) {
         return name.startsWith("net/minecraftforge/") || name.startsWith("it/unimi/dsi/fastutil/")
             || name.startsWith("com/oceanscenery/zenith/") || name.startsWith("com/oceanscenery/agent/")
-            || name.startsWith("cpw/mods/");
+            || name.startsWith("cpw/mods/") || name.startsWith("java/lang");
     }
 
     public boolean patch(ClassNode classNode, String targetName, ClassLoader loader) {

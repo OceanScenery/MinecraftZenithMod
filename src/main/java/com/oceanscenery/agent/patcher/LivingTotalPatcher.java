@@ -66,10 +66,14 @@ public final class LivingTotalPatcher {
 
     //检查类是否为Entity本身或其子类
     public static boolean isEntity(ClassNode node, ClassLoader loader) {
-        if (ENTITY.equals(node.name)) {
+        return isEntity(node.name, node.superName, loader);
+    }
+
+    public static boolean isEntity(String name, String parent, ClassLoader loader) {
+        if (ENTITY.equals(name)) {
             return true;
         }
-        for (String n = node.superName; n != null && !"java/lang/Object".equals(n); n = header(n, loader).parent) {
+        for (String n = parent; n != null && !"java/lang/Object".equals(n); n = header(n, loader).parent) {
             if (ENTITY.equals(n)) {
                 return true;
             }
@@ -165,6 +169,14 @@ public final class LivingTotalPatcher {
     );
 
     public static boolean transform(ClassNode owner, ClassLoader loader, boolean vanilla, boolean entity) {
+        return transform(owner, loader, vanilla, entity, false);
+    }
+
+    public static boolean guardManagerArguments(ClassNode owner) {
+        return transform(owner, null, false, false, true);
+    }
+
+    private static boolean transform(ClassNode owner, ClassLoader loader, boolean vanilla, boolean entity, boolean argumentsOnly) {
         boolean changed = false;
         for (MethodNode m : owner.methods) {
             //不改变构造方法和类初始化方法
@@ -188,7 +200,7 @@ public final class LivingTotalPatcher {
                 continue;
             }
             //对于已经处理过的类不做处理
-            if (alreadyPatched(m, vanilla)) {
+            if (alreadyPatched(m, vanilla) || (argumentsOnly && startsWithMarkCheck(m, false))) {
                 continue;
             }
             //当前方法的返回值
@@ -224,6 +236,7 @@ public final class LivingTotalPatcher {
                 usesFallback |= !callSuper;
             }
             //把语句插在开头
+            if (argumentsOnly && !usesFallback) continue;
             m.instructions.insert(head);
 
             if (callSuper) {
@@ -248,7 +261,7 @@ public final class LivingTotalPatcher {
                 m.instructions.add(new MethodInsnNode(INVOKESPECIAL, owner.superName, m.name, m.desc, false));
                 m.instructions.add(new InsnNode(result.getOpcode(IRETURN)));
             }
-            if (!vanilla) {
+            if (!vanilla && !argumentsOnly) {
                 //try types
                 //catch
                 //label handler
@@ -336,12 +349,16 @@ public final class LivingTotalPatcher {
             return true;
         }
         //检查开头的插入是否为相关插入
+        return startsWithMarkCheck(m, true);
+    }
+
+    private static boolean startsWithMarkCheck(MethodNode m, boolean requireThis) {
         AbstractInsnNode n = m.instructions.getFirst();
         while (n != null && n.getOpcode() < 0) {
             n = n.getNext();
         }
         return n instanceof VarInsnNode v
-            && v.getOpcode() == ALOAD && v.var == 0
+            && v.getOpcode() == ALOAD && (!requireThis || v.var == 0)
             && n.getNext() instanceof MethodInsnNode call
             && call.getOpcode() == INVOKESTATIC
             && (MARK_HOOK.equals(call.owner) || EXTENSION.equals(call.owner))

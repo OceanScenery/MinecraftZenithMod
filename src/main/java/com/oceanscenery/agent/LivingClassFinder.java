@@ -23,26 +23,25 @@ public final class LivingClassFinder {
         Map<String, String> parents = parents();
 
         Set<String> result = new HashSet<>();
-        //这两个类肯定要处理
         result.add(LIVING_ENTITY);
-        result.add(ENTITY);
+        Set<String> nonLiving = new HashSet<>();
+        nonLiving.add(ENTITY);
         Map<String, String> resolved = new HashMap<>(parents);
-
-        for (String name : parents.keySet()) { //所有有父类的类名
+        Set<String> visited = new HashSet<>();
+        for (String name : parents.keySet()) {
+            if (result.contains(name) || nonLiving.contains(name)) continue;
+            visited.clear();
             String current = name;
-            Set<String> visited = new HashSet<>();
-            while (current != null && visited.add(current)) {
-                //一路向上寻找，如果找到了LivingEntity类，说明是其子类
-                if (LIVING_ENTITY.equals(current)) {
-                    result.addAll(visited);
-                    break;
-                }
+            while (current != null && !result.contains(current) && !nonLiving.contains(current) && visited.add(current)) {
                 if (!resolved.containsKey(current)) {
                     resolved.put(current, readParent(current));
                 }
                 current = resolved.get(current);
             }
+            if (current != null && result.contains(current)) result.addAll(visited);
+            else nonLiving.addAll(visited);
         }
+        result.add(ENTITY);
         return result;
     }
 

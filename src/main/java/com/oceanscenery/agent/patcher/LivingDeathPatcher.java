@@ -9,6 +9,7 @@ import com.oceanscenery.agent.util.MethodData;
 import com.oceanscenery.zenith.TheZenithMod;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
@@ -117,6 +118,13 @@ public final class LivingDeathPatcher {
         this.targetNames = Set.copyOf(targets);
     }
 
+    public static boolean hasDeathCode(ClassNode node) {
+        for (MethodNode method : node.methods) {
+            if (isDie(method) || isTickDeath(method)) return true;
+        }
+        return hasDeathTimeWrite(node);
+    }
+
     public boolean transform(ClassNode classNode, String targetName, ClassLoader loader) {
         if (!this.targetNames.contains(targetName)) {
             return false;
@@ -187,7 +195,8 @@ public final class LivingDeathPatcher {
                 local |= injectDeathClock(method);
             }
 
-            if (methodContexts != null
+            // Branch hooks pass local slot zero as the dying entity. Static helpers have no this.
+            if (methodContexts != null && (method.access & Opcodes.ACC_STATIC) == 0
                 && (rootTickDeath || rootDie || isDeathDedicated(methodKey, callers, contexts))) {
                 //有上下文（被调用过），且只被一种死亡方法调用过
                 //获取此方法唯一的上下文
@@ -591,6 +600,38 @@ public final class LivingDeathPatcher {
             predecessors.computeIfAbsent(to, key -> new ArrayList<>()).add(from);
         }
 
+        Set<AbstractInsnNode> canReach = predecessorsOf(goals, predecessors);
+        Set<AbstractInsnNode> unsafe = newIdentitySet();
+        List<AbstractInsnNode> branches = new ArrayList<>();
+        for (AbstractInsnNode node : insns) {
+            if (requiresPrecondition(node)) unsafe.add(node);
+            if (isBranch(node) && !analyzer.guards.contains(node)) branches.add(node);
+        }
+        Set<AbstractInsnNode> leadsToUnsafe = predecessorsOf(unsafe, predecessors);
+        boolean changed = false;
+        for (AbstractInsnNode branch : branches) {
+            if (alreadyHooked(branch)) continue;
+
+            AbstractInsnNode chosen = null;
+            boolean canMissGoal = false;
+            for (AbstractInsnNode successor : successorsOf(insns, branch)) {
+                if (!canReach.contains(successor)) {
+                    canMissGoal = true;
+                } else if (chosen == null) {
+                    chosen = successor;
+                }
+            }
+            // A helper or a compound predicate can conceal the original check. Even then,
+            // never force entry onto a path that can reach a cast or another guarded access.
+            if (chosen != null && canMissGoal && !leadsToUnsafe.contains(chosen)) {
+                changed |= instrument(method, branch, chosen, minDeathTime);
+            }
+        }
+        return changed;
+    }
+
+    private static Set<AbstractInsnNode> predecessorsOf(Set<AbstractInsnNode> goals,
+            Map<AbstractInsnNode, List<AbstractInsnNode>> predecessors) {
         Set<AbstractInsnNode> canReach = newIdentitySet();
         //把所有终点推入队列
         Deque<AbstractInsnNode> queue = new ArrayDeque<>(goals);
@@ -604,50 +645,22 @@ public final class LivingDeathPatcher {
                 }
             }
         }
-        //搜索完了之后所有可达的语句都收集完毕
-        //现在收集全部分支语句
-        List<AbstractInsnNode> branches = new ArrayList<>();
-        for (AbstractInsnNode node : insns) {
-            if (isBranch(node)) {
-                branches.add(node);
-            }
-        }
+        return canReach;
+    }
 
-        boolean changed = false;
-        for (AbstractInsnNode branch : branches) {
-            if (alreadyHooked(branch)) {
-                //不去处理已经处理过的语句
-                continue;
-            }
-
-            //选取后继
-            AbstractInsnNode chosen = null;
-            int distinct = 0;//总共有几种可能（if一般2，switch未知）
-            int reachable = 0;//可到达目标的可能数
-            Set<AbstractInsnNode> seen = newIdentitySet();//用于去重
-            for (AbstractInsnNode successor : successorsOf(insns, branch)) {
-                if (!seen.add(successor)) {
-                    continue;
-                }
-                distinct++;
-                if (canReach.contains(successor)) {
-                    //如果这条语句处在可到达的集合（可能到达而非必须到达）里，那就不用作处理
-                    reachable++;
-                    if (chosen == null) {
-                        //永远记录第一个可达的选择分支
-                        chosen = successor;
-                    }
-                }
-            }
-            if (chosen == null || reachable == distinct) {
-                //如果都不可达（前者）或者都可达（后者），就不做处理
-                continue;
-            }
-            //有分支无法到达，需要手动插入
-            changed |= instrument(method, branch, chosen, minDeathTime);
+    private static boolean requiresPrecondition(AbstractInsnNode node) {
+        int op = node.getOpcode();
+        if (op == Opcodes.CHECKCAST || (op >= Opcodes.IALOAD && op <= Opcodes.SALOAD)
+            || (op >= Opcodes.IASTORE && op <= Opcodes.SASTORE)
+            || op == Opcodes.IDIV || op == Opcodes.LDIV || op == Opcodes.IREM || op == Opcodes.LREM) return true;
+        if (!(node instanceof MethodInsnNode call)) return false;
+        if (call.owner.equals("java/lang/Class") && call.name.equals("cast")) return true;
+        if (!call.owner.startsWith("java/util/")) return false;
+        if (call.owner.startsWith("java/util/Optional")) {
+            return call.name.equals("orElseThrow") || call.name.startsWith("get");
         }
-        //结束
-        return changed;
+        return call.name.equals("next") || call.name.equals("previous")
+            || (call.name.equals("get") && call.desc.startsWith("(I)"));
     }
 
     //标记
@@ -903,9 +916,15 @@ public final class LivingDeathPatcher {
     public static final class InnerAnalyzer extends Analyzer<BasicValue> {
         int[] normalEdges = new int[16];
         int normalEdgeCount;
+        final Set<AbstractInsnNode> guards;
 
         public InnerAnalyzer() {
-            super(new BasicInterpreter());
+            this(new GuardInterpreter());
+        }
+
+        private InnerAnalyzer(GuardInterpreter interpreter) {
+            super(interpreter);
+            guards = interpreter.guards;
         }
 
         @Override
@@ -923,6 +942,56 @@ public final class LivingDeathPatcher {
         @Override
         protected boolean newControlFlowExceptionEdge(int insnIndex, int successorIndex) {
             return super.newControlFlowExceptionEdge(insnIndex, successorIndex);
+        }
+    }
+
+    /** BasicInterpreter normally collapses booleans into INT. Keep safety predicates distinct so
+     * local loads, stack copies and merges cannot turn them back into forceable death conditions. */
+    private static final class GuardInterpreter extends BasicInterpreter {
+        private static final BasicValue PREDICATE = new BasicValue(Type.BOOLEAN_TYPE);
+        private static final Set<String> COLLECTION_TESTS = Set.of("isPresent", "isEmpty", "hasNext", "hasPrevious", "size");
+        final Set<AbstractInsnNode> guards = newIdentitySet();
+
+        GuardInterpreter() {
+            super(Opcodes.ASM9);
+        }
+
+        @Override
+        public BasicValue unaryOperation(AbstractInsnNode insn, BasicValue value) throws AnalyzerException {
+            int op = insn.getOpcode();
+            if (REF1.contains(op) || (value == PREDICATE && isBranch(insn))) guards.add(insn);
+            BasicValue result = super.unaryOperation(insn, value);
+            if (op == Opcodes.INSTANCEOF || op == Opcodes.ARRAYLENGTH) return PREDICATE;
+            return value == PREDICATE && result == BasicValue.INT_VALUE ? PREDICATE : result;
+        }
+
+        @Override
+        public BasicValue binaryOperation(AbstractInsnNode insn, BasicValue left, BasicValue right) throws AnalyzerException {
+            boolean guarded = left == PREDICATE || right == PREDICATE;
+            if (REF2.contains(insn.getOpcode()) || (guarded && isBranch(insn))) guards.add(insn);
+            BasicValue result = super.binaryOperation(insn, left, right);
+            return guarded && result == BasicValue.INT_VALUE ? PREDICATE : result;
+        }
+
+        @Override
+        public BasicValue naryOperation(AbstractInsnNode insn, List<? extends BasicValue> values) throws AnalyzerException {
+            BasicValue result = super.naryOperation(insn, values);
+            if (result == BasicValue.INT_VALUE && insn instanceof MethodInsnNode call) {
+                if (call.owner.equals("java/lang/Class") && (call.name.equals("isInstance") || call.name.equals("isAssignableFrom"))
+                    || call.owner.equals("java/util/Objects") && (call.name.equals("nonNull") || call.name.equals("isNull"))
+                    || call.owner.startsWith("java/util/") && COLLECTION_TESTS.contains(call.name)) {
+                    return PREDICATE;
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public BasicValue merge(BasicValue a, BasicValue b) {
+            if (a == PREDICATE && b == BasicValue.INT_VALUE || b == PREDICATE && a == BasicValue.INT_VALUE) {
+                return PREDICATE;
+            }
+            return super.merge(a, b);
         }
     }
 }
